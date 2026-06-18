@@ -552,6 +552,34 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", _on_text_edited)
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
+                        elif field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
+                            entry = _styled_entry(rf, width=42, font=entry_font)
+                            entry.insert(0, dv)
+                            
+                            def _update_link_style(*args, w=entry):
+                                val_str = w.get().strip()
+                                if val_str:
+                                    is_valid, _, parsed = validate_and_parse_coordinate(val_str)
+                                    if is_valid and parsed is not None:
+                                        fnt = list(entry_font)
+                                        fnt.append("underline")
+                                        w.configure(fg="#4a90d9", font=tuple(fnt), cursor="hand2")
+                                        return
+                                w.configure(fg=TEXT_DARK, font=entry_font, cursor="xterm")
+                                
+                            _update_link_style()
+                            entry.bind("<KeyRelease>", lambda e, w=entry: (_update_link_style(), self._on_field_edited()))
+                            
+                            def _open_map(event, w=entry):
+                                val_str = w.get().strip()
+                                if val_str:
+                                    is_valid, _, parsed = validate_and_parse_coordinate(val_str)
+                                    if is_valid and parsed is not None:
+                                        import webbrowser
+                                        webbrowser.open(f"https://www.google.com/maps?q={parsed[0]},{parsed[1]}")
+                                        
+                            entry.bind("<Double-Button-1>", _open_map)
+                            entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         else:
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
@@ -634,11 +662,16 @@ class UpdateFatalities(tk.Toplevel):
                         
                         # Apply coordinate GPS validation
                         if field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
-                            if str(val).strip():
-                                is_valid, msg, parsed = validate_and_parse_coordinate(str(val))
+                            val_str = str(val).strip()
+                            if val_str:
+                                is_valid, msg, parsed = validate_and_parse_coordinate(val_str)
                                 if not is_valid:
                                     _error_dialog(self, "Invalid Coordinate Format", msg)
                                     return None
+                                if parsed is not None:
+                                    val = f"{parsed[0]}, {parsed[1]}"
+                                else:
+                                    val = val_str
 
                 except (ValueError, TypeError) as exc:
                     _error_dialog(self, "Type Error",
