@@ -53,6 +53,20 @@ Configured under `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE`, known for highly optimiz
 ### AI Rates & Exchange Config
 The `.env` actively tracks the token cost structure via the `AI_RATES` JSON mapping (tracking varying input/output costs per 1M tokens) and utilizes the `AUD_USD` exchange rate setting for accurate, localized cost calculations.
 
+### AI Research & Data Population
+
+The Fatalities Editor features an integrated AI Lookup side panel powered by the Google Gemini API. This feature is specifically designed to help users quickly research historical records and populate the editable `derived_details` fields (such as `circumstances_of_death` and `summary`).
+
+**Google Search Grounding**
+The application connects to the Gemini API and explicitly injects `"tools": [{"google_search": {}}]` into the request payload. This is a critical configuration that enables **Google Search Grounding**. Instead of relying solely on the AI model's internal memory (which often leads to hallucinations or refusal to answer obscure historical queries), this allows the AI to perform live internet searches. It retrieves and synthesizes actual historical records from the Australian War Memorial (AWM), Virtual War Memorial Australia (VWMA), and other official sources on the fly, delivering high-fidelity results comparable to the Google Web interface.
+
+**Prompt Structure**
+The application uses a highly structured, tightened prompt that serves as a protective guardrail:
+- **Anchoring:** It anchors the query using exact, uneditable factual data from the JSON record (e.g., Service Number, Full Name, Date of Death).
+- **Strict Guidelines:** It explicitly instructs the AI **not to invent or alter identity details**.
+- **Targeted Output:** It strictly requests only the specific outputs needed for data entry: a narrative of the circumstances of death (broken into confirmed facts vs. inferences) and the best available location approximation (GPS/MGRS/UTM).
+- **Purpose:** This ensures the AI returns clean, factual text without unnecessary formatting, allowing the user to seamlessly evaluate the research and manually enter the findings into the protected `derived_details` section of the editor.
+
 ---
 
 ## 🚀 Running the App

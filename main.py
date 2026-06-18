@@ -140,8 +140,8 @@ class StyledDialog(tk.Toplevel):
 
         if parent:
             self.transient(parent)
-            self.grab_set()
             self._centre(parent)
+            self.grab_set()
 
         # Icon + message area
         top = tk.Frame(self, bg=WHITE)
@@ -241,12 +241,12 @@ class HelpViewer(tk.Toplevel):
         self.geometry("800x600")
         self.configure(bg=WHITE)
         self.transient(parent)
-        self.grab_set()
 
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (800 // 2)
         y = (self.winfo_screenheight() // 2) - (600 // 2)
         self.geometry(f'+{x}+{y}')
+        self.grab_set()
 
         header = tk.Frame(self, bg=RED_PRIMARY, height=60)
         header.pack(fill=tk.X)
@@ -339,11 +339,11 @@ class MainMenu(tk.Toplevel):
         self._on_update = on_update
         self._on_quit = on_quit
 
-        self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self._quit)
 
         self._build(datasets)
         self._centre(parent)
+        self.grab_set()
 
     def _build(self, datasets: dict[str, str]):
         # Header
@@ -369,6 +369,7 @@ class MainMenu(tk.Toplevel):
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 12))
 
+        self._all_buttons = []
         for label, file_path in datasets.items():
             btn = self._flat_button(body, f"  Update {label}", self._update, file_path)
             btn.pack(fill=tk.X, pady=3)
@@ -390,16 +391,16 @@ class MainMenu(tk.Toplevel):
     def show_about(self):
         about_win = tk.Toplevel(self)
         about_win.title("About")
-        about_win.geometry("450x400")
+        about_win.geometry("450x540")
         about_win.configure(bg="white")
         about_win.resizable(False, False)
         about_win.transient(self)
-        about_win.grab_set()
 
         about_win.update_idletasks()
         x = (about_win.winfo_screenwidth() // 2) - (450 // 2)
-        y = (about_win.winfo_screenheight() // 2) - (400 // 2)
+        y = (about_win.winfo_screenheight() // 2) - (540 // 2)
         about_win.geometry(f'+{x}+{y}')
+        about_win.grab_set()
 
         header = tk.Frame(about_win, bg="#1A237E", height=60)
         header.pack(fill=tk.X)
@@ -423,12 +424,33 @@ class MainMenu(tk.Toplevel):
 
         for label, env_key in details:
             val = os.environ.get(env_key, "N/A")
+            if label == "Version Date" and val != "N/A":
+                try:
+                    from datetime import datetime
+                    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+                        try:
+                            dt = datetime.strptime(val, fmt)
+                            val = dt.strftime("%d-%b-%Y")
+                            break
+                        except ValueError:
+                            continue
+                except Exception:
+                    pass
             row = tk.Frame(content, bg="white")
             row.pack(fill=tk.X, pady=4)
             tk.Label(row, text=f"{label}:", font=("Helvetica", 10, "bold"), 
                      bg="white", fg="#666666", width=15, anchor="w").pack(side=tk.LEFT)
             tk.Label(row, text=val, font=("Helvetica", 9), 
                      bg="white", fg="#333333").pack(side=tk.LEFT)
+
+        # Extra info
+        files = os.environ.get("FILES_AVAILABLE_FOR_UPDATE", "N/A")
+        directory = os.environ.get("FATALITY_FILE_DIRECTORY", "N/A")
+        extra = f'Used to maintain "derived_details" record details {files} in {directory}'
+        row = tk.Frame(content, bg="white")
+        row.pack(fill=tk.X, pady=4)
+        tk.Label(row, text=extra, font=("Helvetica", 9), 
+                 bg="white", fg="#333333", wraplength=380, justify=tk.LEFT, anchor="w").pack(side=tk.LEFT)
 
         tk.Button(about_win, text="CLOSE", command=about_win.destroy, bg="#1A237E", 
                   fg="white", font=("Helvetica", 10, "bold"), padx=30, pady=5, 
@@ -453,6 +475,7 @@ class MainMenu(tk.Toplevel):
         lbl.bind("<Leave>", lambda e, f=frame, l=lbl: self._on_leave(e, f, l))
         lbl.bind("<Button-1>", lambda e, d=user_data: command(d))
 
+        self._all_buttons.append(frame)
         return frame
 
     def _on_hover(self, event, frame, label):
@@ -464,20 +487,28 @@ class MainMenu(tk.Toplevel):
         label.configure(bg=label._orig_bg, fg=label._orig_fg)
 
     def _update(self, file_path: str):
+        self._set_buttons_state(tk.DISABLED)
         self._on_update(file_path)
+        self._set_buttons_state(tk.NORMAL)
+
+    def _set_buttons_state(self, state):
+        for btn in self._all_buttons:
+            if btn.winfo_exists():
+                for child in btn.winfo_children():
+                    child.configure(state=state)
 
     def _quit(self):
         self._on_quit()
 
     def _centre(self, parent):
         self.update_idletasks()
+        w = max(self.winfo_width(), 400)
+        h = max(self.winfo_height(), 300)
         pw = parent.winfo_screenwidth()
         ph = parent.winfo_screenheight()
-        w = self.winfo_width()
-        h = self.winfo_height()
         x = (pw - w) // 2
         y = (ph - h) // 2
-        self.geometry(f"+{x}+{y}")
+        self.geometry(f"{w}x{h}+{x}+{y}")
 
 
 # ---------------------------------------------------------------------------
@@ -513,7 +544,7 @@ class App(tk.Tk):
     # ------------------------------------------------------------------
 
     def _open_editor(self, file_path: str):
-        UpdateFatalities(self, file_path)
+        UpdateFatalities(self._menu, file_path)
 
     # ------------------------------------------------------------------
     # Quit
@@ -528,7 +559,25 @@ class App(tk.Tk):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys, traceback
+    import sys, traceback, os
+
+    # Only one instance at a time
+    try:
+        lock_file = os.path.join(os.environ.get("TEMP", os.getcwd()), "fatalities_editor.lock")
+        _lock_fd = os.open(lock_file, os.O_CREAT | os.O_RDWR)
+        
+        if sys.platform == "win32":
+            import msvcrt
+            msvcrt.locking(_lock_fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, IOError):
+        print("Fatalities Editor is already running.", flush=True)
+        if sys.platform == "win32":
+            input("Press Enter to exit...")
+        sys.exit(0)
+
     print("Starting Fatalities Editor...", flush=True)
     try:
         App()
