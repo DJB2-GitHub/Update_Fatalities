@@ -302,6 +302,13 @@ class UpdateFatalities(tk.Toplevel):
         bf.pack(fill=tk.X)
         self._flat_btn(bf, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
         self._flat_btn(bf, "AI", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
+        
+        self._live_search_var = tk.BooleanVar(value=True)
+        self._live_search_chk = tk.Checkbutton(
+            bf, text="Live Search", variable=self._live_search_var,
+            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9)
+        )
+        self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
 
         self.bind("<Escape>", lambda _e: self._cancel())
 
@@ -632,6 +639,12 @@ class UpdateFatalities(tk.Toplevel):
     def _ai_lookup(self):
         if not self._filtered:
             return
+
+        is_live_search = self._live_search_var.get()
+        confirm_msg = f"Proceed with AI Lookup?\n\nLive Search Grounding is currently: {'ON' if is_live_search else 'OFF'}"
+        if not _confirm_yesno(self, "Confirm AI", confirm_msg):
+            return
+
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
 
@@ -711,12 +724,15 @@ class UpdateFatalities(tk.Toplevel):
                 try:
                     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
                            f"{model}:generateContent?key={api_key}")
-                    body = json.dumps({
+                    payload = {
                         "systemInstruction": {"parts": [{"text": "I am a highly skilled historian."}]},
                         "contents": [{"parts": [{"text": user_prompt}]}],
-                        "tools": [{"google_search": {}}],
                         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2048},
-                    }).encode("utf-8")
+                    }
+                    if is_live_search:
+                        payload["tools"] = [{"google_search": {}}]
+                        
+                    body = json.dumps(payload).encode("utf-8")
                     req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
                     with urllib.request.urlopen(req, timeout=60) as resp:
                         data = json.loads(resp.read().decode("utf-8"))
