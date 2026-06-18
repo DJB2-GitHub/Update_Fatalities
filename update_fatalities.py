@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import tkinter as tk
 import urllib.request
@@ -33,6 +34,71 @@ KEY_FIELDS  = {"id"}
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def validate_and_parse_coordinate(coord_str: str):
+    """
+    Validates a GPS coordinate string and attempts to parse it into (lat, lon).
+    Returns: (is_valid: bool, message: str, coordinates: tuple or None)
+    """
+    if not coord_str or not str(coord_str).strip():
+        return False, "Input is empty.", None
+
+    coord_str = str(coord_str).strip()
+    
+    # 1. Decimal Degrees (e.g., "10.34694 N, 107.07263 E" or "10.34694, 107.07263")
+    dec_regex = re.compile(r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$", re.IGNORECASE)
+    match = dec_regex.match(coord_str)
+    
+    if match:
+        lat = float(match.group(1))
+        lat_dir = match.group(2).upper() if match.group(2) else ""
+        lon = float(match.group(3))
+        lon_dir = match.group(4).upper() if match.group(4) else ""
+        
+        if lat_dir == 'S': lat *= -1
+        if lon_dir == 'W': lon *= -1
+            
+        # Mathematical bounds check
+        if not (-90 <= lat <= 90):
+            return False, f"Invalid latitude ({lat}): Must be between -90 and 90.", None
+        if not (-180 <= lon <= 180):
+            return False, f"Invalid longitude ({lon}): Must be between -180 and 180.", None
+            
+        return True, "Valid Decimal Degrees", (round(lat, 5), round(lon, 5))
+
+    # 2. Military Grid Reference System (MGRS) (e.g., 48PYS713677 or 48P YS 713 677)
+    clean_mgrs = re.sub(r"\s+", "", coord_str).upper()
+    mgrs_regex = re.compile(r"^[1-6][0-9][C-X][A-Z]{2}\d{4,10}$", re.IGNORECASE)
+    
+    if mgrs_regex.match(clean_mgrs):
+        try:
+            # Requires: pip install mgrs
+            import mgrs
+            m = mgrs.MGRS()
+            lat, lon = m.toLatLon(clean_mgrs)
+            return True, "Valid MGRS", (round(lat, 5), round(lon, 5))
+        except ImportError:
+            return True, "Valid MGRS format (Tip: install 'mgrs' python library to calculate lat/lon)", None
+        except Exception as e:
+            return False, f"MGRS format looks valid but math decoding failed: {str(e)}", None
+
+    # 3. Degrees, Minutes, Seconds (DMS) (e.g., 10° 20' N, 107° 04' E)
+    dms_regex = re.compile(r"(\d+)[^0-9A-Z]+(\d+)[^0-9A-Z]*([NSEW]?)", re.IGNORECASE)
+    matches = list(dms_regex.finditer(coord_str))
+    
+    if len(matches) >= 2:
+        return True, "Valid DMS (Degrees/Minutes)", None # Add math translation here if needed
+
+    # 4. Fallback Error
+    error_msg = (
+        f"Unrecognized coordinate format: '{coord_str}'.\n"
+        "Acceptable formats are:\n"
+        "  1. Decimal Degrees: '10.34694 N, 107.07263 E' or '10.34694, 107.07263'\n"
+        "  2. MGRS: '48PYS458630' or '48P YS 458 630'\n"
+        "  3. DMS: '10° 20\' N, 107° 04\' E'"
+    )
+    return False, error_msg, None
+
 
 def _load_json(path: str) -> list[dict] | None:
     if not os.path.exists(path):
@@ -445,7 +511,9 @@ class UpdateFatalities(tk.Toplevel):
         self._entry_widgets = {}
 
         def _render_fields(parent_frame, data_dict, prefix_path=()):
-            for field_name, raw_value in data_dict.items():
+            items = list(data_dict.items())
+            items.sort(key=lambda x: 1 if x[0] == 'summary' else 0)
+            for field_name, raw_value in items:
                 current_path = prefix_path + (field_name,)
                 if isinstance(raw_value, dict):
                     hf = tk.Frame(parent_frame, bg=WHITE)
@@ -470,7 +538,8 @@ class UpdateFatalities(tk.Toplevel):
                         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                     else:
                         if field_name in ("circumstances_of_death", "summary"):
-                            entry = tk.Text(rf, font=entry_font, height=4, width=42, wrap=tk.WORD,
+                            text_height = 3 if field_name == "summary" else 4
+                            entry = tk.Text(rf, font=entry_font, height=text_height, width=42, wrap=tk.WORD,
                                             bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT, 
                                             highlightbackground=BORDER, highlightcolor=ACCENT, 
                                             highlightthickness=1, insertbackground=TEXT_DARK)
@@ -562,6 +631,15 @@ class UpdateFatalities(tk.Toplevel):
                         val = float(raw_value.strip())
                     else:
                         val = raw_value
+                        
+                        # Apply coordinate GPS validation
+                        if field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
+                            if str(val).strip():
+                                is_valid, msg, parsed = validate_and_parse_coordinate(str(val))
+                                if not is_valid:
+                                    _error_dialog(self, "Invalid Coordinate Format", msg)
+                                    return None
+
                 except (ValueError, TypeError) as exc:
                     _error_dialog(self, "Type Error",
                                   f"Field '{'.'.join(path_tuple)}': '{raw_value}' does not match "

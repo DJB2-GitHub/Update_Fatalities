@@ -69,6 +69,33 @@ The application uses a highly structured, tightened prompt that serves as a prot
 
 ---
 
+## 📝 Editable Fields & Validation
+
+In the Update Fatalities modal, the application enforces strict data integrity by locking core identity information. Only specific fields are presented as editable.
+
+### Editable Fields
+Any field nested under the `derived_details` object in the JSON record is fully editable. Commonly, this includes:
+- `pre_service_occupation`
+- `service_type`
+- `unit_served_with`
+- `circumstances_of_death`
+- `summary`
+- `grid_reference` (or other GPS/coordinate fields)
+
+*Note: `circumstances_of_death` and `summary` are rendered as multi-line text boxes for easier narrative entry, and `summary` is explicitly pinned to the bottom of the form for layout consistency.*
+
+### Edit Checking & Validation
+When you click **Update Record**, the application runs the following safety checks before saving:
+1. **Type Preservation:** The application strictly enforces the data type of the original JSON record. If the original value was a boolean, integer, or float, your new input must be successfully parsed into that exact type, otherwise an error dialog blocks the save.
+2. **GPS Coordinate Validation:** If a field name implies a location reference (e.g., contains `gps`, `coordinate`, or `grid`), it is passed through a robust coordinate validator. The field must strictly match one of the following formats:
+   - **Decimal Degrees:** e.g., `10.34694 N, 107.07263 E` or `10.34694, 107.07263`
+   - **MGRS:** e.g., `48PYS458630` or `48P YS 458 630`
+   - **DMS (Degrees, Minutes, Seconds):** e.g., `10° 20' N, 107° 04' E`
+
+If the format is unrecognized, the application blocks the save and displays a tooltip detailing the exact acceptable formats.
+
+---
+
 ## 🚀 Running the App
 To run the application cleanly without an active terminal window, use the wrapper:
 ```bash

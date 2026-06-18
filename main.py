@@ -357,6 +357,20 @@ class MainMenu(tk.Toplevel):
         )
         title_lbl.pack(side=tk.LEFT, padx=20, pady=12)
 
+        about_lbl = tk.Label(
+            header, text="\u2139", bg=RED_PRIMARY, fg=WHITE,
+            font=(FONT_FAMILY, 16, "bold"), cursor="hand2"
+        )
+        about_lbl.pack(side=tk.RIGHT, padx=20, pady=12)
+        about_lbl.bind("<Button-1>", lambda e: self.show_about())
+
+        help_lbl = tk.Label(
+            header, text="?", bg=RED_PRIMARY, fg=WHITE,
+            font=(FONT_FAMILY, 16, "bold"), cursor="hand2"
+        )
+        help_lbl.pack(side=tk.RIGHT, padx=(0, 10), pady=12)
+        help_lbl.bind("<Button-1>", lambda e: self.show_help())
+
         # Body
         body = tk.Frame(self, bg=WHITE, padx=24, pady=20)
         body.pack(fill=tk.BOTH, expand=True)
@@ -375,12 +389,6 @@ class MainMenu(tk.Toplevel):
             btn.pack(fill=tk.X, pady=3)
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(16, 12))
-
-        help_btn = self._flat_button(body, "  ?   Help", lambda _e: self.show_help(), None, is_danger=False)
-        help_btn.pack(fill=tk.X, pady=3)
-
-        about_btn = self._flat_button(body, "  \u2139   About", lambda _e: self.show_about(), None, is_danger=False)
-        about_btn.pack(fill=tk.X, pady=3)
 
         quit_btn = self._flat_button(body, "  Quit", lambda _e: self._quit(), None, is_danger=False)
         quit_btn.pack(fill=tk.X, pady=3)
