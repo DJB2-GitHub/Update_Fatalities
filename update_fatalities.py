@@ -661,6 +661,8 @@ class UpdateFatalities(tk.Toplevel):
             "   - UTM coordinates\n"
             "   - MGRS grid reference\n\n"
             "If the exact location is not documented, provide the closest verifiable location (such as a base, town, road, or landmark) and explain why this is the most accurate approximation.\n\n"
+            "3. The individual's pre-service occupation, as recorded in official enlistment or memorial records.\n\n"
+            "4. The enlistment type: whether they were a Regular soldier or a Conscript (e.g., National Service, Draft, or similar).\n\n"
             "Use only the values I supply.\n"
             "Do not invent or alter identity details.\n"
             "Present the answer in normal text, not structured data.\n\n"
