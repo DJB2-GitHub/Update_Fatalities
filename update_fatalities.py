@@ -138,7 +138,7 @@ def _error_dialog(parent: tk.Toplevel | None, title: str, message: str):
     if parent:
         dlg.transient(parent)
         _center_on_parent(dlg, parent)
-        dlg.grab_set()
+    dlg.grab_set()
     pad = {"padx": 24, "pady": 16}
     icon_row = ttk.Frame(dlg)
     icon_row.pack(fill=tk.X, **pad)
@@ -251,10 +251,11 @@ def _styled_entry(parent, **kw) -> tk.Entry:
 class UpdateFatalities(tk.Toplevel):
     """Modern flat-design modal for editing fatality records with AI side panel."""
 
-    def __init__(self, parent: tk.Tk | tk.Toplevel, file_path: str):
+    def __init__(self, parent: tk.Tk | tk.Toplevel, file_path: str, *, modal_title: str | None = None):
         super().__init__(parent)
         self.configure(bg=BG_GREY)
         self._loaded = False
+        self._modal_title = modal_title
 
         data = _load_json(file_path)
         if data is None:
@@ -298,7 +299,10 @@ class UpdateFatalities(tk.Toplevel):
 
     def _build_ui(self):
         filename = os.path.basename(self.file_path)
-        self.title(f"Update {filename}")
+        if self._modal_title:
+            self.title(self._modal_title)
+        else:
+            self.title(f"Update {filename}")
 
         outer = tk.Frame(self, bg=BG_GREY)
         outer.pack(fill=tk.BOTH, expand=True)
@@ -528,8 +532,12 @@ class UpdateFatalities(tk.Toplevel):
                     label_width = 24 if not prefix_path else 22
                     tk.Label(rf, text=f"{field_name}", font=(FONT, 10), bg=WHITE, fg=TEXT_DARK,
                              width=label_width, anchor=tk.E).pack(side=tk.LEFT, padx=(0, 10))
-                    dv = str(raw_value) if raw_value is not None else ""
-                    is_editable = prefix_path and prefix_path[0] == "derived_details"
+                    # Format list values (e.g. youtube_links) as newline-separated text
+                    if isinstance(raw_value, list):
+                        dv = "\n".join(str(item) for item in raw_value)
+                    else:
+                        dv = str(raw_value) if raw_value is not None else ""
+                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status")
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -550,6 +558,22 @@ class UpdateFatalities(tk.Toplevel):
                                 self._apply_hotlinks(tw)
                                 
                             entry.bind("<KeyRelease>", _on_text_edited)
+                            self._apply_hotlinks(entry)
+                            entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
+                        elif isinstance(raw_value, list):
+                            # youtube_links or other list fields: multi-line text, one URL per line
+                            text_height = 3
+                            entry = tk.Text(rf, font=entry_font, height=text_height, width=42, wrap=tk.WORD,
+                                            bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT,
+                                            highlightbackground=BORDER, highlightcolor=ACCENT,
+                                            highlightthickness=1, insertbackground=TEXT_DARK)
+                            entry.insert("1.0", dv)
+
+                            def _on_list_edited(_e, tw=entry):
+                                self._on_field_edited()
+                                self._apply_hotlinks(tw)
+
+                            entry.bind("<KeyRelease>", _on_list_edited)
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
                         elif field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
@@ -639,7 +663,7 @@ class UpdateFatalities(tk.Toplevel):
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and path_tuple[0] == "derived_details"
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status")
             
             if not is_editable:
                 val = orig_val
@@ -657,13 +681,17 @@ class UpdateFatalities(tk.Toplevel):
                         val = int(raw_value.strip())
                     elif isinstance(orig_val, float):
                         val = float(raw_value.strip())
+                    elif isinstance(orig_val, list):
+                        # Parse newline-separated text back to list (e.g. youtube_links)
+                        lines = raw_value.strip().split("\n")
+                        val = [line.strip() for line in lines if line.strip()]
                     else:
                         val = raw_value
                         
-                        # Apply coordinate GPS validation
+                        # Apply coordinate GPS validation (skip non-coordinate placeholders)
                         if field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
                             val_str = str(val).strip()
-                            if val_str:
+                            if val_str and not re.match(r'^[A-Za-z]+$', val_str):
                                 is_valid, msg, parsed = validate_and_parse_coordinate(val_str)
                                 if not is_valid:
                                     _error_dialog(self, "Invalid Coordinate Format", msg)
@@ -692,7 +720,7 @@ class UpdateFatalities(tk.Toplevel):
         updated = self._read_form()
         if updated is None:
             return
-        record_id = updated.get("id", str(self._filtered_pos + 1))
+        record_id = updated.get("referenceID", str(self._filtered_pos + 1))
         ok = _confirm_yesno(self, "Confirm Update", f'Please confirm update for "{record_id}"')
         if not ok:
             return
@@ -759,48 +787,139 @@ class UpdateFatalities(tk.Toplevel):
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
 
-        svc = record.get("service_number", "")
-        name = record.get("full_name", "")
-        dob = record.get("date_of_birth", "")
-        dod = record.get("date_of_death", "")
-        af = record.get("armed_forces", "")
-        
-        awm = record.get("awm", {}) if isinstance(record.get("awm"), dict) else {}
-        rank = awm.get("rank", record.get("rank", ""))
-        unit = awm.get("unit", record.get("unit", ""))
-        
-        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
-        pod = dd.get("place_of_death", record.get("place_of_death", ""))
-        ftype = dd.get("fatality_type", record.get("fatality_type", ""))
+        # Read from serviceRecordAuthority (the authoritative source)
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
+        svc = sra.get("service_number", "")
+        name = sra.get("full_name", "")
+        dob = sra.get("date_of_birth", "")
+        dod = sra.get("date_of_death", "")
+        rank = sra.get("rank", "")
+        unit = sra.get("unit", "")
 
-        user_prompt = (
-            "Using the values I provide in the placeholders below, generate a detailed narrative focused only on:\n\n"
-            "1. The circumstances of death, clearly separated into:\n"
-            "   - confirmed facts\n"
-            "   - details supported by official or semi-official sources\n"
-            "   - reasonable inference based on context\n"
-            "   - what remains unknown\n\n"
-            "2. The best available approximation of the place of death, using one of the following (whichever is most appropriate or best supported by sources):\n"
-            "   - GPS latitude/longitude\n"
-            "   - UTM coordinates\n"
-            "   - MGRS grid reference\n\n"
-            "If the exact location is not documented, provide the closest verifiable location (such as a base, town, road, or landmark) and explain why this is the most accurate approximation.\n\n"
-            "3. The individual's pre-service occupation, as recorded in official enlistment or memorial records.\n\n"
-            "4. The enlistment type: whether they were a Regular soldier or a Conscript (e.g., National Service, Draft, or similar).\n\n"
-            "Use only the values I supply.\n"
-            "Do not invent or alter identity details.\n"
-            "Present the answer in normal text, not structured data.\n\n"
-            "Identity anchor values:\n\n"
-            f"- Service Number: {svc}\n"
-            f"- Full Name: {name}\n"
-            f"- Date of Birth: {dob}\n"
-            f"- Date of Death: {dod}\n"
-            f"- Armed Forces: {af}\n"
-            f"- Rank: {rank}\n"
-            f"- Unit: {unit}\n"
-            f"- Place of Death: {pod}\n"
-            "- Fatality Type: *[leave blank for the model to determine from records]*"
-        )
+        # Derive Armed Forces from referenceID prefix (AU / NZ)
+        ref_id = record.get("referenceID", "")
+        forces_map = {"AU": "Australian Armed Forces", "NZ": "New Zealand Armed Forces"}
+        af = forces_map.get(ref_id[:2], ref_id[:2] if ref_id else "")
+
+        # Read derived_details
+        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
+        pod = dd.get("place_of_death", "")
+        ftype = sra.get("fatality_type", "")
+
+        # Use the detailed archivist prompt for testing datasets
+        if "testing" in self.file_path.lower():
+            country_map = {"AU": "Australia", "NZ": "New Zealand"}
+            country = country_map.get(ref_id[:2], "")
+            user_prompt = (
+                f"As a military archivist / historian researching the detailed story behind the death of this soldier in the Vietnam War, "
+                f"I require you to do deep research and complete as much as possible of the extra_derived_data output fields. It is imperative you approach this task to help paint a picture of all personal and tactical events surrounding his death.\n"
+                f"You will be provided the following input values to identify the soldier to be researched. If an input value is blank then ignore it in the research:\n"
+                f"country = {country}\n"
+                f"service number = {svc}\n"
+                f"service status = {sra.get('service_status', '')}\n"
+                f"full name = {name}\n"
+                f"sex = {sra.get('sex', '')}\n"
+                f"date of death = {dod}\n"
+                f"date of birth = {dob}\n"
+                f"rank = {rank}\n"
+                f"unit = {unit}\n"
+                f"fatality type = {ftype}\n"
+                f"Using ONLY these values, produce the JSON structure below.\n"
+                f"Fill all fields using the provided values and best-effort military-archivist historical reconstruction.\n"
+                f"If a field cannot be determined, leave it empty.\n"
+                f"YouTube references must be historically credible and directly relevant.\n"
+                f"DERIVED FIELD \"1_unit_served_with\":\n"
+                f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\n"
+                f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\n"
+                f"Separate each element with \", \" and skip empty fields.\n"
+                f"Example:\n"
+                f"\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\"\n"
+                f"DERIVED DATA REQUIREMENTS:\n"
+                f"2. Identify the military operation underway at the time of death.\n"
+                f"3. Provide a full operational and tactical setting including mission objectives, terrain, enemy situation, friendly force disposition, and a narrative summary.\n"
+                f"4. State the cause of death.\n"
+                f"5. Provide the exact or approximate grid reference.\n"
+                f"6. Identify the map sheet number and UTM zone.\n"
+                f"7. Provide a detailed location description.\n"
+                f"8. Reconstruct the unit's movements in the 48 hours prior.\n"
+                f"9. List any AARs, war diaries, contact reports, or casualty reports.\n"
+                f"10. Identify others killed or wounded in the same incident.\n"
+                f"11. Provide burial and repatriation details.\n"
+                f"12. Identify the tank/APC track, fire support base, patrol route, or engineer lane involved.\n"
+                f"13. If the exact grid is unavailable, provide the most probable grid and archival sources.\n"
+                f"14. Provide notes on accuracy and confidence level.\n"
+                f"15. Search for relevant YouTube videos and return them as:\n\n"
+                f"[\n"
+                f"  {{\n"
+                f"    \"title\": \"\",\n"
+                f"    \"url\": \"\",\n"
+                f"    \"relevance_reason\": \"\"\n"
+                f"  }}\n"
+                f"]\n"
+                f"Only include historically credible and directly relevant videos.\n"
+                f"OUTPUT FORMAT:\n"
+                f"{{\n"
+                f"  \"full_name\": \"\",\n"
+                f"  \"extra_unit_served_with\": {{\n"
+                f"    \"country\": \"\",\n"
+                f"    \"service\": \"\",\n"
+                f"    \"corps_or_branch\": \"\",\n"
+                f"    \"command_or_division\": \"\",\n"
+                f"    \"brigade_or_group\": \"\",\n"
+                f"    \"regiment_or_battalion\": \"\",\n"
+                f"    \"sub_unit\": \"\",\n"
+                f"    \"platoon_or_troop\": \"\",\n"
+                f"    \"section_or_squad\": \"\",\n"
+                f"    \"team_or_crew\": \"\"\n"
+                f"  }},\n"
+                f"  \"extra_derived_data\": {{\n"
+                f"    \"1_unit_served_with\": \"\",\n"
+                f"    \"2_operation_name\": \"\",\n"
+                f"    \"3_operational_tactical_setting\": \"\",\n"
+                f"    \"4_cause_of_death\": \"\",\n"
+                f"    \"5_grid_reference\": \"\",\n"
+                f"    \"6_map_sheet_or_utm_zone\": \"\",\n"
+                f"    \"7_location_description\": \"\",\n"
+                f"    \"8_unit_movements_prior_48hrs\": \"\",\n"
+                f"    \"9_associated_AARs_or_war_diaries\": \"\",\n"
+                f"    \"10_related_casualties\": \"\",\n"
+                f"    \"11_burial_and_repatriation\": \"\",\n"
+                f"    \"12_tank_APC_track_FSB_patrol_route_engineer_lane\": \"\",\n"
+                f"    \"13_probable_grid_and_archival_sources\": \"\",\n"
+                f"    \"14_notes_on_accuracy\": \"\",\n"
+                f"    \"15_youtube_references\": []\n"
+                f"  }}\n"
+                f"}}"
+            )
+        else:
+            user_prompt = (
+                "Using the values I provide in the placeholders below, generate a detailed narrative focused only on:\n\n"
+                "1. The circumstances of death, clearly separated into:\n"
+                "   - confirmed facts\n"
+                "   - details supported by official or semi-official sources\n"
+                "   - reasonable inference based on context\n"
+                "   - what remains unknown\n\n"
+                "2. The best available approximation of the place of death, using one of the following (whichever is most appropriate or best supported by sources):\n"
+                "   - GPS latitude/longitude\n"
+                "   - UTM coordinates\n"
+                "   - MGRS grid reference\n\n"
+                "If the exact location is not documented, provide the closest verifiable location (such as a base, town, road, or landmark) and explain why this is the most accurate approximation.\n\n"
+                "3. The individual's pre-service occupation, as recorded in official enlistment or memorial records.\n\n"
+                "4. The enlistment type: whether they were a Regular soldier or a Conscript (e.g., National Service, Draft, or similar).\n\n"
+                "Use only the values I supply.\n"
+                "Do not invent or alter identity details.\n"
+                "Present the answer in normal text, not structured data.\n\n"
+                "Identity anchor values:\n\n"
+                f"- Service Number: {svc}\n"
+                f"- Full Name: {name}\n"
+                f"- Date of Birth: {dob}\n"
+                f"- Date of Death: {dod}\n"
+                f"- Armed Forces: {af}\n"
+                f"- Rank: {rank}\n"
+                f"- Unit: {unit}\n"
+                f"- Place of Death: {pod}\n"
+                "- Fatality Type: *[leave blank for the model to determine from records]*"
+            )
 
         env = {}
         env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -830,15 +949,27 @@ class UpdateFatalities(tk.Toplevel):
 
         def _task():
             last_error = ""
+            is_testing = "testing" in self.file_path.lower()
             for model in models:
                 self.after(0, lambda m=model: self._side_resp_replace(f"Using {m} to get additional details...."))
                 try:
                     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
                            f"{model}:generateContent?key={api_key}")
+                    # Use appropriate system instruction and token budget
+                    if is_testing:
+                        system_text = (
+                            "You are a military archivist and historian specializing in the Vietnam War. "
+                            "You produce structured JSON output from provided soldier identity values. "
+                            "You always return valid, parseable JSON exactly matching the requested schema."
+                        )
+                        max_tokens = 8192
+                    else:
+                        system_text = "I am a highly skilled historian."
+                        max_tokens = 2048
                     payload = {
-                        "systemInstruction": {"parts": [{"text": "I am a highly skilled historian."}]},
+                        "systemInstruction": {"parts": [{"text": system_text}]},
                         "contents": [{"parts": [{"text": user_prompt}]}],
-                        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2048},
+                        "generationConfig": {"temperature": 0.3, "maxOutputTokens": max_tokens},
                     }
                     if is_live_search:
                         payload["tools"] = [{"google_search": {}}]
@@ -848,6 +979,9 @@ class UpdateFatalities(tk.Toplevel):
                     with urllib.request.urlopen(req, timeout=60) as resp:
                         data = json.loads(resp.read().decode("utf-8"))
                         content = data["candidates"][0]["content"]["parts"][0]["text"]
+                    # For testing: strip markdown fences and pretty-print JSON
+                    if is_testing:
+                        content = self._extract_json(content)
                     self.after(0, lambda c=content: self._side_resp_replace(c))
                     return
                 except Exception as exc:
@@ -856,6 +990,20 @@ class UpdateFatalities(tk.Toplevel):
             self.after(0, lambda: self._side_resp_replace(f"All models failed.\n\n{last_error}"))
 
         threading.Thread(target=_task, daemon=True).start()
+
+    def _extract_json(self, text: str) -> str:
+        """Strip markdown code fences and pretty-print JSON if possible."""
+        import re as _re
+        # Remove ```json ... ``` or ``` ... ``` fences
+        cleaned = _re.sub(r'```(?:json)?\s*\n?', '', text)
+        cleaned = _re.sub(r'```\s*$', '', cleaned)
+        cleaned = cleaned.strip()
+        # Try to parse and pretty-print
+        try:
+            parsed = json.loads(cleaned)
+            return json.dumps(parsed, indent=2, ensure_ascii=False)
+        except (json.JSONDecodeError, ValueError):
+            return text  # Return original if not valid JSON
 
     def _side_resp_replace(self, text: str):
         self._side_resp.delete("1.0", tk.END)

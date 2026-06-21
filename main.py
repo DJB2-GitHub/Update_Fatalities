@@ -51,18 +51,9 @@ def _read_env(path: str = ENV_PATH) -> dict[str, str]:
     return result
 
 
-def load_config() -> dict[str, str]:
-    env = _read_env()
-    directory = env.get("FATALITY_FILE_DIRECTORY", "")
-    files_str = env.get("FILES_AVAILABLE_FOR_UPDATE", "")
-
-    if not directory:
-        _show_error("FATALITY_FILE_DIRECTORY not found in .env")
-        return {}
-    if not files_str:
-        _show_error("FILES_AVAILABLE_FOR_UPDATE not found in .env")
-        return {}
-
+def _make_datasets(env: dict[str, str], directory: str, env_key: str) -> dict[str, str]:
+    """Build {label: full_path} from a comma-separated env value."""
+    files_str = env.get(env_key, "")
     datasets: dict[str, str] = {}
     for filename in files_str.split(","):
         filename = filename.strip()
@@ -72,6 +63,26 @@ def load_config() -> dict[str, str]:
         label = os.path.splitext(filename)[0]
         datasets[label] = full_path
     return datasets
+
+
+def load_config() -> dict[str, dict[str, str]]:
+    env = _read_env()
+    directory = env.get("FATALITY_FILE_DIRECTORY", "")
+
+    if not directory:
+        _show_error("FATALITY_FILE_DIRECTORY not found in .env")
+        return {}
+
+    live = _make_datasets(env, directory, "FILES_AVAILABLE_FOR_UPDATE")
+    testing_dir = env.get("TEST_FATALITY_FILE_DIRECTORY", directory)
+    testing = _make_datasets(env, testing_dir, "TEST_FILES_AVAILABLE_FOR_UPDATE")
+
+    if not live and not testing:
+        _show_error("No datasets configured (FILES_AVAILABLE_FOR_UPDATE "
+                    "or FILES_AVAILABLE_FOR_UPDATE_TESTING).")
+        return {}
+
+    return {"live": live, "testing": testing}
 
 
 def load_json(path: str) -> list[dict] | None:
@@ -345,7 +356,7 @@ class MainMenu(tk.Toplevel):
         self._centre(parent)
         self.grab_set()
 
-    def _build(self, datasets: dict[str, str]):
+    def _build(self, datasets: dict[str, dict[str, str]]):
         # Header
         header = tk.Frame(self, bg=RED_PRIMARY, height=56)
         header.pack(fill=tk.X)
@@ -375,18 +386,31 @@ class MainMenu(tk.Toplevel):
         body = tk.Frame(self, bg=WHITE, padx=24, pady=20)
         body.pack(fill=tk.BOTH, expand=True)
 
-        subtitle = tk.Label(
-            body, text="Main Menu", bg=WHITE, fg=TEXT_DARK,
-            font=(FONT_FAMILY, 13, "bold"),
-        )
-        subtitle.pack(anchor="w", pady=(0, 12))
-
-        ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 12))
-
         self._all_buttons = []
-        for label, file_path in datasets.items():
-            btn = self._flat_button(body, f"  Update {label}", self._update, file_path)
-            btn.pack(fill=tk.X, pady=3)
+
+        groups = [
+            ("Live OnThis Day app", datasets.get("live", {}), None),
+            ("Testing OnThisDay app expanded dataset", datasets.get("testing", {}),
+             "Testing AI update of new JSON structure"),
+        ]
+
+        for idx, (heading, group_datasets, modal_title) in enumerate(groups):
+            if not group_datasets:
+                continue
+
+            if idx > 0:
+                ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(4, 8))
+
+            heading_lbl = tk.Label(
+                body, text=heading, bg=WHITE, fg=TEXT_DARK,
+                font=(FONT_FAMILY, 12, "bold"),
+            )
+            heading_lbl.pack(anchor="w", pady=(8, 4))
+
+            for label, file_path in group_datasets.items():
+                user_data = (file_path, modal_title)
+                btn = self._flat_button(body, f"  Update {label}", self._update, user_data)
+                btn.pack(fill=tk.X, pady=3)
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(16, 12))
 
@@ -494,9 +518,13 @@ class MainMenu(tk.Toplevel):
         frame.configure(bg=label._orig_bg)
         label.configure(bg=label._orig_bg, fg=label._orig_fg)
 
-    def _update(self, file_path: str):
+    def _update(self, arg):
+        if isinstance(arg, tuple):
+            file_path, modal_title = arg
+        else:
+            file_path, modal_title = arg, None
         self._set_buttons_state(tk.DISABLED)
-        self._on_update(file_path)
+        self._on_update(file_path, modal_title)
         self._set_buttons_state(tk.NORMAL)
 
     def _set_buttons_state(self, state):
@@ -551,8 +579,11 @@ class App(tk.Tk):
     # Editor
     # ------------------------------------------------------------------
 
-    def _open_editor(self, file_path: str):
-        UpdateFatalities(self._menu, file_path)
+    def _open_editor(self, file_path: str, modal_title: str | None = None):
+        if not os.path.exists(file_path):
+            _show_error(f"'{file_path}' does not exist.")
+            return
+        UpdateFatalities(self._menu, file_path, modal_title=modal_title)
 
     # ------------------------------------------------------------------
     # Quit

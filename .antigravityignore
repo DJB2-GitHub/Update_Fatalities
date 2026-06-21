@@ -1,0 +1,66 @@
+# ==========================================
+# 1. DEPENDENCY & ENVIRONMENT DIRECTORIES
+# ==========================================
+node_modules/
+bower_components/
+jspm_packages/
+.pnpm-store/
+venv/
+.venv/
+env/
+
+# ==========================================
+# 2. BUILD, ARTIFACT & DISTRIBUTION OUTPUTS
+# ==========================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+target/
+bin/
+obj/
+coverage/
+
+# ==========================================
+# 3. LARGE DATA, ENVS & LOCAL DATABASE FILES
+# ==========================================
+*.log
+*.jsonl
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ==========================================
+# 4. INTERNAL SYSTEM, IDE & VERSION CONTROL
+# ==========================================
+.git/
+.idea/
+.vscode/
+.svn/
+.hg/
+.antigravity/
+
+# ==========================================
+# 5. NOISY MEDIA, STALE ASSETS & BINARIES
+# ==========================================
+_backup/
+_archive/
+**/legacy/
+*.mp4
+*.mp3
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+*.zip
+*.tar.gz
