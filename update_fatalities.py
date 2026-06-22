@@ -1124,7 +1124,7 @@ class UpdateFatalities(tk.Toplevel):
                                            bg=WHITE, fg=TEXT_DARK,
                                            width=label_width, anchor=tk.E)
                     field_label.pack(side=tk.LEFT, padx=(0, 10))
-                    # Format list values (e.g. youtube_links) as newline-separated text
+                    # Format list values (e.g. references) as newline-separated text
                     if isinstance(raw_value, list):
                         dv = "\n".join(str(item) for item in raw_value)
                     else:
@@ -1162,7 +1162,7 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", _on_text_edited)
                             self._apply_hotlinks(entry)
                         elif isinstance(raw_value, list):
-                            # youtube_links or other list fields: multi-line text, one URL per line
+                            # references or other list fields: multi-line text, one item per line
                             text_height = 3
                             entry = tk.Text(rf, font=entry_font, height=text_height, width=42, wrap=tk.WORD,
                                             bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT,
@@ -1332,7 +1332,7 @@ class UpdateFatalities(tk.Toplevel):
                     elif isinstance(orig_val, float):
                         val = float(raw_value.strip())
                     elif isinstance(orig_val, list):
-                        # Parse newline-separated text back to list (e.g. youtube_links)
+                        # Parse newline-separated text back to list (e.g. references)
                         lines = raw_value.strip().split("\n")
                         val = [line.strip() for line in lines if line.strip()]
                     else:
@@ -1481,9 +1481,9 @@ class UpdateFatalities(tk.Toplevel):
         ftype = sra.get("fatality_type", "")
 
         # Use the detailed archivist prompt for testing datasets,
-        # AU_fatalities.json, and NZ_fatalities.json
+        # and AU_fatalities.json
         is_testing = ("testing" in self.file_path.lower() or
-                      os.path.basename(self.file_path) in ("AU_fatalities.json", "NZ_fatalities.json"))
+                      os.path.basename(self.file_path) in ("AU_fatalities.json",))
         if is_testing:
             country_map = {"AU": "Australia", "NZ": "New Zealand"}
             country = country_map.get(ref_id[:2], "")
@@ -1504,7 +1504,7 @@ class UpdateFatalities(tk.Toplevel):
                 f"Using ONLY these values, produce the JSON structure below.\n"
                 f"Fill all fields using the provided values and best-effort military-archivist historical reconstruction.\n"
                 f"If a field cannot be determined, leave it empty.\n"
-                f"YouTube references must be historically credible and directly relevant.\n"
+                f"references must be historically credible and directly relevant.\n"
                 f"DERIVED FIELD \"2_unit_served_with\":\n"
                 f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\n"
                 f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\n"
@@ -1526,15 +1526,11 @@ class UpdateFatalities(tk.Toplevel):
                 f"13. Identify the tank/APC track, fire support base, patrol route, or engineer lane involved.\n"
                 f"14. If the exact grid is unavailable, provide the most probable grid and archival sources.\n"
                 f"15. Provide notes on accuracy and confidence level.\n"
-                f"16. Search for relevant YouTube videos and return them as:\n\n"
+                f"16. Search for relevant references and return them as a list of strings:\n\n"
                 f"[\n"
-                f"  {{\n"
-                f"    \"title\": \"\",\n"
-                f"    \"url\": \"\",\n"
-                f"    \"relevance_reason\": \"\"\n"
-                f"  }}\n"
+                f"  \"url_or_reference_text\"\n"
                 f"]\n"
-                f"Only include historically credible and directly relevant videos.\n"
+                f"Only include historically credible and directly relevant references.\n"
                 f"OUTPUT FORMAT:\n"
                 f"{{\n"
                 f"  \"full_name\": \"\",\n"
@@ -1566,7 +1562,8 @@ class UpdateFatalities(tk.Toplevel):
                 f"    \"13_tank_APC_track_FSB_patrol_route_engineer_lane\": \"\",\n"
                 f"    \"14_probable_grid_and_archival_sources\": \"\",\n"
                 f"    \"15_notes_on_accuracy\": \"\",\n"
-                f"    \"16_youtube_references\": []\n"
+                f"    \"references\": [],\n"
+                f"    \"ai_respons\": \"\"\n"
                 f"  }}\n"
                 f"}}"
             )
@@ -1632,7 +1629,7 @@ class UpdateFatalities(tk.Toplevel):
         def _task():
             last_error = ""
             is_testing = ("testing" in self.file_path.lower() or
-                          os.path.basename(self.file_path) in ("AU_fatalities.json", "NZ_fatalities.json"))
+                          os.path.basename(self.file_path) in ("AU_fatalities.json",))
 
             # ── Testing datasets: two-step pipeline ──
             if is_testing:

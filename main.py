@@ -74,15 +74,12 @@ def load_config() -> dict[str, dict[str, str]]:
         return {}
 
     live = _make_datasets(env, directory, "FILES_AVAILABLE_FOR_UPDATE")
-    testing_dir = env.get("TEST_FATALITY_FILE_DIRECTORY", directory)
-    testing = _make_datasets(env, testing_dir, "TEST_FILES_AVAILABLE_FOR_UPDATE")
 
-    if not live and not testing:
-        _show_error("No datasets configured (FILES_AVAILABLE_FOR_UPDATE "
-                    "or FILES_AVAILABLE_FOR_UPDATE_TESTING).")
+    if not live:
+        _show_error("No datasets configured (FILES_AVAILABLE_FOR_UPDATE).")
         return {}
 
-    return {"live": live, "testing": testing}
+    return {"live": live}
 
 
 def load_json(path: str) -> list[dict] | None:
@@ -399,29 +396,15 @@ class MainMenu(tk.Toplevel):
 
         self._all_buttons = []
 
-        groups = [
-            ("Live OnThis Day app", datasets.get("live", {}), None),
-            ("Testing OnThisDay app expanded dataset", datasets.get("testing", {}),
-             "Testing AI update of new JSON structure"),
-        ]
+        heading_lbl = tk.Label(
+            body, text="Live OnThis Day app", bg=WHITE, fg=TEXT_DARK,
+            font=(FONT_FAMILY, 12, "bold"),
+        )
+        heading_lbl.pack(anchor="w", pady=(8, 4))
 
-        for idx, (heading, group_datasets, modal_title) in enumerate(groups):
-            if not group_datasets:
-                continue
-
-            if idx > 0:
-                ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(4, 8))
-
-            heading_lbl = tk.Label(
-                body, text=heading, bg=WHITE, fg=TEXT_DARK,
-                font=(FONT_FAMILY, 12, "bold"),
-            )
-            heading_lbl.pack(anchor="w", pady=(8, 4))
-
-            for label, file_path in group_datasets.items():
-                user_data = (file_path, modal_title)
-                btn = self._flat_button(body, f"  Update {label}", self._update, user_data)
-                btn.pack(fill=tk.X, pady=3)
+        for label, file_path in datasets.get("live", {}).items():
+            btn = self._flat_button(body, f"  Update {label}", self._update, file_path)
+            btn.pack(fill=tk.X, pady=3)
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(16, 12))
 
