@@ -640,6 +640,52 @@ def _save_json(path: str, data: list[dict]) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Session state (last-viewed record per file)
+# ---------------------------------------------------------------------------
+
+def _session_path(file_path: str) -> str:
+    """Return the session.json path in the same directory as *file_path*."""
+    return os.path.join(os.path.dirname(os.path.abspath(file_path)), "session.json")
+
+
+def _load_session(file_path: str) -> dict | None:
+    """Load session entry for *file_path*, or None if not found."""
+    sp = _session_path(file_path)
+    if not os.path.exists(sp):
+        return None
+    try:
+        with open(sp, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    key = os.path.basename(file_path)
+    return data.get(key)
+
+
+def _save_session(file_path: str, pos: int, search_text: str = ""):
+    """Persist the current record position for *file_path*."""
+    sp = _session_path(file_path)
+    data: dict = {}
+    if os.path.exists(sp):
+        try:
+            with open(sp, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (json.JSONDecodeError, OSError):
+            data = {}
+    if not isinstance(data, dict):
+        data = {}
+    key = os.path.basename(file_path)
+    data[key] = {"pos": pos, "search": search_text}
+    try:
+        with open(sp, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2, ensure_ascii=False)
+    except OSError:
+        pass  # best-effort
+
+
+# ---------------------------------------------------------------------------
 # Custom dialogs
 # ---------------------------------------------------------------------------
 
@@ -791,6 +837,23 @@ class UpdateFatalities(tk.Toplevel):
         self._build_ui()
         self._apply_search()
 
+        # ── Restore last-viewed record from session ──
+        session = _load_session(file_path)
+        if session and isinstance(session, dict):
+            saved_pos = session.get("pos", 0)
+            saved_search = session.get("search", "")
+            if saved_search:
+                self._search_text = saved_search
+                self._search_var.set(saved_search)
+                self._apply_search()  # re-filter to match saved search
+                # Re-check saved_pos against re-filtered list
+                if 0 <= saved_pos < len(self._filtered):
+                    self._filtered_pos = saved_pos
+            else:
+                if 0 <= saved_pos < len(self._filtered):
+                    self._filtered_pos = saved_pos
+            self._show_record()
+
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self._cancel)
 
@@ -917,8 +980,9 @@ class UpdateFatalities(tk.Toplevel):
                                     relief=tk.FLAT, highlightthickness=0)
         self._side_prompt.pack(fill=tk.X, padx=12, pady=(0, 6))
 
-        tk.Label(self._side_panel, text="RESPONSE", font=(FONT, 8, "bold"),
-                 bg="#f0f2f5", fg=TEXT_MUTED, anchor="w").pack(fill=tk.X, padx=12, pady=(4, 2))
+        self._side_resp_label = tk.Label(self._side_panel, text="RESPONSE", font=(FONT, 8, "bold"),
+                                          bg="#f0f2f5", fg=TEXT_MUTED, anchor="w")
+        self._side_resp_label.pack(fill=tk.X, padx=12, pady=(4, 2))
         self._side_resp = tk.Text(self._side_panel, font=(FONT, 9), wrap=tk.WORD,
                                   bg=WHITE, fg=TEXT_DARK, padx=8, pady=6,
                                   relief=tk.FLAT, highlightthickness=0)
@@ -965,6 +1029,7 @@ class UpdateFatalities(tk.Toplevel):
         total = len(self._filtered)
         self._search_count.configure(text=f"{total} match{'es' if total != 1 else ''}" if self._search_text else "")
         self._show_record()
+        _save_session(self.file_path, self._filtered_pos, self._search_text)
 
     # ------------------------------------------------------------------
     # Record display
@@ -1074,19 +1139,28 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         if field_name in ("circumstances_of_death", "summary"):
                             text_height = 3 if field_name == "summary" else 4
-                            entry = tk.Text(rf, font=entry_font, height=text_height, width=42, wrap=tk.WORD,
-                                            bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT, 
-                                            highlightbackground=BORDER, highlightcolor=ACCENT, 
+
+                            # Container frame for text + scrollbar
+                            text_frame = tk.Frame(rf, bg=BG_GREY)
+                            text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
+
+                            entry = tk.Text(text_frame, font=entry_font, height=text_height, width=42,
+                                            wrap=tk.WORD, bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT,
+                                            highlightbackground=BORDER, highlightcolor=ACCENT,
                                             highlightthickness=1, insertbackground=TEXT_DARK)
                             entry.insert("1.0", dv)
-                            
+
+                            scrollbar = tk.Scrollbar(text_frame, command=entry.yview)
+                            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+                            entry.configure(yscrollcommand=scrollbar.set)
+                            entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
                             def _on_text_edited(_e, tw=entry):
                                 self._on_field_edited()
                                 self._apply_hotlinks(tw)
-                                
+
                             entry.bind("<KeyRelease>", _on_text_edited)
                             self._apply_hotlinks(entry)
-                            entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
                         elif isinstance(raw_value, list):
                             # youtube_links or other list fields: multi-line text, one URL per line
                             text_height = 3
@@ -1168,6 +1242,17 @@ class UpdateFatalities(tk.Toplevel):
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
+                            entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                        elif field_name == "service_status":
+                            status_values = ["Regular", "Conscript", "Other", "Unassigned"]
+                            entry = ttk.Combobox(rf, values=status_values, state="readonly",
+                                                 font=entry_font, width=40)
+                            current_val = dv.strip()
+                            if current_val in status_values:
+                                entry.set(current_val)
+                            else:
+                                entry.set("Other")
+                            entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         else:
                             entry = _styled_entry(rf, width=42, font=entry_font)
@@ -1340,6 +1425,7 @@ class UpdateFatalities(tk.Toplevel):
         if self._filtered_pos > 0:
             self._filtered_pos -= 1
             self._show_record()
+            _save_session(self.file_path, self._filtered_pos, self._search_text)
 
     def _next(self):
         if self._record_dirty:
@@ -1347,6 +1433,7 @@ class UpdateFatalities(tk.Toplevel):
         if self._filtered_pos < len(self._filtered) - 1:
             self._filtered_pos += 1
             self._show_record()
+            _save_session(self.file_path, self._filtered_pos, self._search_text)
 
     # ------------------------------------------------------------------
     # Side panel
@@ -1393,8 +1480,11 @@ class UpdateFatalities(tk.Toplevel):
         pod = dd.get("place_of_death", "")
         ftype = sra.get("fatality_type", "")
 
-        # Use the detailed archivist prompt for testing datasets
-        if "testing" in self.file_path.lower():
+        # Use the detailed archivist prompt for testing datasets,
+        # AU_fatalities.json, and NZ_fatalities.json
+        is_testing = ("testing" in self.file_path.lower() or
+                      os.path.basename(self.file_path) in ("AU_fatalities.json", "NZ_fatalities.json"))
+        if is_testing:
             country_map = {"AU": "Australia", "NZ": "New Zealand"}
             country = country_map.get(ref_id[:2], "")
             user_prompt = (
@@ -1415,27 +1505,28 @@ class UpdateFatalities(tk.Toplevel):
                 f"Fill all fields using the provided values and best-effort military-archivist historical reconstruction.\n"
                 f"If a field cannot be determined, leave it empty.\n"
                 f"YouTube references must be historically credible and directly relevant.\n"
-                f"DERIVED FIELD \"1_unit_served_with\":\n"
+                f"DERIVED FIELD \"2_unit_served_with\":\n"
                 f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\n"
                 f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\n"
                 f"Separate each element with \", \" and skip empty fields.\n"
                 f"Example:\n"
                 f"\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\"\n"
                 f"DERIVED DATA REQUIREMENTS:\n"
-                f"2. Identify the military operation underway at the time of death.\n"
-                f"3. Provide a full operational and tactical setting including mission objectives, terrain, enemy situation, friendly force disposition, and a narrative summary.\n"
-                f"4. State the cause of death.\n"
-                f"5. Provide the exact or approximate grid reference.\n"
-                f"6. Identify the map sheet number and UTM zone.\n"
-                f"7. Provide a detailed location description.\n"
-                f"8. Reconstruct the unit's movements in the 48 hours prior.\n"
-                f"9. List any AARs, war diaries, contact reports, or casualty reports.\n"
-                f"10. Identify others killed or wounded in the same incident.\n"
-                f"11. Provide burial and repatriation details.\n"
-                f"12. Identify the tank/APC track, fire support base, patrol route, or engineer lane involved.\n"
-                f"13. If the exact grid is unavailable, provide the most probable grid and archival sources.\n"
-                f"14. Provide notes on accuracy and confidence level.\n"
-                f"15. Search for relevant YouTube videos and return them as:\n\n"
+                f"2. Determine \"service_status\" as either \"Regular\" or \"Conscript\".\n"
+                f"3. Identify the military operation underway at the time of death.\n"
+                f"4. Provide a full operational and tactical setting including mission objectives, terrain, enemy situation, friendly force disposition, and a narrative summary.\n"
+                f"5. State the cause of death.\n"
+                f"6. Provide the exact or approximate grid reference.\n"
+                f"7. Identify the map sheet number and UTM zone.\n"
+                f"8. Provide a detailed location description.\n"
+                f"9. Reconstruct the unit's movements in the 48 hours prior.\n"
+                f"10. List any AARs, war diaries, contact reports, or casualty reports.\n"
+                f"11. Identify others killed or wounded in the same incident.\n"
+                f"12. Provide burial and repatriation details.\n"
+                f"13. Identify the tank/APC track, fire support base, patrol route, or engineer lane involved.\n"
+                f"14. If the exact grid is unavailable, provide the most probable grid and archival sources.\n"
+                f"15. Provide notes on accuracy and confidence level.\n"
+                f"16. Search for relevant YouTube videos and return them as:\n\n"
                 f"[\n"
                 f"  {{\n"
                 f"    \"title\": \"\",\n"
@@ -1460,21 +1551,22 @@ class UpdateFatalities(tk.Toplevel):
                 f"    \"team_or_crew\": \"\"\n"
                 f"  }},\n"
                 f"  \"extra_derived_data\": {{\n"
-                f"    \"1_unit_served_with\": \"\",\n"
-                f"    \"2_operation_name\": \"\",\n"
-                f"    \"3_operational_tactical_setting\": \"\",\n"
-                f"    \"4_cause_of_death\": \"\",\n"
-                f"    \"5_grid_reference\": \"\",\n"
-                f"    \"6_map_sheet_or_utm_zone\": \"\",\n"
-                f"    \"7_location_description\": \"\",\n"
-                f"    \"8_unit_movements_prior_48hrs\": \"\",\n"
-                f"    \"9_associated_AARs_or_war_diaries\": \"\",\n"
-                f"    \"10_related_casualties\": \"\",\n"
-                f"    \"11_burial_and_repatriation\": \"\",\n"
-                f"    \"12_tank_APC_track_FSB_patrol_route_engineer_lane\": \"\",\n"
-                f"    \"13_probable_grid_and_archival_sources\": \"\",\n"
-                f"    \"14_notes_on_accuracy\": \"\",\n"
-                f"    \"15_youtube_references\": []\n"
+                f"    \"1_service_status\": \"\",\n"
+                f"    \"2_unit_served_with\": \"\",\n"
+                f"    \"3_operation_name\": \"\",\n"
+                f"    \"4_operational_tactical_setting\": \"\",\n"
+                f"    \"5_cause_of_death\": \"\",\n"
+                f"    \"6_grid_reference\": \"\",\n"
+                f"    \"7_map_sheet_or_utm_zone\": \"\",\n"
+                f"    \"8_location_description\": \"\",\n"
+                f"    \"9_unit_movements_prior_48hrs\": \"\",\n"
+                f"    \"10_associated_AARs_or_war_diaries\": \"\",\n"
+                f"    \"11_related_casualties\": \"\",\n"
+                f"    \"12_burial_and_repatriation\": \"\",\n"
+                f"    \"13_tank_APC_track_FSB_patrol_route_engineer_lane\": \"\",\n"
+                f"    \"14_probable_grid_and_archival_sources\": \"\",\n"
+                f"    \"15_notes_on_accuracy\": \"\",\n"
+                f"    \"16_youtube_references\": []\n"
                 f"  }}\n"
                 f"}}"
             )
@@ -1522,13 +1614,15 @@ class UpdateFatalities(tk.Toplevel):
         api_key = env.get("GEMINI_API_KEY", "")
         models_str = env.get("GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-flash")
         models = [m.strip() for m in models_str.split(",") if m.strip()]
+        researcher_model = env.get("GEMINI_RESEARCHER_MODEL", "gemini-2.5-flash")
 
         if not api_key:
             _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
             return
 
         # Show side panel with prompt, loading response
-        self._side_prompt_label.configure(text="Prompt \u2014 All derived data")
+        self._side_prompt_label.configure(text="PROMPT: All Derived Data")
+        self._side_resp_label.configure(text="RESPONSE: All Derived Data")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", user_prompt)
@@ -1537,45 +1631,147 @@ class UpdateFatalities(tk.Toplevel):
 
         def _task():
             last_error = ""
-            is_testing = "testing" in self.file_path.lower()
-            for model in models:
-                self.after(0, lambda m=model: self._side_resp_replace(f"Using {m} to get additional details...."))
+            is_testing = ("testing" in self.file_path.lower() or
+                          os.path.basename(self.file_path) in ("AU_fatalities.json", "NZ_fatalities.json"))
+
+            # ── Testing datasets: two-step pipeline ──
+            if is_testing:
+                # Step 1: Research with search-enabled fast model ──
+                research_prompt = (
+                    f"Research the military history: What operation was {unit} engaged in on {dod} "
+                    f"in Vietnam? Who was {name} (service number {svc}, rank {rank}) and what were "
+                    f"the circumstances of their death on {dod}? Provide raw operational details, "
+                    f"unit movements, battle narrative, casualties, terrain, and tactical context. "
+                    f"Be comprehensive and factual. Provide all details you can find."
+                )
+                research_text = ""
                 try:
-                    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-                           f"{model}:generateContent?key={api_key}")
-                    # Use appropriate system instruction and token budget
-                    if is_testing:
+                    self.after(0, lambda: self._side_resp_replace(
+                        f"Step 1/2 — Researching with {researcher_model} (search enabled)..."
+                    ))
+                    research_payload = {
+                        "systemInstruction": {
+                            "parts": [{
+                                "text": (
+                                    "You are a military researcher specializing in the Vietnam War. "
+                                    "Provide raw, detailed factual text in prose. No formatting, no markdown."
+                                )
+                            }]
+                        },
+                        "contents": [{"parts": [{"text": research_prompt}]}],
+                        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096},
+                        "tools": [{"google_search": {}}],
+                    }
+                    research_url = (
+                        f"https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"{researcher_model}:generateContent?key={api_key}"
+                    )
+                    research_body = json.dumps(research_payload).encode("utf-8")
+                    research_req = urllib.request.Request(
+                        research_url, data=research_body,
+                        headers={"Content-Type": "application/json"}
+                    )
+                    with urllib.request.urlopen(research_req, timeout=45) as resp:
+                        research_data = json.loads(resp.read().decode("utf-8"))
+                        research_text = research_data["candidates"][0]["content"]["parts"][0]["text"]
+                except Exception:
+                    # Step 1 failed → will continue with empty research; step 2 works from internal knowledge
+                    pass
+
+                # Step 2: Structure with search-disabled, JSON-mode, no thinking ──
+                if research_text:
+                    structured_prompt = (
+                        f"RESEARCH MATERIAL (use ONLY this for your answers; do NOT search the web):\n\n"
+                        f"{research_text}\n\n"
+                        f"────────────────────────────────────────\n\n"
+                        f"{user_prompt}"
+                    )
+                else:
+                    structured_prompt = user_prompt
+
+                for model in models:
+                    self.after(0, lambda m=model: self._side_resp_replace(
+                        f"Step 2/2 — Structuring with {m} (JSON mode, no search)..."
+                    ))
+                    try:
+                        url = (
+                            f"https://generativelanguage.googleapis.com/v1beta/models/"
+                            f"{model}:generateContent?key={api_key}"
+                        )
                         system_text = (
                             "You are a military archivist and historian specializing in the Vietnam War. "
-                            "You produce structured JSON output from provided soldier identity values. "
-                            "You always return valid, parseable JSON exactly matching the requested schema."
+                            "You produce structured JSON output from provided research material and soldier "
+                            "identity values. You always return valid, parseable JSON exactly matching "
+                            "the requested schema."
                         )
-                        max_tokens = 8192
-                    else:
+                        payload = {
+                            "systemInstruction": {"parts": [{"text": system_text}]},
+                            "contents": [{"parts": [{"text": structured_prompt}]}],
+                            "generationConfig": {
+                                "temperature": 0.2,
+                                "maxOutputTokens": 8192,
+                                "responseMimeType": "application/json",
+                                "thinkingConfig": {"thinkingBudget": 0},
+                            },
+                        }
+                        # Google Search tool deliberately NOT included — disabled for step 2
+
+                        body = json.dumps(payload).encode("utf-8")
+                        req = urllib.request.Request(
+                            url, data=body, headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req, timeout=60) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            content = data["candidates"][0]["content"]["parts"][0]["text"]
+                        content = self._extract_json(content)
+                        self.after(0, lambda c=content: self._side_resp_replace(c))
+                        return
+                    except Exception as exc:
+                        last_error = f"{model}: {exc}"
+                        continue
+                self.after(0, lambda: self._side_resp_replace(
+                    f"All models failed.\n\n{last_error}"
+                ))
+
+            # ── Non-testing datasets: original single-step flow ──
+            else:
+                for model in models:
+                    self.after(0, lambda m=model: self._side_resp_replace(
+                        f"Using {m} to get additional details...."
+                    ))
+                    try:
+                        url = (
+                            f"https://generativelanguage.googleapis.com/v1beta/models/"
+                            f"{model}:generateContent?key={api_key}"
+                        )
                         system_text = "I am a highly skilled historian."
                         max_tokens = 2048
-                    payload = {
-                        "systemInstruction": {"parts": [{"text": system_text}]},
-                        "contents": [{"parts": [{"text": user_prompt}]}],
-                        "generationConfig": {"temperature": 0.3, "maxOutputTokens": max_tokens},
-                    }
-                    if is_live_search:
-                        payload["tools"] = [{"google_search": {}}]
-                        
-                    body = json.dumps(payload).encode("utf-8")
-                    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-                    with urllib.request.urlopen(req, timeout=60) as resp:
-                        data = json.loads(resp.read().decode("utf-8"))
-                        content = data["candidates"][0]["content"]["parts"][0]["text"]
-                    # For testing: strip markdown fences and pretty-print JSON
-                    if is_testing:
-                        content = self._extract_json(content)
-                    self.after(0, lambda c=content: self._side_resp_replace(c))
-                    return
-                except Exception as exc:
-                    last_error = f"{model}: {exc}"
-                    continue
-            self.after(0, lambda: self._side_resp_replace(f"All models failed.\n\n{last_error}"))
+                        payload = {
+                            "systemInstruction": {"parts": [{"text": system_text}]},
+                            "contents": [{"parts": [{"text": user_prompt}]}],
+                            "generationConfig": {
+                                "temperature": 0.3,
+                                "maxOutputTokens": max_tokens,
+                            },
+                        }
+                        if is_live_search:
+                            payload["tools"] = [{"google_search": {}}]
+
+                        body = json.dumps(payload).encode("utf-8")
+                        req = urllib.request.Request(
+                            url, data=body, headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req, timeout=60) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            content = data["candidates"][0]["content"]["parts"][0]["text"]
+                        self.after(0, lambda c=content: self._side_resp_replace(c))
+                        return
+                    except Exception as exc:
+                        last_error = f"{model}: {exc}"
+                        continue
+                self.after(0, lambda: self._side_resp_replace(
+                    f"All models failed.\n\n{last_error}"
+                ))
 
         threading.Thread(target=_task, daemon=True).start()
 
@@ -1688,7 +1884,8 @@ class UpdateFatalities(tk.Toplevel):
 
         is_live_search = self._live_search_var.get()
 
-        self._side_prompt_label.configure(text="Prompt — grid_reference lookup")
+        self._side_prompt_label.configure(text="PROMPT: Grid Reference Lookup")
+        self._side_resp_label.configure(text="RESPONSE: Grid Reference Lookup")
         # ── show side panel with the prompt ──────────────────────────
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
@@ -1871,6 +2068,7 @@ class UpdateFatalities(tk.Toplevel):
 
         is_live_search = self._live_search_var.get()
         self._side_prompt_label.configure(text="PROMPT: Place of Death")
+        self._side_resp_label.configure(text="RESPONSE: Place of Death")
 
         # ── show side panel with the prompt ──────────────────────────
         self._side_prompt.configure(state=tk.NORMAL)
@@ -2141,4 +2339,5 @@ class UpdateFatalities(tk.Toplevel):
                                 "You have unsaved changes.\nClose and discard all changes?")
             if not ok:
                 return
+        _save_session(self.file_path, self._filtered_pos, self._search_text)
         self.destroy()

@@ -164,7 +164,7 @@
     "referenceID": "AU_43058",
     "serviceRecordAuthority": {
       "service_number": "43058",
-      "service_status": "Unassigned",
+      "service_status": "Regular",
       "full_name": "NORLEY, Graham Leonard",
       "sex": "M",
       "date_of_death": "1968-01-26",
@@ -174,12 +174,12 @@
       "fatality_type": "Killed in Action"
     },
     "derived_details": {
-      "place_of_death": "Phuoc Tuy Province, South Vietnam",
-      "circumstances_of_death": "Corporal Graham Leonard Norley was killed when his platoon engaged enemy forces during a patrol.",
+      "place_of_death": "15 kilometers northeast of Bien Hoa airbase, Bien Hoa Province, South Vietnam.",
+      "circumstances_of_death": "\"Operation Coburg was a joint Australian-New Zealand operation conducted outside of Phuoc Tuy Province, specifically in the border area of Bien Hoa and Long Khanh provinces. The mission was designed to block communist forces (specifically the Viet Cong 5th Division) from infiltrating the major allied bases at Long Binh and Bien Hoa prior to and during the Tet holiday period. \"Killed in Action (Gunshot wound / Small arms fire during a contact with enemy forces in a bunker system)\",",
       "pre_service_occupation": "Clerk",
       "unit_served_with": "2nd Battalion, The Royal Australian Regiment (2RAR)",
       "summary": "Corporal Graham Leonard Norley of 2RAR was killed in action on 26 January 1968 in Phuoc Tuy Province during a patrol.",
-      "grid_reference": "Unassigned",
+      "grid_reference": "11.01745, 106.94679 {YT 125 185}",
       "youtube_links": []
     }
   },
