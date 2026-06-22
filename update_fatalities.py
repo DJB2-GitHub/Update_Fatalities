@@ -35,67 +35,580 @@ KEY_FIELDS  = {"id"}
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _split_coord_display(val_str: str) -> tuple[str, str]:
+    """Split a coordinate display value into its decimal and original parts.
+
+    When a non-decimal coordinate (MGRS, DMS, etc.) is parsed and converted,
+    the stored value takes the form  "lat, lon {original input}"  so the
+    user can see both the computed decimal and what they originally typed.
+
+    This helper extracts the two parts:
+        "10.57183, 107.21889 {YS 426 694}"  →  ("10.57183, 107.21889", "YS 426 694")
+        "10.6895, 107.3305"                  →  ("10.6895, 107.3305", "")
+
+    Returns (decimal_part, original_suffix).  original_suffix is "" when
+    no {…} annotation is present.
+    """
+    m = re.match(r'^(.*?)\s*\{([^}]+)\}\s*$', str(val_str).strip())
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    return str(val_str).strip(), ""
+
+
+class _ToolTip:
+    """Lightweight hover tooltip for tkinter widgets.
+
+    Usage:
+        _ToolTip(widget, "help text")
+    The tooltip appears on <Enter> and hides on <Leave>.
+    """
+    def __init__(self, widget: tk.Widget, text: str):
+        self.widget = widget
+        self.text = text
+        self._tip: tk.Toplevel | None = None
+        widget.bind("<Enter>", self._show)
+        widget.bind("<Leave>", self._hide)
+
+    def _show(self, _event=None):
+        if self._tip is not None:
+            return
+        x = self.widget.winfo_rootx() + 6
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 2
+        self._tip = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        lbl = tk.Label(
+            tw, text=self.text, justify=tk.LEFT,
+            background="#333333", foreground="#ffffff",
+            font=(FONT, 9), padx=7, pady=4,
+        )
+        lbl.pack()
+
+    def _hide(self, _event=None):
+        if self._tip is not None:
+            self._tip.destroy()
+            self._tip = None
+
+
+# =============================================================================
+# Vietnam-era MGRS → Decimal Coordinate Conversion
+# =============================================================================
+#
+# CONTEXT ────────────────────────────────────────────────────────────────────
+#
+# During the Vietnam War, U.S. and allied military maps used the MGRS
+# (Military Grid Reference System) based on the **South Vietnam 1960 (SVN60)**
+# datum.  Modern tools (Google Maps, GPS, GIS software) use **WGS84**.
+#
+# The two datums do not align — the same MGRS coordinate refers to slightly
+# different physical locations depending on which datum underpins the grid.
+#
+# The SVN60 → WGS84 offset in southern Vietnam is roughly:
+#     +205 m Easting
+#      +75 m Northing
+#
+# At 10° N latitude this is ~0.0018° (≈ 6.5 arc-seconds), which matters for
+# casualty-location accuracy when records were written on a 1970 map but
+# viewed on Google Earth today.
+#
+#
+# MGRS ANATOMY (using the README example) ────────────────────────────────────
+#
+#     Original:   48P YS 426 694
+#
+#     48   = UTM zone number (1–60)
+#     P    = latitude band (C–X, skipping I and O)
+#     YS   = 100 km × 100 km grid-square letter pair
+#     426  = Easting  within that square (3 digits → 42600 m, i.e. 100 m prec.)
+#     694  = Northing within that square (3 digits → 69400 m)
+#
+# Think of it like an address:
+#     "48P"      → region  (UTM zone + latitude band)
+#     "YS"       → city block  (100 km square)
+#     "426 694"  → house number  (metre offset within the block)
+#
+#
+# THE 48Q → 48P TRANSCRIPTION ERROR ──────────────────────────────────────────
+#
+# Many Vietnam War records contain "48Q YS …".  This is almost certainly a
+# typographical error because the 100 km square **YS exists only in 48P**,
+# not 48Q.  (48P covers southern Vietnam / III & IV Corps; 48Q covers
+# northern Vietnam / I & II Corps.)
+#
+# Our parser detects this and auto-corrects 48Q → 48P for southern squares.
+#
+#
+# PRECISION ──────────────────────────────────────────────────────────────────
+#
+# MGRS numerical digits come in even-length pairs (2, 4, 6, 8, 10 digits):
+#
+#     Digits  East/North digits    Precision       Example
+#     ─────  ──────────────────    ─────────       ───────
+#       2     1 + 1                10 000 m        (rarely used)
+#       4     2 + 2                 1 000 m        48P YS 42 69
+#       6     3 + 3                   100 m        48P YS 426 694  ← typical
+#       8     4 + 4                    10 m        48P YS 4260 6940
+#      10     5 + 5                     1 m        48P YS 42600 69400
+#
+# Our parser preserves the input precision: a 6-digit input produces a
+# 6-digit shifted MGRS, rounded to the nearest 100 m grid intersection.
+#
+#
+# LIMITATIONS ────────────────────────────────────────────────────────────────
+#
+# * The datum shift constants (+205 E, +75 N) are region-specific for
+#   Bà Rịa–Vũng Tàu / Phước Tuy Province.  Other parts of Vietnam may need
+#   slightly different values.
+#
+# * We do not handle 100 km square boundary crossing caused by the shift
+#   (e.g. an easting of 99850 + 205 = 100055 would tick into the next
+#   square).  In practice the shift is small and this is vanishingly
+#   unlikely for real casualty coordinates.
+#
+# * The zone-inference table (_VIETNAM_48P_SQUARES) lists the common III &
+#   IV Corps squares.  Edge cases near the 48P/48Q boundary may be wrong.
+#   If you encounter one, add the square to the set or provide the full
+#   GZD in the input.
+#
+# =============================================================================
+
+
+# ---------------------------------------------------------------------------
+# 100 km grid squares known to be in Vietnam zone 48P (southern: III & IV Corps)
+# ---------------------------------------------------------------------------
+#
+# These are the two-letter 100 000 m square identifiers that fall inside
+# UTM zone 48, latitude band P.  In the Vietnam War context, 48P covers
+# the southern half of South Vietnam — roughly everything from Đà Nẵng
+# southward, including III Corps (Saigon / Biên Hòa / Vũng Tàu) and
+# IV Corps (Mekong Delta).
+#
+# Sourcing: US Army Map Service 1:250 000 series (Series L509 / L7014).
+#
+# Squares *not* in this set are assumed to be in 48Q (northern I & II Corps).
+# ---------------------------------------------------------------------------
+_VIETNAM_48P_SQUARES = {
+    # Y-series squares (eastern side of zone 48, lat band P)
+    "YS", "YT", "YU", "YV", "YW", "YX", "YY", "YZ",
+    # X-series squares (western side of zone 48, lat band P)
+    "XR", "XS", "XT", "XU", "XV", "XW", "XX", "XY", "XZ",
+    # These straddle the P/Q boundary; listed in 48P because the majority
+    # of their populated area lies in III Corps territory.
+    "YQ", "YR",
+    "XQ",
+}
+
+
+# ---------------------------------------------------------------------------
+# SVN60 → WGS84 datum-shift parameters (metres)
+# ---------------------------------------------------------------------------
+#
+# During the Vietnam War, U.S. military maps used the Indian 1960 datum
+# (also called South Vietnam 1960, SVN60, or EPSG:4136 locally).
+#
+# Converting an SVN60 UTM coordinate to WGS84 UTM requires adding these
+# offsets.  The values below are the **approximate average** for the
+# Bà Rịa–Vũng Tàu / Phước Tuy Province area (the theatre of most
+# Australian operations).
+#
+# For other regions of Vietnam the shift may differ by ±30 m; if you need
+# higher accuracy, use a dedicated coordinate-transformation library
+# (e.g. pyproj with the appropriate EPSG grid-shift file).
+# ---------------------------------------------------------------------------
+_DATUM_SHIFT_E = 205   # metres to add to Easting  (SVN60 → WGS84)
+_DATUM_SHIFT_N = 75    # metres to add to Northing (SVN60 → WGS84)
+
+
+# ---------------------------------------------------------------------------
+# _try_parse_vietnam_mgrs(coord_str: str) → (float, float) | None
+# ---------------------------------------------------------------------------
+#
+# The core Vietnam-era MGRS normaliser.
+#
+# Accepts any of these input shapes (spaces are stripped, case-insensitive):
+#
+#     "48P YS 426 694"   — full, correct zone
+#     "48Q YS 426 694"   — full, WRONG zone  → auto-corrected 48Q→48P
+#     "YS 426 694"       — partial, no zone   → zone inferred from square
+#     "48PYS426694"      — compact (no spaces)
+#     "YS426694"         — compact partial
+#     "48Q YS 42600 69400" — 10-digit fine precision
+#
+# Pipeline (each step is documented inline):
+#
+#   1. Clean & normalise whitespace / case
+#   2. Match against a full-MGRS regex or a partial (no-GZD) regex
+#   3. If partial, infer zone 48 + band P or Q from the square lookup table
+#   4. Auto-correct 48Q → 48P for squares known to be in 48P
+#   5. Split the numerical half into Easting / Northing components
+#   6. Expand abbreviated digits to full-metre values
+#      (e.g. "426" → 42600 m for 6-digit input)
+#   7. Add the SVN60 → WGS84 datum shift to both Easting and Northing
+#   8. Clamp shifted values to the 0–99999 m range of a 100 km square
+#   9. Round back to the input's original precision
+#  10. Reconstruct a corrected MGRS string
+#  11. Convert MGRS → decimal lat/lon (WGS84) using the `mgrs` library
+#
+# Returns a (lat, lon) tuple rounded to 5 decimal places (~1 m precision),
+# or None if the input does not match any Vietnam MGRS pattern.
+# ---------------------------------------------------------------------------
+def _try_parse_vietnam_mgrs(coord_str: str):
+    # Deferred import so the file can be loaded even without `mgrs` installed,
+    # and to avoid a heavy import on every coordinate-parse attempt.
+    import mgrs as mgrs_lib
+
+    # ---- step 1: normalise -------------------------------------------------
+    # Strip all whitespace, convert to uppercase.  This collapses
+    # "48P YS 426 694" → "48PYS426694" and "ys 426 694" → "YS426694".
+    clean = re.sub(r"\s+", "", str(coord_str).strip()).upper()
+    if not clean:
+        return None
+
+    # ---- step 2: regex matching --------------------------------------------
+    #
+    # full_pat    matches  "48PYS426694"  (GZD + square + digits)
+    # partial_pat matches  "YS426694"     (square + digits, no GZD)
+    #
+    # Both patterns use the official MGRS character sets:
+    #   Latitude band:  C–H, J–N, P–X   (I and O are omitted to avoid
+    #                   confusion with digits 1 and 0)
+    #   100 km square:  A–H, J–N, P–Z   (same rationale)
+    #   Digits:         4–10 (even count, i.e. 2+2 to 5+5 per component)
+
+    # Pattern 1 — full MGRS with Grid Zone Designator
+    #   Group 1: \d{1,2}       zone number (1–60, but typically 1–2 digits)
+    #   Group 2: [C-HJ-NP-X]   latitude band letter
+    #   Group 3: [A-HJ-NP-Z]{2}  100 km square letter pair
+    #   Group 4: \d{4,10}      numerical easting + northing (even-length)
+    full_pat = re.compile(
+        r"^(\d{1,2})"            # e.g. "48"
+        r"([C-HJ-NP-X])"         # e.g. "P"
+        r"([A-HJ-NP-Z]{2})"      # e.g. "YS"
+        r"(\d{4,10})$"           # e.g. "426694" or "4260069400"
+    )
+
+    # Pattern 2 — partial MGRS (square + digits only, no GZD)
+    #   Group 1: [A-HJ-NP-Z]{2}  100 km square letter pair (e.g. "YS")
+    #   Group 2: \d{4,10}        numerical easting + northing
+    #
+    # This handles the common Vietnam War shorthand where soldiers
+    # omitted the GZD because everyone in the unit knew they were in
+    # "48P" or "48Q".
+    partial_pat = re.compile(
+        r"^([A-HJ-NP-Z]{2})"     # e.g. "YS"
+        r"(\d{4,10})$"           # e.g. "426694"
+    )
+
+    m = full_pat.match(clean)
+    if m:
+        zone_str, lat_band, square, digits = (
+            m.group(1), m.group(2), m.group(3), m.group(4)
+        )
+    else:
+        m = partial_pat.match(clean)
+        if not m:
+            # Does not look like any MGRS form we handle — let the caller
+            # try the generic MGRS parser or fall through to DMS / error.
+            return None
+        square, digits = m.group(1), m.group(2)
+
+        # ---- step 3: zone inference from square ----------------------------
+        # When the user hasn't supplied a GZD, we look up the 100 km square
+        # in our known-Vietnam table.  Squares not explicitly listed as 48P
+        # are assumed to be 48Q (northern Vietnam).
+        #
+        # This is a heuristic — if someone is working with coordinates from
+        # a completely different part of the world that happen to share the
+        # same square letters, they should supply the full GZD.
+        zone_str = "48"
+        lat_band = "P" if square in _VIETNAM_48P_SQUARES else "Q"
+
+    # Cast zone to integer for the correction check below.
+    zone = int(zone_str)
+
+    # ---- step 4: zone correction -------------------------------------------
+    # "48Q YS" is a well-known transcription error in Vietnam War records.
+    # The YS square physically exists only in zone 48P (southern Vietnam).
+    # We silently correct Q → P for any square in our 48P set.
+    #
+    # This also catches the case where a user typed "48Q" out of habit
+    # (many maps of the period labelled everything as "48Q" in the margin).
+    if zone == 48 and lat_band == "Q" and square in _VIETNAM_48P_SQUARES:
+        lat_band = "P"
+
+    # ---- step 5: split numerical digits into Easting / Northing ------------
+    #
+    # MGRS digits are always an even-length string where the first half is
+    # the Easting offset and the second half is the Northing offset, both
+    # relative to the south-west corner of the 100 km square.
+    #
+    #     "426694"  →  half=3  →  e_str="426"   n_str="694"
+    #     "4260069400" → half=5 → e_str="42600" n_str="69400"
+    half = len(digits) // 2
+    e_str = digits[:half]    # Easting digits
+    n_str = digits[half:]    # Northing digits
+    precision = half          # digits per component (3 → 100 m, 5 → 1 m)
+
+    # ---- step 6: expand abbreviated digits to full metres ------------------
+    #
+    # A 6-digit MGRS encodes 100 m precision: "426" means 42 600 metres
+    # east of the square's western edge.  We multiply by 10^(5-precision)
+    # to bring the value into the 0–99 999 m range:
+    #
+    #     precision=3 → scale=10²=100  →  426×100 = 42 600 m
+    #     precision=5 → scale=10⁰=1    → 42600×1 = 42 600 m
+    scale = 10 ** (5 - precision)
+    easting = int(e_str) * scale
+    northing = int(n_str) * scale
+
+    # ---- step 7: apply SVN60 → WGS84 datum shift --------------------------
+    #
+    # The original coordinate was recorded on an SVN60 map.  To express the
+    # same physical point in WGS84 (used by GPS, Google Maps, etc.) we must
+    # shift the grid easting and northing by the datum offset.
+    #
+    #     SVN60 Easting + 205 m ≈ WGS84 Easting
+    #     SVN60 Northing + 75 m ≈ WGS84 Northing
+    easting += _DATUM_SHIFT_E
+    northing += _DATUM_SHIFT_N
+
+    # ---- step 8: clamp to 100 km square bounds (0–99 999 m) ----------------
+    #
+    # A 100 km MGRS square runs from 0 to 99 999 metres in both axes.
+    # The datum shift is small enough that real coordinates will never clip
+    # under normal circumstances, but we clamp defensively to keep the
+    # reconstructed MGRS valid.
+    easting = max(0, min(99999, easting))
+    northing = max(0, min(99999, northing))
+
+    # ---- step 9: round back to the original input precision ----------------
+    #
+    # We divide by the scale factor, round to the nearest integer, and
+    # zero-pad to the original number of digits.  This preserves the
+    # precision level the user typed.
+    #
+    #     input "426" (100 m) → shifted 42805 → round(42805/100)=428 → "428"
+    #     input "42600" (1 m) → shifted 42805 → round(42805/1)=42805 → "42805"
+    new_e = str(int(round(easting / scale))).zfill(precision)
+    new_n = str(int(round(northing / scale))).zfill(precision)
+
+    # ---- step 10: reconstruct the corrected MGRS string --------------------
+    #
+    # Assemble the pieces back into a standard MGRS string that the `mgrs`
+    # library can consume.  Example:
+    #     "48" + "P" + "YS" + "428" + "695"  →  "48PYS428695"
+    corrected_mgrs = f"{zone_str}{lat_band}{square}{new_e}{new_n}"
+
+    # ---- step 11: convert MGRS → decimal lat/lon (WGS84) -------------------
+    #
+    # The `mgrs` Python library (pip install mgrs) converts an MGRS string
+    # directly to WGS84 decimal degrees.  Because we already shifted the
+    # easting/northing to account for the SVN60 datum, the result is the
+    # modern GPS coordinate of the physical location described by the
+    # original Vietnam-era grid reference.
+    #
+    # We round to 5 decimal places (~1.1 m at the equator, ~1.0 m at 10° N)
+    # which is well within the inherent precision limits of wartime MGRS.
+    try:
+        m = mgrs_lib.MGRS()
+        lat, lon = m.toLatLon(corrected_mgrs)
+        return round(lat, 5), round(lon, 5)
+    except Exception:
+        # The `mgrs` library may raise on malformed input that passed our
+        # regex but is not a real MGRS location (e.g. an invalid square
+        # letter pair for the given zone).  Return None so the caller falls
+        # through to the generic MGRS parser or error message.
+        return None
+
+
+# ---------------------------------------------------------------------------
+# validate_and_parse_coordinate(coord_str: str)
+#     → (is_valid: bool, message: str, coordinates: (float, float) | None)
+# ---------------------------------------------------------------------------
+#
+# The single entry-point for coordinate validation used by both the manual
+# editor and the AI-result ingestion paths (see _read_form() and the AI
+# side-panel response parsing in UpdateFatalities).
+#
+# Tries each parser in order of specificity.  The first parser that
+# succeeds wins and short-circuits the rest:
+#
+#   Priority  Parser              Examples
+#   ────────  ──────────────────  ──────────────────────────────────────
+#    1 (hi)   Decimal Degrees      "10.6895, 107.3305"
+#                                 "10.34694 N, 107.07263 E"
+#    2        Vietnam-era MGRS     "48Q YS 426 694"
+#                                 "YS 426 694"
+#    3        Generic MGRS         "48PYS458630"
+#                                 (any non-Vietnam MGRS worldwide)
+#    4 (lo)   DMS                  "10° 20' N, 107° 04' E"
+#
+# Vietnam-era MGRS (priority 2) is placed BEFORE generic MGRS (priority 3)
+# so that Vietnam-specific corrections (zone fix + datum shift) are
+# applied before the generic converter gets a chance to misinterpret the
+# coordinate as a raw WGS84 MGRS.
+#
+# Returns a 3-tuple:
+#   is_valid    True if a parser accepted the input
+#   message     Human-readable validation result
+#   coordinates (lat, lon) if parseable, else None
+# ---------------------------------------------------------------------------
 def validate_and_parse_coordinate(coord_str: str):
-    """
-    Validates a GPS coordinate string and attempts to parse it into (lat, lon).
-    Returns: (is_valid: bool, message: str, coordinates: tuple or None)
-    """
+    # Guard: reject empty or whitespace-only input immediately.
     if not coord_str or not str(coord_str).strip():
         return False, "Input is empty.", None
 
+    # Normalise: strip leading/trailing whitespace (but preserve internal
+    # spaces — the regex patterns handle those themselves).
     coord_str = str(coord_str).strip()
-    
-    # 1. Decimal Degrees (e.g., "10.34694 N, 107.07263 E" or "10.34694, 107.07263")
-    dec_regex = re.compile(r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$", re.IGNORECASE)
+
+    # =========================================================================
+    # PARSER 1 — Decimal Degrees
+    # =========================================================================
+    #
+    # Matches two decimal numbers separated by a comma (and optionally
+    # whitespace and N/S/E/W hemisphere letters).
+    #
+    # Accepted forms:
+    #     "10.34694, 107.07263"
+    #     "10.34694 N, 107.07263 E"
+    #     "-33.8688, 151.2093"           (bare negatives for S/W)
+    #
+    # The regex captures:
+    #   Group 1: latitude  (signed decimal or unsigned + optional N/S)
+    #   Group 2: N or S    (optional)
+    #   Group 3: longitude (signed decimal or unsigned + optional E/W)
+    #   Group 4: E or W    (optional)
+    dec_regex = re.compile(
+        r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$",
+        re.IGNORECASE
+    )
     match = dec_regex.match(coord_str)
-    
+
     if match:
         lat = float(match.group(1))
         lat_dir = match.group(2).upper() if match.group(2) else ""
         lon = float(match.group(3))
         lon_dir = match.group(4).upper() if match.group(4) else ""
-        
-        if lat_dir == 'S': lat *= -1
-        if lon_dir == 'W': lon *= -1
-            
-        # Mathematical bounds check
+
+        # Apply hemisphere sign from letter suffix (S/W flip the sign).
+        # If no suffix and value is already negative, it stays negative.
+        if lat_dir == 'S':
+            lat *= -1
+        if lon_dir == 'W':
+            lon *= -1
+
+        # Reject coordinates that are physically impossible.
         if not (-90 <= lat <= 90):
-            return False, f"Invalid latitude ({lat}): Must be between -90 and 90.", None
+            return False, (
+                f"Invalid latitude ({lat}): Must be between -90 and 90."
+            ), None
         if not (-180 <= lon <= 180):
-            return False, f"Invalid longitude ({lon}): Must be between -180 and 180.", None
-            
+            return False, (
+                f"Invalid longitude ({lon}): Must be between -180 and 180."
+            ), None
+
+        # 5 decimal places ≈ 1.1 m resolution — more than enough.
         return True, "Valid Decimal Degrees", (round(lat, 5), round(lon, 5))
 
-    # 2. Military Grid Reference System (MGRS) (e.g., 48PYS713677 or 48P YS 713 677)
+    # =========================================================================
+    # PARSER 2 — Vietnam-era MGRS (with zone correction & datum shift)
+    # =========================================================================
+    #
+    # Try the Vietnam-specific parser BEFORE the generic MGRS parser.
+    # This ensures that "YS 426 694" gets the SVN60 → WGS84 treatment
+    # rather than being rejected or interpreted as a generic WGS84 MGRS.
+    #
+    # _try_parse_vietnam_mgrs returns None if the input does not look
+    # like a Vietnam-era MGRS, which causes this parser to yield and
+    # let parser 3 attempt it instead.
+    vietnam_result = _try_parse_vietnam_mgrs(coord_str)
+    if vietnam_result is not None:
+        return (
+            True,
+            "Valid Vietnam-era MGRS (zone-corrected, datum-shifted)",
+            vietnam_result,
+        )
+
+    # =========================================================================
+    # PARSER 3 — Generic MGRS (worldwide, WGS84 assumed)
+    # =========================================================================
+    #
+    # Catches any MGRS that does not match the Vietnam patterns: NATO
+    # exercises in Germany, modern hiking coordinates, etc.
+    #
+    # The regex requires:
+    #   - 1- or 2-digit zone (1-60, but 1-6 catches the first digit for 1-2
+    #     digit zones; the full zone check is done by the mgrs library)
+    #   - latitude band letter (C-X, excluding I/O)
+    #   - 2-letter 100 km square (A-Z, excluding I/O)
+    #   - 4-10 numerical digits (even count)
+    #
+    # NOTE: this regex requires the full GZD prefix, so "YS426694" would
+    # NOT match here — it was already handled by parser 2 (Vietnam MGRS).
     clean_mgrs = re.sub(r"\s+", "", coord_str).upper()
-    mgrs_regex = re.compile(r"^[1-6][0-9][C-X][A-Z]{2}\d{4,10}$", re.IGNORECASE)
-    
+    mgrs_regex = re.compile(
+        r"^[1-6][0-9][C-X][A-Z]{2}\d{4,10}$", re.IGNORECASE
+    )
+
     if mgrs_regex.match(clean_mgrs):
         try:
-            # Requires: pip install mgrs
             import mgrs
             m = mgrs.MGRS()
             lat, lon = m.toLatLon(clean_mgrs)
+            # No datum shift applied here — we assume the MGRS is
+            # already referenced to WGS84 (modern standard).
             return True, "Valid MGRS", (round(lat, 5), round(lon, 5))
         except ImportError:
-            return True, "Valid MGRS format (Tip: install 'mgrs' python library to calculate lat/lon)", None
+            # The `mgrs` library is listed in requirements.txt but the
+            # user might be running from source without `pip install -r`.
+            return (
+                True,
+                "Valid MGRS format (Tip: install 'mgrs' python library "
+                "to calculate lat/lon)",
+                None,
+            )
         except Exception as e:
-            return False, f"MGRS format looks valid but math decoding failed: {str(e)}", None
+            return (
+                False,
+                f"MGRS format looks valid but math decoding failed: {str(e)}",
+                None,
+            )
 
-    # 3. Degrees, Minutes, Seconds (DMS) (e.g., 10° 20' N, 107° 04' E)
-    dms_regex = re.compile(r"(\d+)[^0-9A-Z]+(\d+)[^0-9A-Z]*([NSEW]?)", re.IGNORECASE)
+    # =========================================================================
+    # PARSER 4 — Degrees/Minutes/Seconds (DMS)
+    # =========================================================================
+    #
+    # Lightweight detection: looks for at least two degree-minute pairs
+    # with optional hemisphere letters.  Full mathematical conversion is
+    # not implemented (the `mgrs` library doesn't handle DMS); this parser
+    # simply validates the *format* so the user doesn't get an "unrecognized"
+    # error when pasting DMS coordinates.
+    #
+    # If you need DMS → decimal conversion, integrate `dms-to-decimal` or
+    # write the arc-second arithmetic here.
+    dms_regex = re.compile(
+        r"(\d+)[^0-9A-Z]+(\d+)[^0-9A-Z]*([NSEW]?)", re.IGNORECASE
+    )
     matches = list(dms_regex.finditer(coord_str))
-    
-    if len(matches) >= 2:
-        return True, "Valid DMS (Degrees/Minutes)", None # Add math translation here if needed
 
-    # 4. Fallback Error
+    if len(matches) >= 2:
+        return True, "Valid DMS (Degrees/Minutes)", None
+
+    # =========================================================================
+    # FALLBACK — nothing matched
+    # =========================================================================
+    #
+    # Show the user which formats are accepted so they can retype or
+    # reformat the coordinate.
     error_msg = (
         f"Unrecognized coordinate format: '{coord_str}'.\n"
         "Acceptable formats are:\n"
-        "  1. Decimal Degrees: '10.34694 N, 107.07263 E' or '10.34694, 107.07263'\n"
-        "  2. MGRS: '48PYS458630' or '48P YS 458 630'\n"
-        "  3. DMS: '10° 20\' N, 107° 04\' E'"
+        "  1. Decimal Degrees: '10.34694 N, 107.07263 E'"
+        " or '10.34694, 107.07263'\n"
+        "  2. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
+        "  3. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
+        "  4. DMS: '10° 20' N, 107° 04' E'"
     )
     return False, error_msg, None
 
@@ -394,8 +907,11 @@ class UpdateFatalities(tk.Toplevel):
         hb.pack(side=tk.RIGHT)
         hb.bind("<Button-1>", lambda e: self._hide_side_panel())
 
-        tk.Label(self._side_panel, text="PROMPT", font=(FONT, 8, "bold"),
-                 bg="#f0f2f5", fg=TEXT_MUTED, anchor="w").pack(fill=tk.X, padx=12, pady=(10, 2))
+        self._side_prompt_label = tk.Label(
+            self._side_panel, text="PROMPT", font=(FONT, 8, "bold"),
+            bg="#f0f2f5", fg=TEXT_MUTED, anchor="w",
+        )
+        self._side_prompt_label.pack(fill=tk.X, padx=12, pady=(10, 2))
         self._side_prompt = tk.Text(self._side_panel, font=(FONT, 8), wrap=tk.WORD,
                                     bg=WHITE, fg=TEXT_DARK, padx=8, pady=6, height=12,
                                     relief=tk.FLAT, highlightthickness=0)
@@ -512,6 +1028,15 @@ class UpdateFatalities(tk.Toplevel):
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
         self._record_snapshot = copy.deepcopy(record)
+        # Copy grid_reference to clipboard on every record change
+        # so the user can always paste back the last-seen original
+        dd = record.get("derived_details", {}) if isinstance(
+            record.get("derived_details"), dict
+        ) else {}
+        grid_val = str(dd.get("grid_reference", ""))
+        if grid_val:
+            self.clipboard_clear()
+            self.clipboard_append(grid_val)
         self._entry_widgets = {}
 
         def _render_fields(parent_frame, data_dict, prefix_path=()):
@@ -530,14 +1055,16 @@ class UpdateFatalities(tk.Toplevel):
                     rf = tk.Frame(parent_frame, bg=WHITE)
                     rf.pack(fill=tk.X, padx=16 if not prefix_path else 0, pady=4)
                     label_width = 24 if not prefix_path else 22
-                    tk.Label(rf, text=f"{field_name}", font=(FONT, 10), bg=WHITE, fg=TEXT_DARK,
-                             width=label_width, anchor=tk.E).pack(side=tk.LEFT, padx=(0, 10))
+                    field_label = tk.Label(rf, text=f"{field_name}", font=(FONT, 10),
+                                           bg=WHITE, fg=TEXT_DARK,
+                                           width=label_width, anchor=tk.E)
+                    field_label.pack(side=tk.LEFT, padx=(0, 10))
                     # Format list values (e.g. youtube_links) as newline-separated text
                     if isinstance(raw_value, list):
                         dv = "\n".join(str(item) for item in raw_value)
                     else:
                         dv = str(raw_value) if raw_value is not None else ""
-                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status")
+                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -577,13 +1104,36 @@ class UpdateFatalities(tk.Toplevel):
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
                         elif field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
+                            # Make the field label a clickable hot link that triggers
+                            # an AI location lookup for this soldier.
+                            field_label.configure(
+                                fg="#4a90d9", font=(FONT, 10, "underline"),
+                                cursor="hand2",
+                            )
+                            field_label.bind(
+                                "<Button-1>", lambda e: self._ai_location_lookup()
+                            )
+                            # Small info button that opens the MGRS reference doc
+                            info_btn = tk.Label(
+                                rf, text="\u2139", font=(FONT, 11),
+                                bg=WHITE, fg="#4a90d9", cursor="hand2",
+                            )
+                            info_btn.pack(side=tk.LEFT, padx=(0, 6))
+                            info_btn.bind(
+                                "<Button-1>", lambda e: self._show_mgrs_info()
+                            )
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
-                            
+                            _ToolTip(entry,
+                                     "Replace current value with new reference "
+                                     "to convert to decimal format")
+
                             def _update_link_style(*args, w=entry):
                                 val_str = w.get().strip()
                                 if val_str:
-                                    is_valid, _, parsed = validate_and_parse_coordinate(val_str)
+                                    # Strip {original} suffix before validating
+                                    decimal_part, _ = _split_coord_display(val_str)
+                                    is_valid, _, parsed = validate_and_parse_coordinate(decimal_part)
                                     if is_valid and parsed is not None:
                                         fnt = list(entry_font)
                                         fnt.append("underline")
@@ -597,12 +1147,27 @@ class UpdateFatalities(tk.Toplevel):
                             def _open_map(event, w=entry):
                                 val_str = w.get().strip()
                                 if val_str:
-                                    is_valid, _, parsed = validate_and_parse_coordinate(val_str)
+                                    # Strip {original} suffix before parsing
+                                    decimal_part, _ = _split_coord_display(val_str)
+                                    is_valid, _, parsed = validate_and_parse_coordinate(decimal_part)
                                     if is_valid and parsed is not None:
                                         import webbrowser
                                         webbrowser.open(f"https://www.google.com/maps?q={parsed[0]},{parsed[1]}")
                                         
                             entry.bind("<Double-Button-1>", _open_map)
+                            entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                        elif field_name == "place_of_death":
+                            # Make the label a hot link for AI location expansion
+                            field_label.configure(
+                                fg="#4a90d9", font=(FONT, 10, "underline"),
+                                cursor="hand2",
+                            )
+                            field_label.bind(
+                                "<Button-1>", lambda e: self._ai_place_lookup()
+                            )
+                            entry = _styled_entry(rf, width=42, font=entry_font)
+                            entry.insert(0, dv)
+                            entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         else:
                             entry = _styled_entry(rf, width=42, font=entry_font)
@@ -663,7 +1228,7 @@ class UpdateFatalities(tk.Toplevel):
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status")
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
             
             if not is_editable:
                 val = orig_val
@@ -692,14 +1257,36 @@ class UpdateFatalities(tk.Toplevel):
                         if field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
                             val_str = str(val).strip()
                             if val_str and not re.match(r'^[A-Za-z]+$', val_str):
-                                is_valid, msg, parsed = validate_and_parse_coordinate(val_str)
+                                # Copy original to clipboard so the user can
+                                # revert immediately after the update if needed
+                                self.clipboard_clear()
+                                self.clipboard_append(val_str)
+                                # Strip existing {original} suffix before validating
+                                clean_val, existing = _split_coord_display(val_str)
+                                is_valid, msg, parsed = validate_and_parse_coordinate(clean_val)
                                 if not is_valid:
                                     _error_dialog(self, "Invalid Coordinate Format", msg)
                                     return None
                                 if parsed is not None:
-                                    val = f"{parsed[0]}, {parsed[1]}"
+                                    formatted = f"{parsed[0]}, {parsed[1]}"
+                                    # Preserve or create plain-text annotation
+                                    if existing:
+                                        val = f"{formatted} {{{existing}}}"
+                                    elif clean_val != formatted:
+                                        val = f"{formatted} {{{clean_val}}}"
+                                    else:
+                                        val = formatted
                                 else:
                                     val = val_str
+
+                        # Prevent saving with an empty unit field
+                        if field_name == "unit" and not str(val).strip():
+                            _error_dialog(
+                                self, "Missing Unit",
+                                "The 'unit' field cannot be empty.\n"
+                                "Please enter the soldier's unit before updating.",
+                            )
+                            return None
 
                 except (ValueError, TypeError) as exc:
                     _error_dialog(self, "Type Error",
@@ -941,6 +1528,7 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         # Show side panel with prompt, loading response
+        self._side_prompt_label.configure(text="Prompt \u2014 All derived data")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", user_prompt)
@@ -990,6 +1578,522 @@ class UpdateFatalities(tk.Toplevel):
             self.after(0, lambda: self._side_resp_replace(f"All models failed.\n\n{last_error}"))
 
         threading.Thread(target=_task, daemon=True).start()
+
+    # ------------------------------------------------------------------
+    # AI Location Lookup (triggered by clicking the grid_reference label)
+    # ------------------------------------------------------------------
+
+    def _ai_location_lookup(self):
+        """Fire a location-focused AI lookup for the current record.
+
+        Called when the user clicks the 'grid_reference' field label.
+        Builds a prompt that stresses obtaining the best available
+        approximation of the place of death (GPS / UTM / MGRS) and
+        displays the result in the side panel.
+
+        No confirmation dialog — the click itself is the confirmation.
+        """
+        if not self._filtered:
+            return
+
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+
+        # ── gather soldier identity fields ──────────────────────────
+        sra = (
+            record.get("serviceRecordAuthority", {})
+            if isinstance(record.get("serviceRecordAuthority"), dict)
+            else {}
+        )
+        svc = sra.get("service_number", "")
+        name = sra.get("full_name", "")
+        dob = sra.get("date_of_birth", "")
+        dod = sra.get("date_of_death", "")
+        rank = sra.get("rank", "")
+        unit = sra.get("unit", "")
+
+        ref_id = record.get("referenceID", "")
+        forces_map = {
+            "AU": "Australian Armed Forces",
+            "NZ": "New Zealand Armed Forces",
+        }
+        af = forces_map.get(ref_id[:2], ref_id[:2] if ref_id else "")
+
+        dd = (
+            record.get("derived_details", {})
+            if isinstance(record.get("derived_details"), dict)
+            else {}
+        )
+        pod = dd.get("place_of_death", "")
+        grid_ref = dd.get("grid_reference", "")
+        ftype = sra.get("fatality_type", "")
+
+        # ── build a location-stressed prompt ─────────────────────────
+        user_prompt = (
+            f"Using the soldier identity values below, research and provide "
+            f"the following in plain text:\n\n"
+            f"PRIMARY TASK — THE BEST AVAILABLE APPROXIMATION OF THE PLACE "
+            f"OF DEATH, using one of the following (whichever is most "
+            f"appropriate or best supported by sources):\n"
+            f"   - GPS latitude/longitude\n"
+            f"   - UTM coordinates\n"
+            f"   - MGRS grid reference\n\n"
+            f"If the exact location is not documented, provide the closest "
+            f"verifiable location (such as a base, town, road, or landmark) "
+            f"and explain why this is the most accurate approximation.\n\n"
+            f"SECONDARY DETAILS:\n"
+            f"1. A detailed location description (terrain, nearby features, "
+            f"   distance from known landmarks).\n"
+            f"2. The map sheet number and UTM zone.\n"
+            f"3. The military operation underway at the time of death.\n"
+            f"4. Brief circumstances of death (confirmed facts only).\n\n"
+            f"IDENTITY ANCHOR VALUES:\n\n"
+            f"- Service Number: {svc}\n"
+            f"- Full Name: {name}\n"
+            f"- Date of Birth: {dob}\n"
+            f"- Date of Death: {dod}\n"
+            f"- Armed Forces: {af}\n"
+            f"- Rank: {rank}\n"
+            f"- Unit: {unit}\n"
+            f"- Place of Death (if known): {pod}\n"
+            f"- Current Grid Reference (if any): {grid_ref}\n"
+            f"- Fatality Type: {ftype}\n\n"
+            f"Use only the values supplied.  Do not invent or alter identity "
+            f"details.  Present the answer in normal text."
+        )
+
+        # ── read API key & models from .env ──────────────────────────
+        env = {}
+        env_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), ".env"
+        )
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, _, v = line.partition("=")
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+
+        api_key = env.get("GEMINI_API_KEY", "")
+        models_str = env.get(
+            "GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-flash"
+        )
+        models = [m.strip() for m in models_str.split(",") if m.strip()]
+
+        if not api_key:
+            _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
+            return
+
+        is_live_search = self._live_search_var.get()
+
+        self._side_prompt_label.configure(text="Prompt — grid_reference lookup")
+        # ── show side panel with the prompt ──────────────────────────
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._show_side_panel()
+
+        # ── run AI call in background thread ─────────────────────────
+        def _task():
+            last_error = ""
+            for model in models:
+                self.after(
+                    0,
+                    lambda m=model: self._side_resp_replace(
+                        f"Researching location for {name} using {m}…"
+                    ),
+                )
+                try:
+                    url = (
+                        f"https://generativelanguage.googleapis.com/v1beta/"
+                        f"models/{model}:generateContent?key={api_key}"
+                    )
+                    payload = {
+                        "systemInstruction": {
+                            "parts": [{
+                                "text": (
+                                    "You are a military historian specialising "
+                                    "in Vietnam War locations and geography. "
+                                    "You provide accurate, source-supported "
+                                    "location information in plain text."
+                                ),
+                            }],
+                        },
+                        "contents": [{"parts": [{"text": user_prompt}]}],
+                        "generationConfig": {
+                            "temperature": 0.3,
+                            "maxOutputTokens": 2048,
+                        },
+                    }
+                    if is_live_search:
+                        payload["tools"] = [{"google_search": {}}]
+
+                    body = json.dumps(payload).encode("utf-8")
+                    req = urllib.request.Request(
+                        url,
+                        data=body,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    with urllib.request.urlopen(req, timeout=60) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        content = (
+                            data["candidates"][0]["content"]["parts"][0]["text"]
+                        )
+                    self.after(
+                        0, lambda c=content: self._side_resp_replace(c)
+                    )
+                    return
+                except Exception as exc:
+                    last_error = f"{model}: {exc}"
+                    continue
+            self.after(
+                0,
+                lambda: self._side_resp_replace(
+                    f"All models failed.\n\n{last_error}"
+                ),
+            )
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    # ------------------------------------------------------------------
+    # AI Place Lookup (triggered by clicking the place_of_death label)
+    # ------------------------------------------------------------------
+
+    def _ai_place_lookup(self):
+        """Fire a place-name expansion AI lookup for the current record.
+
+        Called when the user clicks the 'place_of_death' field label.
+        Builds a prompt that asks the AI to expand a text description
+        like "Phuoc Tuy Province, South Vietnam" into structured
+        location detail with country / province / village / landmark /
+        distance-from-reference-point.
+
+        Also requests the best available GPS / UTM / MGRS coordinate.
+        No confirmation dialog — the click itself is the confirmation.
+        """
+        if not self._filtered:
+            return
+
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+
+        # ── gather soldier identity fields ──────────────────────────
+        sra = (
+            record.get("serviceRecordAuthority", {})
+            if isinstance(record.get("serviceRecordAuthority"), dict)
+            else {}
+        )
+        svc = sra.get("service_number", "")
+        name = sra.get("full_name", "")
+        dob = sra.get("date_of_birth", "")
+        dod = sra.get("date_of_death", "")
+        rank = sra.get("rank", "")
+        unit = sra.get("unit", "")
+
+        ref_id = record.get("referenceID", "")
+        forces_map = {
+            "AU": "Australian Armed Forces",
+            "NZ": "New Zealand Armed Forces",
+        }
+        af = forces_map.get(ref_id[:2], ref_id[:2] if ref_id else "")
+        country_map = {"AU": "Australia", "NZ": "New Zealand"}
+        country = country_map.get(ref_id[:2], ref_id[:2] if ref_id else "")
+
+        dd = (
+            record.get("derived_details", {})
+            if isinstance(record.get("derived_details"), dict)
+            else {}
+        )
+        pod = dd.get("place_of_death", "")
+        grid_ref = dd.get("grid_reference", "")
+        cod = dd.get("circumstances_of_death", "")
+        usw = dd.get("unit_served_with", "")
+        ftype = sra.get("fatality_type", "")
+
+        # ── build a place-expansion prompt ──────────────────────────
+        user_prompt = (
+            f"Your sole task is to produce an enhanced place_of_death "
+            f"description for this soldier.  Using the soldier identity "
+            f"values and all provided details below, describe the "
+            f"location in plain text using this structured format:\n\n"
+            f"  {{country}} / {{region or province}} / "
+            f"{{village, town, district, or city}} / "
+            f"{{prominent nearby feature, landmark, or military "
+            f"object}} / {{distance and direction from a known "
+            f"reference point}}\n\n"
+            f"ALSO PROVIDE:\n"
+            f"1. Any alternative names, historical names, or local "
+            f"names for this place.\n\n"
+            f"IDENTITY ANCHOR VALUES:\n\n"
+            f"- Country: {country}\n"
+            f"- Service Number: {svc}\n"
+            f"- Full Name: {name}\n"
+            f"- Date of Birth: {dob}\n"
+            f"- Date of Death: {dod}\n"
+            f"- Armed Forces: {af}\n"
+            f"- Rank: {rank}\n"
+            f"- Unit: {unit}\n"
+            f"- Unit Served With: {usw}\n"
+            f"- Fatality Type: {ftype}\n"
+            f"- Grid Reference (if known): {grid_ref}\n"
+            f"- Circumstances of Death: {cod}\n\n"
+            f"CURRENT place_of_death TEXT TO EXPAND:\n"
+            f"  \"{pod}\"\n\n"
+            f"Use only the values supplied.  Do not invent or alter "
+            f"identity details.  Present the answer in normal text."
+        )
+        # ── read API key & models from .env ──────────────────────────
+        env = {}
+        env_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), ".env"
+        )
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, _, v = line.partition("=")
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+
+        api_key = env.get("GEMINI_API_KEY", "")
+        models_str = env.get(
+            "GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-flash"
+        )
+        models = [m.strip() for m in models_str.split(",") if m.strip()]
+
+        if not api_key:
+            _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
+            return
+
+        is_live_search = self._live_search_var.get()
+        self._side_prompt_label.configure(text="PROMPT: Place of Death")
+
+        # ── show side panel with the prompt ──────────────────────────
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._show_side_panel()
+
+        # ── run AI call in background thread ─────────────────────────
+        def _task():
+            last_error = ""
+            for model in models:
+                self.after(
+                    0,
+                    lambda m=model: self._side_resp_replace(
+                        f"Researching location for {name} using {m}…"
+                    ),
+                )
+                try:
+                    url = (
+                        f"https://generativelanguage.googleapis.com/v1beta/"
+                        f"models/{model}:generateContent?key={api_key}"
+                    )
+                    payload = {
+                        "systemInstruction": {
+                            "parts": [{
+                                "text": (
+                                    "You are a military historian specialising "
+                                    "in Vietnam War locations and geography. "
+                                    "You break down place descriptions into "
+                                    "structured location detail and provide "
+                                    "coordinates where possible."
+                                ),
+                            }],
+                        },
+                        "contents": [{"parts": [{"text": user_prompt}]}],
+                        "generationConfig": {
+                            "temperature": 0.3,
+                            "maxOutputTokens": 2048,
+                        },
+                    }
+                    if is_live_search:
+                        payload["tools"] = [{"google_search": {}}]
+
+                    body = json.dumps(payload).encode("utf-8")
+                    req = urllib.request.Request(
+                        url,
+                        data=body,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    with urllib.request.urlopen(req, timeout=60) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        content = (
+                            data["candidates"][0]["content"]["parts"][0]["text"]
+                        )
+                    self.after(
+                        0, lambda c=content: self._side_resp_replace(c)
+                    )
+                    return
+                except Exception as exc:
+                    last_error = f"{model}: {exc}"
+                    continue
+            self.after(
+                0,
+                lambda: self._side_resp_replace(
+                    f"All models failed.\n\n{last_error}"
+                ),
+            )
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    # ------------------------------------------------------------------
+    # MGRS Reference Doc Viewer (triggered by the ℹ button on grid fields)
+    # ------------------------------------------------------------------
+
+    def _show_mgrs_info(self):
+        """Open a modal viewer for MGRS_to_Decimal_Coordinates.md.
+
+        Displays the reference document with heading formatting and a
+        live search bar that highlights matching text in yellow.
+        """
+        doc_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "rConvert_to_Decimal_Coordinates.md",
+        )
+        # Fallback: try in the parent directory (workspace root)
+        if not os.path.exists(doc_path):
+            doc_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "rConvert_to_Decimal_Coordinates.md",
+            )
+            doc_path = os.path.normpath(doc_path)
+
+        dlg = tk.Toplevel(self)
+        dlg.title("MGRS → Decimal Coordinates Reference")
+        dlg.geometry("780x620")
+        dlg.configure(bg=WHITE)
+        dlg.resizable(True, True)
+        dlg.transient(self)
+        dlg.grab_set()
+
+        # ── centre on parent ──────────────────────────────────────
+        dlg.update_idletasks()
+        pw = self.winfo_screenwidth()
+        ph = self.winfo_screenheight()
+        x = (pw - 780) // 2
+        y = max(0, (ph - 620) // 2)
+        dlg.geometry(f"+{x}+{y}")
+
+        # ── header with search bar ─────────────────────────────────
+        header = tk.Frame(dlg, bg=ACCENT, height=52)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+
+        tk.Label(
+            header, text="Search:", bg=ACCENT, fg=WHITE,
+            font=(FONT, 11, "bold"),
+        ).pack(side=tk.LEFT, padx=(20, 8), pady=13)
+
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(
+            header, textvariable=search_var,
+            font=(FONT, 11), width=38,
+            relief=tk.FLAT, bg="#ffffff", fg=TEXT_DARK,
+        )
+        search_entry.pack(side=tk.LEFT, pady=13)
+
+        # ── text area with scrollbar ───────────────────────────────
+        text_frame = tk.Frame(dlg, bg=WHITE)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(14, 20))
+
+        text_w = tk.Text(
+            text_frame, font=(FONT, 10), wrap=tk.WORD,
+            relief=tk.FLAT, bg="#f9f9f9", fg=TEXT_DARK,
+            padx=12, pady=12,
+        )
+        scrollbar = ttk.Scrollbar(text_frame, command=text_w.yview)
+        text_w.configure(yscrollcommand=scrollbar.set)
+        text_w.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # ── tag styles ─────────────────────────────────────────────
+        text_w.tag_configure(
+            "search", background="#ffeb3b", foreground="black",
+        )
+        text_w.tag_configure(
+            "h1", font=(FONT, 16, "bold"), foreground=ACCENT,
+            spacing1=12, spacing3=8,
+        )
+        text_w.tag_configure(
+            "h2", font=(FONT, 14, "bold"), foreground=ACCENT_HOV,
+            spacing1=10, spacing3=6,
+        )
+        text_w.tag_configure(
+            "h3", font=(FONT, 12, "bold"), spacing1=6, spacing3=4,
+        )
+        text_w.tag_configure(
+            "code", font=("Consolas", 9), background="#e8e8e8",
+            foreground="#333333",
+        )
+
+        # ── load the markdown file ─────────────────────────────────
+        if not os.path.exists(doc_path):
+            text_w.insert(tk.END, f"Document not found:\n{doc_path}")
+            text_w.configure(state=tk.DISABLED)
+            return
+
+        with open(doc_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        text_w.insert(tk.END, content)
+
+        # Apply heading tags (using Text widget "line.column" indices)
+        for match in re.finditer(r'^#\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h1", start, end)
+        for match in re.finditer(r'^##\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h2", start, end)
+        for match in re.finditer(r'^###\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h3", start, end)
+        # Style inline code (backtick-wrapped spans)
+        for match in re.finditer(r'`([^`]+)`', content):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("code", start, end)
+
+        text_w.configure(state=tk.DISABLED)
+
+        # ── live search callback ───────────────────────────────────
+        def _on_search(*args):
+            query = search_var.get().lower()
+            # Remove previous highlights (must temporarily enable writes)
+            text_w.configure(state=tk.NORMAL)
+            text_w.tag_remove("search", "1.0", tk.END)
+            if not query:
+                text_w.configure(state=tk.DISABLED)
+                return
+
+            start_idx = "1.0"
+            first_match = None
+            while True:
+                start_idx = text_w.search(
+                    query, start_idx, nocase=True, stopindex=tk.END,
+                )
+                if not start_idx:
+                    break
+                if first_match is None:
+                    first_match = start_idx
+                end_idx = f"{start_idx} + {len(query)} chars"
+                text_w.tag_add("search", start_idx, end_idx)
+                start_idx = end_idx
+
+            text_w.configure(state=tk.DISABLED)
+            if first_match:
+                text_w.see(first_match)
+
+        search_var.trace_add("write", _on_search)
 
     def _extract_json(self, text: str) -> str:
         """Strip markdown code fences and pretty-print JSON if possible."""

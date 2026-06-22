@@ -152,7 +152,9 @@ class StyledDialog(tk.Toplevel):
         if parent:
             self.transient(parent)
             self._centre(parent)
-            self.grab_set()
+        else:
+            self._centre_on_screen()
+        self.grab_set()
 
         # Icon + message area
         top = tk.Frame(self, bg=WHITE)
@@ -238,6 +240,15 @@ class StyledDialog(tk.Toplevel):
         w, h = self.winfo_width(), self.winfo_height()
         x = px + (pw - w) // 2
         y = py + (ph - h) // 2
+        self.geometry(f"+{x}+{y}")
+
+    def _centre_on_screen(self):
+        self.update_idletasks()
+        w, h = self.winfo_width(), self.winfo_height()
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        x = (sw - w) // 2
+        y = (sh - h) // 2
         self.geometry(f"+{x}+{y}")
 
 
