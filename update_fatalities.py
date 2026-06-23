@@ -17,6 +17,7 @@ import urllib.request
 import urllib.error
 from tkinter import ttk
 import session_manager
+from session_manager import _apply_field
 
 # ---------------------------------------------------------------------------
 # Design tokens
@@ -314,6 +315,7 @@ class UpdateFatalities(tk.Toplevel):
                             _apply_field(dd, "unit_served_with", fields.get("derived_details.unit_served_with"))
                             _apply_field(dd, "references", fields.get("derived_details.references"))
                             _apply_field(dd, "ai_response", fields.get("derived_details.ai_response"))
+                            _apply_field(dd, "authoritative_ai_override", fields.get("derived_details.authoritative_ai_override"))
                             self._show_record()
 
         self.transient(parent)
@@ -633,8 +635,15 @@ class UpdateFatalities(tk.Toplevel):
                         entry.configure(state="readonly", readonlybackground="#f0f0f0", fg=TEXT_MUTED)
                         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                     else:
-                        if field_name in ("circumstances_of_death", "summary", "ai_response"):
-                            text_height = 3 if field_name == "summary" else (8 if field_name == "ai_response" else 4)
+                        if field_name in ("circumstances_of_death", "summary", "ai_response", "authoritative_ai_override"):
+                            if field_name == "summary":
+                                text_height = 3
+                            elif field_name == "ai_response":
+                                text_height = 8
+                            elif field_name == "authoritative_ai_override":
+                                text_height = 5
+                            else:
+                                text_height = 4
 
                             # Container frame for text + scrollbar
                             text_frame = tk.Frame(rf, bg=BG_GREY)
@@ -1342,6 +1351,7 @@ class UpdateFatalities(tk.Toplevel):
             "derived_details.unit_served_with": dd.get("unit_served_with", ""),
             "derived_details.references": dd.get("references", ""),
             "derived_details.ai_response": dd.get("ai_response", ""),
+            "derived_details.authoritative_ai_override": dd.get("authoritative_ai_override", ""),
         }
 
         ref_state = {
