@@ -16,6 +16,7 @@ import tkinter as tk
 import urllib.request
 import urllib.error
 from tkinter import ttk
+import session_manager
 
 # ---------------------------------------------------------------------------
 # Design tokens
@@ -221,7 +222,12 @@ _DATUM_SHIFT_E = 205   # metres to add to Easting  (SVN60 → WGS84)
 _DATUM_SHIFT_N = 75    # metres to add to Northing (SVN60 → WGS84)
 
 
-\nimport coords\n\nclass UpdateFatalities
+from coords import (
+    _load_json, _save_json, _error_dialog, _confirm_yesnocancel,
+    _confirm_yesno, _bind_hover, _center_on_parent, _styled_entry
+)
+import coords
+
 class UpdateFatalities(tk.Toplevel):
     """Modern flat-design modal for editing fatality records with AI side panel."""
 
@@ -321,9 +327,23 @@ class UpdateFatalities(tk.Toplevel):
         x = (pw - w) // 2
         y = (ph - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
+        try:
+            self.state('zoomed')
+        except Exception:
+            pass
         self.grab_set()
 
         parent.wait_window(self)
+
+    def _cancel(self):
+        if self._record_dirty:
+            ok = _confirm_yesno(self, "Discard Changes?",
+                                "You have unsaved changes.\nClose and discard all changes?")
+            if not ok:
+                return
+        extra = self._gather_ref_state()
+        session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
+        self.destroy()
 
     # ------------------------------------------------------------------
     # UI
@@ -1077,7 +1097,6 @@ class UpdateFatalities(tk.Toplevel):
                 if not m1:
                     self.after(0, lambda: self._side_resp_replace(f"Step 1 Failed.\n\n{last_error}"))
                     return
-                nonlocal step1_secs, step2_start
                 step1_secs = time.time() - step1_start
                 step2_start = time.time()
                 
@@ -1095,10 +1114,239 @@ class UpdateFatalities(tk.Toplevel):
                 self.after(0, lambda c=final_text: self._side_resp_replace(c))
 
         threading.Thread(target=_task, daemon=True).start()
-    # ------------------------------------------------------------------
-    # ------------------------------------------------------------------
-
 
     # ------------------------------------------------------------------
+    # MGRS Reference Doc Viewer (triggered by the ℹ button on grid fields)
     # ------------------------------------------------------------------
 
+    def _show_mgrs_info(self):
+        """Open a modal viewer for MGRS_to_Decimal_Coordinates.md.
+
+        Displays the reference document with heading formatting and a
+        live search bar that highlights matching text in yellow.
+        """
+        doc_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "rConvert_to_Decimal_Coordinates.md",
+        )
+        # Fallback: try in the parent directory (workspace root)
+        if not os.path.exists(doc_path):
+            doc_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "rConvert_to_Decimal_Coordinates.md",
+            )
+            doc_path = os.path.normpath(doc_path)
+
+        dlg = tk.Toplevel(self)
+        dlg.title("MGRS → Decimal Coordinates Reference")
+        dlg.geometry("780x620")
+        dlg.configure(bg=WHITE)
+        dlg.resizable(True, True)
+        dlg.transient(self)
+        dlg.grab_set()
+
+        # ── centre on parent ──────────────────────────────────────
+        dlg.update_idletasks()
+        pw = self.winfo_screenwidth()
+        ph = self.winfo_screenheight()
+        x = (pw - 780) // 2
+        y = max(0, (ph - 620) // 2)
+        dlg.geometry(f"+{x}+{y}")
+
+        # ── header with search bar ─────────────────────────────────
+        header = tk.Frame(dlg, bg=ACCENT, height=52)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+
+        tk.Label(
+            header, text="Search:", bg=ACCENT, fg=WHITE,
+            font=(FONT, 11, "bold"),
+        ).pack(side=tk.LEFT, padx=(20, 8), pady=13)
+
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(
+            header, textvariable=search_var,
+            font=(FONT, 11), width=38,
+            relief=tk.FLAT, bg="#ffffff", fg=TEXT_DARK,
+        )
+        search_entry.pack(side=tk.LEFT, pady=13)
+
+        # ── text area with scrollbar ───────────────────────────────
+        text_frame = tk.Frame(dlg, bg=WHITE)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(14, 20))
+
+        text_w = tk.Text(
+            text_frame, font=(FONT, 10), wrap=tk.WORD,
+            relief=tk.FLAT, bg="#f9f9f9", fg=TEXT_DARK,
+            padx=12, pady=12,
+        )
+        scrollbar = ttk.Scrollbar(text_frame, command=text_w.yview)
+        text_w.configure(yscrollcommand=scrollbar.set)
+        text_w.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # ── tag styles ─────────────────────────────────────────────
+        text_w.tag_configure(
+            "search", background="#ffeb3b", foreground="black",
+        )
+        text_w.tag_configure(
+            "h1", font=(FONT, 16, "bold"), foreground=ACCENT,
+            spacing1=12, spacing3=8,
+        )
+        text_w.tag_configure(
+            "h2", font=(FONT, 14, "bold"), foreground=ACCENT_HOV,
+            spacing1=10, spacing3=6,
+        )
+        text_w.tag_configure(
+            "h3", font=(FONT, 12, "bold"), spacing1=6, spacing3=4,
+        )
+        text_w.tag_configure(
+            "code", font=("Consolas", 9), background="#e8e8e8",
+            foreground="#333333",
+        )
+
+        # ── load the markdown file ─────────────────────────────────
+        if not os.path.exists(doc_path):
+            text_w.insert(tk.END, f"Document not found:\n{doc_path}")
+            text_w.configure(state=tk.DISABLED)
+            return
+
+        with open(doc_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        text_w.insert(tk.END, content)
+
+        # Apply heading tags (using Text widget "line.column" indices)
+        for match in re.finditer(r'^#\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h1", start, end)
+        for match in re.finditer(r'^##\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h2", start, end)
+        for match in re.finditer(r'^###\s+(.+)$', content, re.MULTILINE):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("h3", start, end)
+        # Style inline code (backtick-wrapped spans)
+        for match in re.finditer(r'`([^`]+)`', content):
+            start = f"1.0 + {match.start()} chars"
+            end = f"1.0 + {match.end()} chars"
+            text_w.tag_add("code", start, end)
+
+        text_w.configure(state=tk.DISABLED)
+
+        # ── live search callback ───────────────────────────────────
+        def _on_search(*args):
+            query = search_var.get().lower()
+            # Remove previous highlights (must temporarily enable writes)
+            text_w.configure(state=tk.NORMAL)
+            text_w.tag_remove("search", "1.0", tk.END)
+            if not query:
+                text_w.configure(state=tk.DISABLED)
+                return
+
+            start_idx = "1.0"
+            first_match = None
+            while True:
+                start_idx = text_w.search(
+                    query, start_idx, nocase=True, stopindex=tk.END,
+                )
+                if not start_idx:
+                    break
+                if first_match is None:
+                    first_match = start_idx
+                end_idx = f"{start_idx} + {len(query)} chars"
+                text_w.tag_add("search", start_idx, end_idx)
+                start_idx = end_idx
+
+            text_w.configure(state=tk.DISABLED)
+            if first_match:
+                text_w.see(first_match)
+
+        search_var.trace_add("write", _on_search)
+
+    def _extract_json(self, text: str) -> str:
+        """Strip markdown code fences and pretty-print JSON if possible."""
+        import re as _re
+        # Remove ```json ... ``` or ``` ... ``` fences
+        cleaned = _re.sub(r'```(?:json)?\s*\n?', '', text)
+        cleaned = _re.sub(r'```\s*$', '', cleaned)
+        cleaned = cleaned.strip()
+        # Try to parse and pretty-print
+        try:
+            parsed = json.loads(cleaned)
+            return json.dumps(parsed, indent=2, ensure_ascii=False)
+        except (json.JSONDecodeError, ValueError):
+            return text  # Return original if not valid JSON
+
+    def _side_resp_replace(self, text: str):
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp.insert("1.0", text)
+        # Show COPY button when response exceeds 200 characters
+        if len(text) > 200:
+            try:
+                self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
+            except tk.TclError:
+                pass  # already packed
+        else:
+            self._copy_btn.pack_forget()
+
+    def _copy_response_to_ai_response(self):
+        """Copy the current AI response text into the ai_response field in the Update modal."""
+        response_text = self._side_resp.get("1.0", "end-1c").strip()
+        if not response_text:
+            return
+        # Find the ai_response entry widget
+        key = ("derived_details", "ai_response")
+        entry = self._entry_widgets.get(key)
+        if entry is None:
+            return
+        # Replace the displayed value (does NOT write to underlying JSON until Update)
+        if isinstance(entry, tk.Text):
+            entry.delete("1.0", tk.END)
+            entry.insert("1.0", response_text)
+        else:
+            entry.delete(0, tk.END)
+            entry.insert(0, response_text)
+        # Mark record dirty so user is prompted on close
+        self._record_dirty = True
+        self._set_locked(True)
+
+    def _gather_ref_state(self) -> dict | None:
+        """Collect side-panel prompt/response and key field values for the current record."""
+        if not self._filtered:
+            return None
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+        ref_id = record.get("referenceID", "")
+        if not ref_id:
+            return None
+
+        # Side panel text
+        prompt_text = self._side_prompt.get("1.0", "end-1c").strip()
+        resp_text = self._side_resp.get("1.0", "end-1c").strip()
+
+        # Field values
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
+        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
+
+        fields = {
+            "serviceRecordAuthority.service_status": sra.get("service_status", ""),
+            "derived_details.place_of_death": dd.get("place_of_death", ""),
+            "derived_details.grid_reference": dd.get("grid_reference", ""),
+            "derived_details.circumstances_of_death": dd.get("circumstances_of_death", ""),
+            "derived_details.pre_service_occupation": dd.get("pre_service_occupation", ""),
+            "derived_details.unit_served_with": dd.get("unit_served_with", ""),
+            "derived_details.references": dd.get("references", ""),
+            "derived_details.ai_response": dd.get("ai_response", ""),
+        }
+
+        ref_state = {
+            "prompt": prompt_text,
+            "response": resp_text,
+            "fields": fields,
+        }
+        return {"lastRefId": ref_id, ref_id: ref_state}

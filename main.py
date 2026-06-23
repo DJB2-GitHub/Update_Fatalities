@@ -539,6 +539,20 @@ class App(tk.Tk):
     """Root window — withdrawn; the Main Menu is the visible entry point."""
 
     def __init__(self):
+        # Single instance check via local port binding (ignored by firewall, robust cross-platform)
+        import socket
+        import sys
+        from tkinter import messagebox
+        try:
+            self._lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._lock_socket.bind(('127.0.0.1', 58284))
+        except socket.error:
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showwarning("Already Running", "Fatalities Editor is already running.")
+            root.destroy()
+            sys.exit(0)
+
         super().__init__()
         self.withdraw()
         self.configure(bg=BG_GREY)
@@ -582,24 +596,7 @@ class App(tk.Tk):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys, traceback, os
-
-    # Only one instance at a time
-    try:
-        lock_file = os.path.join(os.environ.get("TEMP", os.getcwd()), "fatalities_editor.lock")
-        _lock_fd = os.open(lock_file, os.O_CREAT | os.O_RDWR)
-        
-        if sys.platform == "win32":
-            import msvcrt
-            msvcrt.locking(_lock_fd, msvcrt.LK_NBLCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except (OSError, IOError):
-        print("Fatalities Editor is already running.", flush=True)
-        if sys.platform == "win32":
-            input("Press Enter to exit...")
-        sys.exit(0)
+    import sys, traceback
 
     print("Starting Fatalities Editor...", flush=True)
     try:

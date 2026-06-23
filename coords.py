@@ -1,4 +1,12 @@
-import re\nimport math\nimport mgrs\n\n# ---------------------------------------------------------------------------
+import re
+import math
+import mgrs
+import os
+import json
+import tkinter as tk
+from tkinter import ttk
+
+# ---------------------------------------------------------------------------
 # _try_parse_vietnam_mgrs(coord_str: str) → (float, float) | None
 # ---------------------------------------------------------------------------
 #
@@ -422,6 +430,16 @@ def _save_json(path: str, data: list[dict]) -> bool:
 # ---------------------------------------------------------------------------
 # Custom dialogs
 # ---------------------------------------------------------------------------
+
+ACCENT      = "#c63f3f"
+ACCENT_HOV  = "#a53434"
+BG_GREY     = "#f5f5f5"
+WHITE       = "#ffffff"
+TEXT_DARK   = "#222222"
+TEXT_MUTED  = "#888888"
+BORDER      = "#dcdcdc"
+FONT        = "Segoe UI"
+
 
 def _error_dialog(parent: tk.Toplevel | None, title: str, message: str):
     dlg = tk.Toplevel(parent)

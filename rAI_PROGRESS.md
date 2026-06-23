@@ -1,22 +1,29 @@
 # rAI_PROGRESS.md
 
 ## Session Summary (Completed)
-1. **AI Pipeline Consolidation**: Migrated the legacy 2-step AI generation pipeline into a robust, 1-Step Architecture using `responseSchema` and exponential backoff (retries for 503/429 errors).
-2. **Payload Modularisation**: Extracted all AI prompt and schema logic out of the UI into a dedicated `ai_master_prompts.py` module. Created three dynamically selectable API payload options (A, B, and C).
-3. **UI Integration**: Added a UI dropdown to select the payload option at runtime, alongside a "Live Search" checkbox.
-4. **Coordinate Engine Extraction**: Physically extracted complex GPS conversion logic (Vietnam-era MGRS, DMS, WGS84) out of the Tkinter controller and into a dedicated `coords.py` module.
-5. **Session State Isolation**: Moved the session-tracking code out of the dataset directory and safely encapsulated it in `session_manager.py`. It now saves `session.json` directly to the python application root, tracking `pos`, `search`, `ai_option`, and `live_search` state per-dataset.
-6. **Code Cleanup**: Removed all orphaned/legacy networking code (`_ai_location_lookup`, `_ai_place_lookup`) and refactored bulky loops using Python dictionary/list comprehensions for cleaner syntax.
+1. **Syntax Fixes**:
+   - Fixed literal `\n` syntax issues in `update_fatalities.py` and `coords.py`.
+   - Removed an invalid `nonlocal` declaration inside `_task()` in `update_fatalities.py`.
+2. **Missing UI Helpers Restored**:
+   - Restored truncated bottom functions in `update_fatalities.py`: `_cancel`, `_show_mgrs_info`, `_extract_json`, `_side_resp_replace`, `_copy_response_to_ai_response`, and `_gather_ref_state`.
+   - Added missing `session_manager` import in `update_fatalities.py` to fix runtime exceptions.
+3. **Coordinate Engine and Tkinter Dependencies**:
+   - Resolved `NameError` and dependency issues in `coords.py` by importing `os`, `json`, `tkinter as tk`, and `ttk` and copying the UI design tokens.
+4. **Modal Window State**:
+   - Updated the `UpdateFatalities` modal to start maximized (full screen) using `self.state('zoomed')`.
+5. **Single-Instance Enforcement**:
+   - Moved the single-instance check into `App.__init__` so it runs when launching both `main.py` and `main.pyw`.
+   - Migrated from a file-based lock to socket port binding (`localhost:58284`) for a robust, cross-platform lock.
+   - Replaced console output with a Tkinter warning messagebox for duplicate instances to prevent headless background hanging.
 
 ## Current System State
-* **Main UI Controller**: `update_fatalities.py` is now strictly focused on DOM manipulation, Tkinter rendering, and callback routing.
-* **Payload Generation**: Handled entirely by `ai_master_prompts.py`, exporting dynamic configuration dicts.
-* **Coordinate Parsing**: Handled entirely by `coords.py`.
-* **State Management**: Session states are handled globally by `session_manager.py` (saving to `session.json` in the root app directory).
-* **Data Targeting**: Target files (`AU_fatalities.json`, `NZ_fatalities.json`) are pulled from `FATALITY_FILE_DIRECTORY` defined in `.env`.
+* **Main UI Controller (`update_fatalities.py`)**: Fully integrated with UI helpers restored. Imports `session_manager` to save state.
+* **Coordinate Engine (`coords.py`)**: Independent logic but contains copied UI tokens and Tkinter imports to support the modal dialog helpers migrated there.
+* **Single Instance Guard**: Handled in `App.__init__` using a local socket binding on port `58284`.
+* **State Isolation**: Handled via `session_manager.py`.
 
 ## Next-Step Checklist
-* [ ] **User Verification**: Test the full UI workflow, including navigating records, running the AI query with different payload options, and applying coordinates.
-* [ ] **Review AI Outputs**: Validate the precision and response time of the 1-Step JSON schema vs the older 2-Step pipeline.
-* [ ] **Firestore Sync**: Perform a test synchronization of the derived data back to the Firebase backend.
-* [ ] **Production Run**: Resume normal operational curation.
+* [ ] **Verify Coordinates Editor**: Verify that clicking the ℹ button on coordinate fields properly shows the MGRS markdown reference.
+* [ ] **Test Lock & Discard**: Verify that editing fields locks the record navigation and that closing with unsaved changes prompts a discard warning.
+* [ ] **AI Master Response Verification**: Test Option A, B, and C prompts via the AI panel using different configurations.
+* [ ] **Production Run**: Confirm normal operations.
