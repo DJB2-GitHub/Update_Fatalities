@@ -11,8 +11,10 @@ import json
 import os
 import re
 import threading
+import time
 import tkinter as tk
 import urllib.request
+import urllib.error
 from tkinter import ttk
 
 # ---------------------------------------------------------------------------
@@ -664,8 +666,8 @@ def _load_session(file_path: str) -> dict | None:
     return data.get(key)
 
 
-def _save_session(file_path: str, pos: int, search_text: str = ""):
-    """Persist the current record position for *file_path*."""
+def _save_session(file_path: str, pos: int, search_text: str = "", extra: dict | None = None):
+    """Persist the current record position for *file_path*, merging *extra* if given."""
     sp = _session_path(file_path)
     data: dict = {}
     if os.path.exists(sp):
@@ -677,12 +679,25 @@ def _save_session(file_path: str, pos: int, search_text: str = ""):
     if not isinstance(data, dict):
         data = {}
     key = os.path.basename(file_path)
-    data[key] = {"pos": pos, "search": search_text}
+    entry = data.get(key, {})
+    if not isinstance(entry, dict):
+        entry = {}
+    entry["pos"] = pos
+    entry["search"] = search_text
+    if extra:
+        entry.update(extra)
+    data[key] = entry
     try:
         with open(sp, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, ensure_ascii=False)
     except OSError:
         pass  # best-effort
+
+
+def _apply_field(target: dict, key: str, value):
+    """Set *target[key]* = *value* only if *value* is non-empty (non-blank string)."""
+    if value and isinstance(value, str) and value.strip():
+        target[key] = value
 
 
 # ---------------------------------------------------------------------------
@@ -854,6 +869,39 @@ class UpdateFatalities(tk.Toplevel):
                     self._filtered_pos = saved_pos
             self._show_record()
 
+            # ── Restore side-panel prompt/response for this reference ID ──
+            last_ref_id = session.get("lastRefId", "")
+            if last_ref_id and last_ref_id in session:
+                ref_state = session[last_ref_id]
+                if isinstance(ref_state, dict):
+                    saved_prompt = ref_state.get("prompt", "")
+                    saved_response = ref_state.get("response", "")
+                    if saved_prompt:
+                        self._side_prompt.configure(state=tk.NORMAL)
+                        self._side_prompt.delete("1.0", tk.END)
+                        self._side_prompt.insert("1.0", saved_prompt)
+                        self._side_prompt_label.configure(text="PROMPT: All Derived Data")
+                    if saved_response:
+                        self._side_resp_label.configure(text="RESPONSE: All Derived Data")
+                        self._side_resp_replace(saved_response)
+                        self._show_side_panel()
+                    # Restore field values into working_data for this record
+                    fields = ref_state.get("fields", {})
+                    if fields:
+                        record = self.working_data[self._filtered[self._filtered_pos]]
+                        sra = record.setdefault("serviceRecordAuthority", {})
+                        dd = record.setdefault("derived_details", {})
+                        if isinstance(sra, dict) and isinstance(dd, dict):
+                            _apply_field(sra, "service_status", fields.get("serviceRecordAuthority.service_status"))
+                            _apply_field(dd, "place_of_death", fields.get("derived_details.place_of_death"))
+                            _apply_field(dd, "grid_reference", fields.get("derived_details.grid_reference"))
+                            _apply_field(dd, "circumstances_of_death", fields.get("derived_details.circumstances_of_death"))
+                            _apply_field(dd, "pre_service_occupation", fields.get("derived_details.pre_service_occupation"))
+                            _apply_field(dd, "unit_served_with", fields.get("derived_details.unit_served_with"))
+                            _apply_field(dd, "references", fields.get("derived_details.references"))
+                            _apply_field(dd, "ai_response", fields.get("derived_details.ai_response"))
+                            self._show_record()
+
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self._cancel)
 
@@ -947,7 +995,7 @@ class UpdateFatalities(tk.Toplevel):
         bf = tk.Frame(main, bg=BG_GREY)
         bf.pack(fill=tk.X)
         self._flat_btn(bf, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
-        self._flat_btn(bf, "AI", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
+        self._flat_btn(bf, "AI: Create a Master Response", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
         
         self._live_search_var = tk.BooleanVar(value=True)
         self._live_search_chk = tk.Checkbutton(
@@ -955,6 +1003,12 @@ class UpdateFatalities(tk.Toplevel):
             bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9)
         )
         self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
+
+        self._copy_btn = self._flat_btn(
+            bf, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
+            bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
+        )
+        self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
 
         self.bind("<Escape>", lambda _e: self._cancel())
 
@@ -1123,7 +1177,7 @@ class UpdateFatalities(tk.Toplevel):
                     field_label = tk.Label(rf, text=f"{field_name}", font=(FONT, 10),
                                            bg=WHITE, fg=TEXT_DARK,
                                            width=label_width, anchor=tk.E)
-                    field_label.pack(side=tk.LEFT, padx=(0, 10))
+                    field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
                     # Format list values (e.g. references) as newline-separated text
                     if isinstance(raw_value, list):
                         dv = "\n".join(str(item) for item in raw_value)
@@ -1137,8 +1191,8 @@ class UpdateFatalities(tk.Toplevel):
                         entry.configure(state="readonly", readonlybackground="#f0f0f0", fg=TEXT_MUTED)
                         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                     else:
-                        if field_name in ("circumstances_of_death", "summary"):
-                            text_height = 3 if field_name == "summary" else 4
+                        if field_name in ("circumstances_of_death", "summary", "ai_response"):
+                            text_height = 3 if field_name == "summary" else (8 if field_name == "ai_response" else 4)
 
                             # Container frame for text + scrollbar
                             text_frame = tk.Frame(rf, bg=BG_GREY)
@@ -1178,15 +1232,6 @@ class UpdateFatalities(tk.Toplevel):
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
                         elif field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
-                            # Make the field label a clickable hot link that triggers
-                            # an AI location lookup for this soldier.
-                            field_label.configure(
-                                fg="#4a90d9", font=(FONT, 10, "underline"),
-                                cursor="hand2",
-                            )
-                            field_label.bind(
-                                "<Button-1>", lambda e: self._ai_location_lookup()
-                            )
                             # Small info button that opens the MGRS reference doc
                             info_btn = tk.Label(
                                 rf, text="\u2139", font=(FONT, 11),
@@ -1231,14 +1276,6 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<Double-Button-1>", _open_map)
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         elif field_name == "place_of_death":
-                            # Make the label a hot link for AI location expansion
-                            field_label.configure(
-                                fg="#4a90d9", font=(FONT, 10, "underline"),
-                                cursor="hand2",
-                            )
-                            field_label.bind(
-                                "<Button-1>", lambda e: self._ai_place_lookup()
-                            )
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
@@ -1454,7 +1491,14 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         is_live_search = self._live_search_var.get()
-        confirm_msg = f"Proceed with AI Lookup?\n\nLive Search Grounding is currently: {'ON' if is_live_search else 'OFF'}"
+        confirm_msg = (
+            f"Clear & Direct\n\n"
+            f"[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]\n\n"
+            f"// Live Search is currently: {'ON' if is_live_search else 'OFF'}\n\n"
+            f"[The AI\u2019s built-in knowledge stops at its last major update (roughly 1\u20132 years ago). \n"
+            f"Live Search fills that missing window with anything new or recently updated. \n"
+            f"Turn it on if you need modern information\u2014just note it may increase overall response time by about 25%.]"
+        )
         if not _confirm_yesno(self, "Confirm AI", confirm_msg):
             return
 
@@ -1611,7 +1655,18 @@ class UpdateFatalities(tk.Toplevel):
         api_key = env.get("GEMINI_API_KEY", "")
         models_str = env.get("GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-flash")
         models = [m.strip() for m in models_str.split(",") if m.strip()]
-        researcher_model = env.get("GEMINI_RESEARCHER_MODEL", "gemini-2.5-flash")
+        master_timeout = int(env.get("AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS", "150"))
+        internal_timeout = int(env.get("AI_INTERNAL_RESPONSE_MODEL_CUTOFF_SECONDS", "40"))
+
+        # Parse AI rates and AUD exchange rate for cost calculation
+        try:
+            ai_rates = json.loads(env.get("AI_RATES", "{}"))
+        except Exception:
+            ai_rates = {}
+        try:
+            aud_usd = float(env.get("AUD_USD", "0.7"))
+        except Exception:
+            aud_usd = 0.7
 
         if not api_key:
             _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
@@ -1628,12 +1683,54 @@ class UpdateFatalities(tk.Toplevel):
 
         def _task():
             last_error = ""
+            start_time = time.time()
+            step1_secs = 0.0
+            step2_start = 0.0
             is_testing = ("testing" in self.file_path.lower() or
                           os.path.basename(self.file_path) in ("AU_fatalities.json",))
 
+            def _make_header(model_name, usage_meta, research_model_name=None, research_usage_meta=None):
+                """Build cost/attribution header showing Step 1 + Step 2 costs, times, and total."""
+                from datetime import datetime
+                now = datetime.now()
+                ts = now.strftime("%d:%b:%Y %H:%M")
+                step2_secs = time.time() - step2_start if step2_start else time.time() - start_time
+                total_secs = time.time() - start_time
+
+                def _calc_cost(mn, um):
+                    if not um or mn not in ai_rates:
+                        return 0.0
+                    rate = ai_rates[mn]
+                    pt = um.get("promptTokenCount", 0)
+                    ct = um.get("candidatesTokenCount", 0)
+                    return (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                           (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+
+                step1_cost = _calc_cost(research_model_name, research_usage_meta) if research_model_name else 0.0
+                step2_cost = _calc_cost(model_name, usage_meta)
+                total_cost = step1_cost + step2_cost
+
+                lines = [f"Created {ts} $A {total_cost:.4f} ({total_secs:.0f}s)"]
+                if research_model_name:
+                    lines.append(f"Step 1 ({research_model_name}): $A {step1_cost:.4f} ({step1_secs:.0f}s)")
+                lines.append(f"Step 2 ({model_name}): $A {step2_cost:.4f} ({step2_secs:.0f}s)")
+                return "\n".join(lines) + "\n\n"
+
+            def _fmt_err(exc):
+                """Return error string; for HTTP errors include the response body."""
+                if isinstance(exc, urllib.error.HTTPError):
+                    try:
+                        body = exc.read().decode("utf-8", errors="replace")[:500]
+                    except Exception:
+                        body = "(could not read body)"
+                    return f"{exc.code} {exc.reason} — {body}"
+                return str(exc)
+
             # ── Testing datasets: two-step pipeline ──
+            research_model_name = None
+            research_usage = None
             if is_testing:
-                # Step 1: Research with search-enabled fast model ──
+                # Step 1: Research with search-enabled model ──
                 research_prompt = (
                     f"Research the military history: What operation was {unit} engaged in on {dod} "
                     f"in Vietnam? Who was {name} (service number {svc}, rank {rank}) and what were "
@@ -1642,39 +1739,52 @@ class UpdateFatalities(tk.Toplevel):
                     f"Be comprehensive and factual. Provide all details you can find."
                 )
                 research_text = ""
-                try:
-                    self.after(0, lambda: self._side_resp_replace(
-                        f"Step 1/2 — Researching with {researcher_model} (search enabled)..."
+                research_model_name = None
+                research_usage = None
+                step1_start = time.time()
+                for model in models:
+                    self.after(0, lambda m=model: self._side_resp_replace(
+                        f"Step 1/2 — Researching with {m} (search enabled)..."
                     ))
-                    research_payload = {
-                        "systemInstruction": {
-                            "parts": [{
-                                "text": (
-                                    "You are a military researcher specializing in the Vietnam War. "
-                                    "Provide raw, detailed factual text in prose. No formatting, no markdown."
-                                )
-                            }]
-                        },
-                        "contents": [{"parts": [{"text": research_prompt}]}],
-                        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096},
-                        "tools": [{"google_search": {}}],
-                    }
-                    research_url = (
-                        f"https://generativelanguage.googleapis.com/v1beta/models/"
-                        f"{researcher_model}:generateContent?key={api_key}"
-                    )
-                    research_body = json.dumps(research_payload).encode("utf-8")
-                    research_req = urllib.request.Request(
-                        research_url, data=research_body,
-                        headers={"Content-Type": "application/json"}
-                    )
-                    with urllib.request.urlopen(research_req, timeout=45) as resp:
-                        research_data = json.loads(resp.read().decode("utf-8"))
-                        research_text = research_data["candidates"][0]["content"]["parts"][0]["text"]
-                except Exception:
-                    # Step 1 failed → will continue with empty research; step 2 works from internal knowledge
-                    pass
+                    try:
+                        research_payload = {
+                            "systemInstruction": {
+                                "parts": [{
+                                    "text": (
+                                        "You are a military researcher specializing in the Vietnam War. "
+                                        "Provide raw, detailed factual text in prose. No formatting, no markdown."
+                                    )
+                                }]
+                            },
+                            "contents": [{"parts": [{"text": research_prompt}]}],
+                            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4096},
+                            "tools": [{"google_search": {}}],
+                        }
+                        research_url = (
+                            f"https://generativelanguage.googleapis.com/v1beta/models/"
+                            f"{model}:generateContent?key={api_key}"
+                        )
+                        research_body = json.dumps(research_payload).encode("utf-8")
+                        research_req = urllib.request.Request(
+                            research_url, data=research_body,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(research_req, timeout=internal_timeout) as resp:
+                            research_data = json.loads(resp.read().decode("utf-8"))
+                            research_text = research_data["candidates"][0]["content"]["parts"][0]["text"]
+                            research_model_name = model
+                            research_usage = research_data.get("usageMetadata", {})
+                        break
+                    except Exception as exc:
+                        err_msg = f"{model}: {_fmt_err(exc)}"
+                        last_error = err_msg
+                        self.after(0, lambda e=err_msg: self._side_resp_replace(
+                            f"Step 1/2 — Research failed.\n\n{e}"
+                        ))
+                        continue
 
+                step1_secs = time.time() - step1_start
+                step2_start = time.time()
                 # Step 2: Structure with search-disabled, JSON-mode, no thinking ──
                 if research_text:
                     structured_prompt = (
@@ -1688,7 +1798,7 @@ class UpdateFatalities(tk.Toplevel):
 
                 for model in models:
                     self.after(0, lambda m=model: self._side_resp_replace(
-                        f"Step 2/2 — Structuring with {m} (JSON mode, no search)..."
+                        f"Step 2/2 — Structuring with {m} (JSON mode, excl LIVE search data)..."
                     ))
                     try:
                         url = (
@@ -1717,14 +1827,17 @@ class UpdateFatalities(tk.Toplevel):
                         req = urllib.request.Request(
                             url, data=body, headers={"Content-Type": "application/json"}
                         )
-                        with urllib.request.urlopen(req, timeout=60) as resp:
+                        with urllib.request.urlopen(req, timeout=master_timeout) as resp:
                             data = json.loads(resp.read().decode("utf-8"))
                             content = data["candidates"][0]["content"]["parts"][0]["text"]
+                            usage_meta = data.get("usageMetadata", {})
                         content = self._extract_json(content)
+                        header = _make_header(model, usage_meta, research_model_name, research_usage)
+                        content = header + content
                         self.after(0, lambda c=content: self._side_resp_replace(c))
                         return
                     except Exception as exc:
-                        last_error = f"{model}: {exc}"
+                        last_error = f"{model}: {_fmt_err(exc)}"
                         continue
                 self.after(0, lambda: self._side_resp_replace(
                     f"All models failed.\n\n{last_error}"
@@ -1732,6 +1845,7 @@ class UpdateFatalities(tk.Toplevel):
 
             # ── Non-testing datasets: original single-step flow ──
             else:
+                step2_start = time.time()
                 for model in models:
                     self.after(0, lambda m=model: self._side_resp_replace(
                         f"Using {m} to get additional details...."
@@ -1758,13 +1872,16 @@ class UpdateFatalities(tk.Toplevel):
                         req = urllib.request.Request(
                             url, data=body, headers={"Content-Type": "application/json"}
                         )
-                        with urllib.request.urlopen(req, timeout=60) as resp:
+                        with urllib.request.urlopen(req, timeout=master_timeout) as resp:
                             data = json.loads(resp.read().decode("utf-8"))
                             content = data["candidates"][0]["content"]["parts"][0]["text"]
+                            usage_meta = data.get("usageMetadata", {})
+                        header = _make_header(model, usage_meta, research_model_name, research_usage)
+                        content = header + content
                         self.after(0, lambda c=content: self._side_resp_replace(c))
                         return
                     except Exception as exc:
-                        last_error = f"{model}: {exc}"
+                        last_error = f"{model}: {_fmt_err(exc)}"
                         continue
                 self.after(0, lambda: self._side_resp_replace(
                     f"All models failed.\n\n{last_error}"
@@ -1875,6 +1992,9 @@ class UpdateFatalities(tk.Toplevel):
         )
         models = [m.strip() for m in models_str.split(",") if m.strip()]
 
+        master_timeout = int(env.get("AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS", "150"))
+        internal_timeout = int(env.get("AI_INTERNAL_RESPONSE_MODEL_CUTOFF_SECONDS", "40"))
+
         if not api_key:
             _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
             return
@@ -1931,7 +2051,7 @@ class UpdateFatalities(tk.Toplevel):
                         data=body,
                         headers={"Content-Type": "application/json"},
                     )
-                    with urllib.request.urlopen(req, timeout=60) as resp:
+                    with urllib.request.urlopen(req, timeout=master_timeout) as resp:
                         data = json.loads(resp.read().decode("utf-8"))
                         content = (
                             data["candidates"][0]["content"]["parts"][0]["text"]
@@ -2059,6 +2179,9 @@ class UpdateFatalities(tk.Toplevel):
         )
         models = [m.strip() for m in models_str.split(",") if m.strip()]
 
+        master_timeout = int(env.get("AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS", "150"))
+        internal_timeout = int(env.get("AI_INTERNAL_RESPONSE_MODEL_CUTOFF_SECONDS", "40"))
+
         if not api_key:
             _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
             return
@@ -2116,7 +2239,7 @@ class UpdateFatalities(tk.Toplevel):
                         data=body,
                         headers={"Content-Type": "application/json"},
                     )
-                    with urllib.request.urlopen(req, timeout=60) as resp:
+                    with urllib.request.urlopen(req, timeout=master_timeout) as resp:
                         data = json.loads(resp.read().decode("utf-8"))
                         content = (
                             data["candidates"][0]["content"]["parts"][0]["text"]
@@ -2307,6 +2430,35 @@ class UpdateFatalities(tk.Toplevel):
     def _side_resp_replace(self, text: str):
         self._side_resp.delete("1.0", tk.END)
         self._side_resp.insert("1.0", text)
+        # Show COPY button when response exceeds 200 characters
+        if len(text) > 200:
+            try:
+                self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
+            except tk.TclError:
+                pass  # already packed
+        else:
+            self._copy_btn.pack_forget()
+
+    def _copy_response_to_ai_response(self):
+        """Copy the current AI response text into the ai_response field in the Update modal."""
+        response_text = self._side_resp.get("1.0", "end-1c").strip()
+        if not response_text:
+            return
+        # Find the ai_response entry widget
+        key = ("derived_details", "ai_response")
+        entry = self._entry_widgets.get(key)
+        if entry is None:
+            return
+        # Replace the displayed value (does NOT write to underlying JSON until Update)
+        if isinstance(entry, tk.Text):
+            entry.delete("1.0", tk.END)
+            entry.insert("1.0", response_text)
+        else:
+            entry.delete(0, tk.END)
+            entry.insert(0, response_text)
+        # Mark record dirty so user is prompted on close
+        self._record_dirty = True
+        self._set_locked(True)
 
     # ------------------------------------------------------------------
     # File-level actions
@@ -2330,11 +2482,50 @@ class UpdateFatalities(tk.Toplevel):
         self.dirty = False
         self._show_record()
 
+    def _gather_ref_state(self) -> dict | None:
+        """Collect side-panel prompt/response and key field values for the current record."""
+        if not self._filtered:
+            return None
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+        ref_id = record.get("referenceID", "")
+        if not ref_id:
+            return None
+
+        # Side panel text
+        prompt_text = self._side_prompt.get("1.0", "end-1c").strip()
+        resp_text = self._side_resp.get("1.0", "end-1c").strip()
+
+        # Field values: serviceRecordAuthority.service_status,
+        # derived_details.place_of_death, grid_reference, circumstances_of_death,
+        # pre_service_occupation, unit_served_with, references, ai_response
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
+        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
+
+        fields = {
+            "serviceRecordAuthority.service_status": sra.get("service_status", ""),
+            "derived_details.place_of_death": dd.get("place_of_death", ""),
+            "derived_details.grid_reference": dd.get("grid_reference", ""),
+            "derived_details.circumstances_of_death": dd.get("circumstances_of_death", ""),
+            "derived_details.pre_service_occupation": dd.get("pre_service_occupation", ""),
+            "derived_details.unit_served_with": dd.get("unit_served_with", ""),
+            "derived_details.references": dd.get("references", ""),
+            "derived_details.ai_response": dd.get("ai_response", ""),
+        }
+
+        ref_state = {
+            "prompt": prompt_text,
+            "response": resp_text,
+            "fields": fields,
+        }
+        return {"lastRefId": ref_id, ref_id: ref_state}
+
     def _cancel(self):
         if self._record_dirty:
             ok = _confirm_yesno(self, "Discard Changes?",
                                 "You have unsaved changes.\nClose and discard all changes?")
             if not ok:
                 return
-        _save_session(self.file_path, self._filtered_pos, self._search_text)
+        extra = self._gather_ref_state()
+        _save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
         self.destroy()

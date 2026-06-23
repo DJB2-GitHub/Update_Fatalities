@@ -25,47 +25,78 @@ The application relies on an environment configuration file for routing paths an
 The environment configuration specifically defines access to a variety of state-of-the-art AI models. Below is an overview of the features and intended use cases for each model tracked in the dev environment:
 
 ### Google Gemini Models
-Configured under `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE`, these models offer varying tiers of reasoning and speed.
+Configured under `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE`. These models power the two-step AI pipeline in priority order.
 
 1. **Gemini 2.5 Pro (`gemini-2.5-pro`)**
-   - **Role:** Deep Analysis Model (`GEMINI_DEEP_ANALYSIS_MODEL`).
-   - **Features:** The heavyweight flagship model. Highly capable of handling massive contexts, deep reasoning, and complex instructions. Offers the highest accuracy for difficult analytical tasks and complex data transformations.
+   - **Role:** Primary model for both research and structuring.
+   - **Features:** The heavyweight flagship model. Highest accuracy, deepest reasoning, best JSON output. Tried first in both pipeline steps.
 
 2. **Gemini 3.5 Flash (`gemini-3.5-flash`)**
-   - **Role:** Primary Fast Generation.
-   - **Features:** Next-generation lightweight model. Extremely fast time-to-first-token and highly cost-efficient. Designed for high-volume, standard text-to-text tasks where speed and responsiveness are paramount.
+   - **Role:** First fallback.
+   - **Features:** Next-generation lightweight model. Fast and cost-efficient. Tried second if `-pro` is unavailable.
 
 3. **Gemini 2.5 Flash (`gemini-2.5-flash`)**
-   - **Role:** Fallback Fast Generation.
-   - **Features:** Predecessor to 3.5 Flash. Still highly capable for rapid, lightweight prompt execution with a very low token cost.
+   - **Role:** Final fallback.
+   - **Features:** Predecessor to 3.5 Flash. Rapid, lightweight execution at very low token cost. Last resort if both higher-tier models fail.
 
 ### DeepSeek Models
-Configured under `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE`, known for highly optimized pricing and strong reasoning.
-
-1. **DeepSeek v4 Pro (`deepseek-v4-pro`)**
-   - **Role:** Advanced Generation/Coding.
-   - **Features:** An extremely robust model that frequently rivals top-tier proprietary models in logic and reasoning tasks while maintaining highly competitive input/output token pricing.
-
-2. **DeepSeek v4 Flash (`deepseek-v4-flash`)**
-   - **Role:** Ultra-fast Generation.
-   - **Features:** Built for raw speed and minimal cost. Excellent for simple classification, formatting, or parsing tasks where deep reasoning is not required.
+Defined in `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE` and `AI_INTERNAL_ANALYSIS_MODEL`. These are configured in `.env` for future use but are not currently wired into the Master Response pipeline.
 
 ### AI Rates & Exchange Config
 The `.env` actively tracks the token cost structure via the `AI_RATES` JSON mapping (tracking varying input/output costs per 1M tokens) and utilizes the `AUD_USD` exchange rate setting for accurate, localized cost calculations.
 
 ### AI Research & Data Population
 
-The Fatalities Editor features an integrated AI Lookup side panel powered by the Google Gemini API. This feature is specifically designed to help users quickly research historical records and populate the editable `derived_details` fields (such as `circumstances_of_death` and `summary`).
+The Fatalities Editor features a single AI entry point — the **"AI: Create Master Response"** button in the Update Fatalities modal. Clicking it triggers a two-step pipeline powered by the models defined in `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE`.
 
-**Google Search Grounding**
-The application connects to the Gemini API and explicitly injects `"tools": [{"google_search": {}}]` into the request payload. This is a critical configuration that enables **Google Search Grounding**. Instead of relying solely on the AI model's internal memory (which often leads to hallucinations or refusal to answer obscure historical queries), this allows the AI to perform live internet searches. It retrieves and synthesizes actual historical records from the Australian War Memorial (AWM), Virtual War Memorial Australia (VWMA), and other official sources on the fly, delivering high-fidelity results comparable to the Google Web interface.
+---
 
-**Prompt Structure**
-The application uses a highly structured, tightened prompt that serves as a protective guardrail:
-- **Anchoring:** It anchors the query using exact, uneditable factual data from the JSON record (e.g., Service Number, Full Name, Date of Death).
-- **Strict Guidelines:** It explicitly instructs the AI **not to invent or alter identity details**.
-- **Targeted Output:** It strictly requests only the specific outputs needed for data entry: a narrative of the circumstances of death (broken into confirmed facts vs. inferences) and the best available location approximation (GPS/MGRS/UTM).
-- **Purpose:** This ensures the AI returns clean, factual text without unnecessary formatting, allowing the user to seamlessly evaluate the research and manually enter the findings into the protected `derived_details` section of the editor.
+#### The Two-Step Pipeline
+
+Both steps iterate through the model list in order (`gemini-2.5-pro` → `gemini-3.5-flash` → `gemini-2.5-flash`), falling back to the next model if one fails.
+
+**Step 1 — Live Research (with Google Search)**
+- A prompt is sent asking the model to research the soldier's military history on the open web: *what operation was the unit engaged in, who was this person, and what were the circumstances of their death?*
+- Google Search Grounding is **enabled** (`"tools": [{"google_search": {}}]`) so the model retrieves and synthesises live web data from the Australian War Memorial (AWM), Virtual War Memorial Australia (VWMA), and other official sources.
+- The output is raw prose — no formatting, no markdown.
+- Timeout: `AI_INTERNAL_RESPONSE_MODEL_CUTOFF_SECONDS` (defaults to 40s).
+- If all models fail, Step 2 continues using only the model's internal knowledge.
+
+**Step 2 — JSON Structuring (excl LIVE search data)**
+- The research text from Step 1 (if available) is fed in as **the sole source material** — the model is explicitly instructed *"use ONLY this for your answers; do NOT search the web."*
+- If Step 1 produced nothing, Step 2 works from the model's internal knowledge.
+- The model outputs **valid JSON** (`responseMimeType: "application/json"`) matching the `derived_data` schema.
+- Google Search is deliberately **disabled** to prevent contamination of the structured result.
+- Timeout: `AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS` (defaults to 150s).
+
+---
+
+#### Result: User Review → Master Record
+
+The AI's final structured JSON response is displayed in the side panel for **user review and visual acceptance**. Once approved, the result is manually pasted into the `derived_data` → `ai_response` field, where it serves as an **internal master record for ad hoc quick info lookup** — a cached, authoritative AI-generated summary that can be referenced without re-running the pipeline.
+
+---
+
+#### Confirmation Dialog
+
+Before the pipeline runs, a confirmation dialog appears explaining the AI's fixed knowledge cutoff and the role of Live Search:
+
+> *Clear & Direct*
+>
+> *[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]*
+>
+> *// Live Search is currently: ON | OFF*
+>
+> *[The AI's built-in knowledge stops at its last major update (roughly 1–2 years ago). Live Search fills that missing window with anything new or recently updated. Turn it on if you need modern information — just note it may increase overall response time by about 25%.]*
+
+The **Live Search** checkbox in the bottom bar toggles search grounding on/off.
+
+| Live Search | Effect on Master Response pipeline | Effect on non‑testing datasets |
+|---|---|---|
+| **ON** (default) | Step 1 always searches the web. Step 2 never searches (hardcoded per step). | Google Search tool injected — model can retrieve live web data. |
+| **OFF** | Same as ON — Step 1/Step 2 search behaviour is hardcoded for the two‑step pipeline. | No search tool — model relies entirely on internal (cutoff‑dated) knowledge. |
+
+> **Note:** In the Master Response pipeline, Step 1 always uses Google Search and Step 2 never does, regardless of the checkbox state. The toggle primarily affects the single‑step fallback path used for non‑testing datasets.
 
 ---
 
