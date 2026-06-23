@@ -35,34 +35,24 @@ ENV_PATH = ".env"
 # ---------------------------------------------------------------------------
 
 def _read_env(path: str = ENV_PATH) -> dict[str, str]:
-    result: dict[str, str] = {}
     if not os.path.exists(path):
-        return result
+        return {}
     with open(path, "r", encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            result[key] = value
-            os.environ[key] = value
+        result = {
+            line.partition("=")[0].strip(): line.partition("=")[2].strip().strip('"').strip("'")
+            for line in (l.strip() for l in fh)
+            if line and not line.startswith("#") and "=" in line
+        }
+    os.environ.update(result)
     return result
 
 
 def _make_datasets(env: dict[str, str], directory: str, env_key: str) -> dict[str, str]:
     """Build {label: full_path} from a comma-separated env value."""
-    files_str = env.get(env_key, "")
-    datasets: dict[str, str] = {}
-    for filename in files_str.split(","):
-        filename = filename.strip()
-        if not filename:
-            continue
-        full_path = os.path.join(directory, filename)
-        label = os.path.splitext(filename)[0]
-        datasets[label] = full_path
-    return datasets
+    return {
+        os.path.splitext(f.strip())[0]: os.path.join(directory, f.strip())
+        for f in env.get(env_key, "").split(",") if f.strip()
+    }
 
 
 def load_config() -> dict[str, dict[str, str]]:

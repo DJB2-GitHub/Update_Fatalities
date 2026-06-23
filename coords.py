@@ -1,0 +1,542 @@
+import re\nimport math\nimport mgrs\n\n# ---------------------------------------------------------------------------
+# _try_parse_vietnam_mgrs(coord_str: str) → (float, float) | None
+# ---------------------------------------------------------------------------
+#
+# The core Vietnam-era MGRS normaliser.
+#
+# Accepts any of these input shapes (spaces are stripped, case-insensitive):
+#
+#     "48P YS 426 694"   — full, correct zone
+#     "48Q YS 426 694"   — full, WRONG zone  → auto-corrected 48Q→48P
+#     "YS 426 694"       — partial, no zone   → zone inferred from square
+#     "48PYS426694"      — compact (no spaces)
+#     "YS426694"         — compact partial
+#     "48Q YS 42600 69400" — 10-digit fine precision
+#
+# Pipeline (each step is documented inline):
+#
+#   1. Clean & normalise whitespace / case
+#   2. Match against a full-MGRS regex or a partial (no-GZD) regex
+#   3. If partial, infer zone 48 + band P or Q from the square lookup table
+#   4. Auto-correct 48Q → 48P for squares known to be in 48P
+#   5. Split the numerical half into Easting / Northing components
+#   6. Expand abbreviated digits to full-metre values
+#      (e.g. "426" → 42600 m for 6-digit input)
+#   7. Add the SVN60 → WGS84 datum shift to both Easting and Northing
+#   8. Clamp shifted values to the 0–99999 m range of a 100 km square
+#   9. Round back to the input's original precision
+#  10. Reconstruct a corrected MGRS string
+#  11. Convert MGRS → decimal lat/lon (WGS84) using the `mgrs` library
+#
+# Returns a (lat, lon) tuple rounded to 5 decimal places (~1 m precision),
+# or None if the input does not match any Vietnam MGRS pattern.
+# ---------------------------------------------------------------------------
+def _try_parse_vietnam_mgrs(coord_str: str):
+    # Deferred import so the file can be loaded even without `mgrs` installed,
+    # and to avoid a heavy import on every coordinate-parse attempt.
+    import mgrs as mgrs_lib
+
+    # ---- step 1: normalise -------------------------------------------------
+    # Strip all whitespace, convert to uppercase.  This collapses
+    # "48P YS 426 694" → "48PYS426694" and "ys 426 694" → "YS426694".
+    clean = re.sub(r"\s+", "", str(coord_str).strip()).upper()
+    if not clean:
+        return None
+
+    # ---- step 2: regex matching --------------------------------------------
+    #
+    # full_pat    matches  "48PYS426694"  (GZD + square + digits)
+    # partial_pat matches  "YS426694"     (square + digits, no GZD)
+    #
+    # Both patterns use the official MGRS character sets:
+    #   Latitude band:  C–H, J–N, P–X   (I and O are omitted to avoid
+    #                   confusion with digits 1 and 0)
+    #   100 km square:  A–H, J–N, P–Z   (same rationale)
+    #   Digits:         4–10 (even count, i.e. 2+2 to 5+5 per component)
+
+    # Pattern 1 — full MGRS with Grid Zone Designator
+    #   Group 1: \d{1,2}       zone number (1–60, but typically 1–2 digits)
+    #   Group 2: [C-HJ-NP-X]   latitude band letter
+    #   Group 3: [A-HJ-NP-Z]{2}  100 km square letter pair
+    #   Group 4: \d{4,10}      numerical easting + northing (even-length)
+    full_pat = re.compile(
+        r"^(\d{1,2})"            # e.g. "48"
+        r"([C-HJ-NP-X])"         # e.g. "P"
+        r"([A-HJ-NP-Z]{2})"      # e.g. "YS"
+        r"(\d{4,10})$"           # e.g. "426694" or "4260069400"
+    )
+
+    # Pattern 2 — partial MGRS (square + digits only, no GZD)
+    #   Group 1: [A-HJ-NP-Z]{2}  100 km square letter pair (e.g. "YS")
+    #   Group 2: \d{4,10}        numerical easting + northing
+    #
+    # This handles the common Vietnam War shorthand where soldiers
+    # omitted the GZD because everyone in the unit knew they were in
+    # "48P" or "48Q".
+    partial_pat = re.compile(
+        r"^([A-HJ-NP-Z]{2})"     # e.g. "YS"
+        r"(\d{4,10})$"           # e.g. "426694"
+    )
+
+    m = full_pat.match(clean)
+    if m:
+        zone_str, lat_band, square, digits = (
+            m.group(1), m.group(2), m.group(3), m.group(4)
+        )
+    else:
+        m = partial_pat.match(clean)
+        if not m:
+            # Does not look like any MGRS form we handle — let the caller
+            # try the generic MGRS parser or fall through to DMS / error.
+            return None
+        square, digits = m.group(1), m.group(2)
+
+        # ---- step 3: zone inference from square ----------------------------
+        # When the user hasn't supplied a GZD, we look up the 100 km square
+        # in our known-Vietnam table.  Squares not explicitly listed as 48P
+        # are assumed to be 48Q (northern Vietnam).
+        #
+        # This is a heuristic — if someone is working with coordinates from
+        # a completely different part of the world that happen to share the
+        # same square letters, they should supply the full GZD.
+        zone_str = "48"
+        lat_band = "P" if square in _VIETNAM_48P_SQUARES else "Q"
+
+    # Cast zone to integer for the correction check below.
+    zone = int(zone_str)
+
+    # ---- step 4: zone correction -------------------------------------------
+    # "48Q YS" is a well-known transcription error in Vietnam War records.
+    # The YS square physically exists only in zone 48P (southern Vietnam).
+    # We silently correct Q → P for any square in our 48P set.
+    #
+    # This also catches the case where a user typed "48Q" out of habit
+    # (many maps of the period labelled everything as "48Q" in the margin).
+    if zone == 48 and lat_band == "Q" and square in _VIETNAM_48P_SQUARES:
+        lat_band = "P"
+
+    # ---- step 5: split numerical digits into Easting / Northing ------------
+    #
+    # MGRS digits are always an even-length string where the first half is
+    # the Easting offset and the second half is the Northing offset, both
+    # relative to the south-west corner of the 100 km square.
+    #
+    #     "426694"  →  half=3  →  e_str="426"   n_str="694"
+    #     "4260069400" → half=5 → e_str="42600" n_str="69400"
+    half = len(digits) // 2
+    e_str = digits[:half]    # Easting digits
+    n_str = digits[half:]    # Northing digits
+    precision = half          # digits per component (3 → 100 m, 5 → 1 m)
+
+    # ---- step 6: expand abbreviated digits to full metres ------------------
+    #
+    # A 6-digit MGRS encodes 100 m precision: "426" means 42 600 metres
+    # east of the square's western edge.  We multiply by 10^(5-precision)
+    # to bring the value into the 0–99 999 m range:
+    #
+    #     precision=3 → scale=10²=100  →  426×100 = 42 600 m
+    #     precision=5 → scale=10⁰=1    → 42600×1 = 42 600 m
+    scale = 10 ** (5 - precision)
+    easting = int(e_str) * scale
+    northing = int(n_str) * scale
+
+    # ---- step 7: apply SVN60 → WGS84 datum shift --------------------------
+    #
+    # The original coordinate was recorded on an SVN60 map.  To express the
+    # same physical point in WGS84 (used by GPS, Google Maps, etc.) we must
+    # shift the grid easting and northing by the datum offset.
+    #
+    #     SVN60 Easting + 205 m ≈ WGS84 Easting
+    #     SVN60 Northing + 75 m ≈ WGS84 Northing
+    easting += _DATUM_SHIFT_E
+    northing += _DATUM_SHIFT_N
+
+    # ---- step 8: clamp to 100 km square bounds (0–99 999 m) ----------------
+    #
+    # A 100 km MGRS square runs from 0 to 99 999 metres in both axes.
+    # The datum shift is small enough that real coordinates will never clip
+    # under normal circumstances, but we clamp defensively to keep the
+    # reconstructed MGRS valid.
+    easting = max(0, min(99999, easting))
+    northing = max(0, min(99999, northing))
+
+    # ---- step 9: round back to the original input precision ----------------
+    #
+    # We divide by the scale factor, round to the nearest integer, and
+    # zero-pad to the original number of digits.  This preserves the
+    # precision level the user typed.
+    #
+    #     input "426" (100 m) → shifted 42805 → round(42805/100)=428 → "428"
+    #     input "42600" (1 m) → shifted 42805 → round(42805/1)=42805 → "42805"
+    new_e = str(int(round(easting / scale))).zfill(precision)
+    new_n = str(int(round(northing / scale))).zfill(precision)
+
+    # ---- step 10: reconstruct the corrected MGRS string --------------------
+    #
+    # Assemble the pieces back into a standard MGRS string that the `mgrs`
+    # library can consume.  Example:
+    #     "48" + "P" + "YS" + "428" + "695"  →  "48PYS428695"
+    corrected_mgrs = f"{zone_str}{lat_band}{square}{new_e}{new_n}"
+
+    # ---- step 11: convert MGRS → decimal lat/lon (WGS84) -------------------
+    #
+    # The `mgrs` Python library (pip install mgrs) converts an MGRS string
+    # directly to WGS84 decimal degrees.  Because we already shifted the
+    # easting/northing to account for the SVN60 datum, the result is the
+    # modern GPS coordinate of the physical location described by the
+    # original Vietnam-era grid reference.
+    #
+    # We round to 5 decimal places (~1.1 m at the equator, ~1.0 m at 10° N)
+    # which is well within the inherent precision limits of wartime MGRS.
+    try:
+        m = mgrs_lib.MGRS()
+        lat, lon = m.toLatLon(corrected_mgrs)
+        return round(lat, 5), round(lon, 5)
+    except Exception:
+        # The `mgrs` library may raise on malformed input that passed our
+        # regex but is not a real MGRS location (e.g. an invalid square
+        # letter pair for the given zone).  Return None so the caller falls
+        # through to the generic MGRS parser or error message.
+        return None
+
+
+# ---------------------------------------------------------------------------
+# validate_and_parse_coordinate(coord_str: str)
+#     → (is_valid: bool, message: str, coordinates: (float, float) | None)
+# ---------------------------------------------------------------------------
+#
+# The single entry-point for coordinate validation used by both the manual
+# editor and the AI-result ingestion paths (see _read_form() and the AI
+# side-panel response parsing in UpdateFatalities).
+#
+# Tries each parser in order of specificity.  The first parser that
+# succeeds wins and short-circuits the rest:
+#
+#   Priority  Parser              Examples
+#   ────────  ──────────────────  ──────────────────────────────────────
+#    1 (hi)   Decimal Degrees      "10.6895, 107.3305"
+#                                 "10.34694 N, 107.07263 E"
+#    2        Vietnam-era MGRS     "48Q YS 426 694"
+#                                 "YS 426 694"
+#    3        Generic MGRS         "48PYS458630"
+#                                 (any non-Vietnam MGRS worldwide)
+#    4 (lo)   DMS                  "10° 20' N, 107° 04' E"
+#
+# Vietnam-era MGRS (priority 2) is placed BEFORE generic MGRS (priority 3)
+# so that Vietnam-specific corrections (zone fix + datum shift) are
+# applied before the generic converter gets a chance to misinterpret the
+# coordinate as a raw WGS84 MGRS.
+#
+# Returns a 3-tuple:
+#   is_valid    True if a parser accepted the input
+#   message     Human-readable validation result
+#   coordinates (lat, lon) if parseable, else None
+# ---------------------------------------------------------------------------
+def validate_and_parse_coordinate(coord_str: str):
+    # Guard: reject empty or whitespace-only input immediately.
+    if not coord_str or not str(coord_str).strip():
+        return False, "Input is empty.", None
+
+    # Normalise: strip leading/trailing whitespace (but preserve internal
+    # spaces — the regex patterns handle those themselves).
+    coord_str = str(coord_str).strip()
+
+    # =========================================================================
+    # PARSER 1 — Decimal Degrees
+    # =========================================================================
+    #
+    # Matches two decimal numbers separated by a comma (and optionally
+    # whitespace and N/S/E/W hemisphere letters).
+    #
+    # Accepted forms:
+    #     "10.34694, 107.07263"
+    #     "10.34694 N, 107.07263 E"
+    #     "-33.8688, 151.2093"           (bare negatives for S/W)
+    #
+    # The regex captures:
+    #   Group 1: latitude  (signed decimal or unsigned + optional N/S)
+    #   Group 2: N or S    (optional)
+    #   Group 3: longitude (signed decimal or unsigned + optional E/W)
+    #   Group 4: E or W    (optional)
+    dec_regex = re.compile(
+        r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$",
+        re.IGNORECASE
+    )
+    match = dec_regex.match(coord_str)
+
+    if match:
+        lat = float(match.group(1))
+        lat_dir = match.group(2).upper() if match.group(2) else ""
+        lon = float(match.group(3))
+        lon_dir = match.group(4).upper() if match.group(4) else ""
+
+        # Apply hemisphere sign from letter suffix (S/W flip the sign).
+        # If no suffix and value is already negative, it stays negative.
+        if lat_dir == 'S':
+            lat *= -1
+        if lon_dir == 'W':
+            lon *= -1
+
+        # Reject coordinates that are physically impossible.
+        if not (-90 <= lat <= 90):
+            return False, (
+                f"Invalid latitude ({lat}): Must be between -90 and 90."
+            ), None
+        if not (-180 <= lon <= 180):
+            return False, (
+                f"Invalid longitude ({lon}): Must be between -180 and 180."
+            ), None
+
+        # 5 decimal places ≈ 1.1 m resolution — more than enough.
+        return True, "Valid Decimal Degrees", (round(lat, 5), round(lon, 5))
+
+    # =========================================================================
+    # PARSER 2 — Vietnam-era MGRS (with zone correction & datum shift)
+    # =========================================================================
+    #
+    # Try the Vietnam-specific parser BEFORE the generic MGRS parser.
+    # This ensures that "YS 426 694" gets the SVN60 → WGS84 treatment
+    # rather than being rejected or interpreted as a generic WGS84 MGRS.
+    #
+    # _try_parse_vietnam_mgrs returns None if the input does not look
+    # like a Vietnam-era MGRS, which causes this parser to yield and
+    # let parser 3 attempt it instead.
+    vietnam_result = _try_parse_vietnam_mgrs(coord_str)
+    if vietnam_result is not None:
+        return (
+            True,
+            "Valid Vietnam-era MGRS (zone-corrected, datum-shifted)",
+            vietnam_result,
+        )
+
+    # =========================================================================
+    # PARSER 3 — Generic MGRS (worldwide, WGS84 assumed)
+    # =========================================================================
+    #
+    # Catches any MGRS that does not match the Vietnam patterns: NATO
+    # exercises in Germany, modern hiking coordinates, etc.
+    #
+    # The regex requires:
+    #   - 1- or 2-digit zone (1-60, but 1-6 catches the first digit for 1-2
+    #     digit zones; the full zone check is done by the mgrs library)
+    #   - latitude band letter (C-X, excluding I/O)
+    #   - 2-letter 100 km square (A-Z, excluding I/O)
+    #   - 4-10 numerical digits (even count)
+    #
+    # NOTE: this regex requires the full GZD prefix, so "YS426694" would
+    # NOT match here — it was already handled by parser 2 (Vietnam MGRS).
+    clean_mgrs = re.sub(r"\s+", "", coord_str).upper()
+    mgrs_regex = re.compile(
+        r"^[1-6][0-9][C-X][A-Z]{2}\d{4,10}$", re.IGNORECASE
+    )
+
+    if mgrs_regex.match(clean_mgrs):
+        try:
+            import mgrs
+            m = mgrs.MGRS()
+            lat, lon = m.toLatLon(clean_mgrs)
+            # No datum shift applied here — we assume the MGRS is
+            # already referenced to WGS84 (modern standard).
+            return True, "Valid MGRS", (round(lat, 5), round(lon, 5))
+        except ImportError:
+            # The `mgrs` library is listed in requirements.txt but the
+            # user might be running from source without `pip install -r`.
+            return (
+                True,
+                "Valid MGRS format (Tip: install 'mgrs' python library "
+                "to calculate lat/lon)",
+                None,
+            )
+        except Exception as e:
+            return (
+                False,
+                f"MGRS format looks valid but math decoding failed: {str(e)}",
+                None,
+            )
+
+    # =========================================================================
+    # PARSER 4 — Degrees/Minutes/Seconds (DMS)
+    # =========================================================================
+    #
+    # Lightweight detection: looks for at least two degree-minute pairs
+    # with optional hemisphere letters.  Full mathematical conversion is
+    # not implemented (the `mgrs` library doesn't handle DMS); this parser
+    # simply validates the *format* so the user doesn't get an "unrecognized"
+    # error when pasting DMS coordinates.
+    #
+    # If you need DMS → decimal conversion, integrate `dms-to-decimal` or
+    # write the arc-second arithmetic here.
+    dms_regex = re.compile(
+        r"(\d+)[^0-9A-Z]+(\d+)[^0-9A-Z]*([NSEW]?)", re.IGNORECASE
+    )
+    matches = list(dms_regex.finditer(coord_str))
+
+    if len(matches) >= 2:
+        return True, "Valid DMS (Degrees/Minutes)", None
+
+    # =========================================================================
+    # FALLBACK — nothing matched
+    # =========================================================================
+    #
+    # Show the user which formats are accepted so they can retype or
+    # reformat the coordinate.
+    error_msg = (
+        f"Unrecognized coordinate format: '{coord_str}'.\n"
+        "Acceptable formats are:\n"
+        "  1. Decimal Degrees: '10.34694 N, 107.07263 E'"
+        " or '10.34694, 107.07263'\n"
+        "  2. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
+        "  3. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
+        "  4. DMS: '10° 20' N, 107° 04' E'"
+    )
+    return False, error_msg, None
+
+
+def _load_json(path: str) -> list[dict] | None:
+    if not os.path.exists(path):
+        _error_dialog(None, "File Missing", f"'{path}' does not exist.")
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except json.JSONDecodeError as exc:
+        _error_dialog(None, "Invalid JSON", f"'{path}' is not valid JSON.\n{exc}")
+        return None
+    if not isinstance(data, list):
+        _error_dialog(None, "Bad Structure", f"'{path}' must contain a JSON array.")
+        return None
+    return data
+
+
+def _save_json(path: str, data: list[dict]) -> bool:
+    try:
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2, ensure_ascii=False)
+        return True
+    except OSError as exc:
+        _error_dialog(None, "Save Error", f"Could not write '{path}'.\n{exc}")
+        return False
+
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Custom dialogs
+# ---------------------------------------------------------------------------
+
+def _error_dialog(parent: tk.Toplevel | None, title: str, message: str):
+    dlg = tk.Toplevel(parent)
+    dlg.title(title)
+    dlg.resizable(False, False)
+    dlg.configure(bg=WHITE)
+    if parent:
+        dlg.transient(parent)
+        _center_on_parent(dlg, parent)
+    dlg.grab_set()
+    pad = {"padx": 24, "pady": 16}
+    icon_row = ttk.Frame(dlg)
+    icon_row.pack(fill=tk.X, **pad)
+    canvas = tk.Canvas(icon_row, width=28, height=28, bg=WHITE, highlightthickness=0)
+    canvas.pack(side=tk.LEFT)
+    canvas.create_oval(2, 2, 26, 26, fill=ACCENT, outline="")
+    canvas.create_line(9, 9, 19, 19, fill=WHITE, width=2)
+    canvas.create_line(19, 9, 9, 19, fill=WHITE, width=2)
+    msg_lbl = tk.Label(icon_row, text=message, font=(FONT, 10), bg=WHITE,
+                       fg=TEXT_DARK, justify=tk.LEFT, wraplength=380)
+    msg_lbl.pack(side=tk.LEFT, padx=(12, 0))
+    btn_frame = ttk.Frame(dlg)
+    btn_frame.pack(fill=tk.X, padx=24, pady=(0, 16))
+    ok = tk.Label(btn_frame, text="OK", font=(FONT, 10, "bold"),
+                  bg=ACCENT, fg=WHITE, padx=28, pady=6, cursor="hand2")
+    ok.pack(side=tk.RIGHT)
+    _bind_hover(ok, ACCENT, ACCENT_HOV)
+    ok.bind("<Button-1>", lambda e: dlg.destroy())
+    dlg.wait_window()
+
+
+def _confirm_yesnocancel(parent: tk.Toplevel, title: str, message: str,
+                         yes_text="Yes", no_text="No", cancel_text="Cancel",
+                         yes_bg=ACCENT, no_bg=BORDER, cancel_bg=BORDER) -> bool | None:
+    result = [None]
+    dlg = tk.Toplevel(parent)
+    dlg.title(title)
+    dlg.resizable(False, False)
+    dlg.configure(bg=WHITE)
+    dlg.transient(parent)
+    _center_on_parent(dlg, parent)
+    dlg.grab_set()
+    pad = {"padx": 24, "pady": 16}
+    icon_row = ttk.Frame(dlg)
+    icon_row.pack(fill=tk.X, **pad)
+    canvas = tk.Canvas(icon_row, width=28, height=28, bg=WHITE, highlightthickness=0)
+    canvas.pack(side=tk.LEFT)
+    canvas.create_oval(2, 2, 26, 26, fill="#f0ad4e", outline="")
+    canvas.create_text(14, 14, text="!", fill=WHITE, font=(FONT, 14, "bold"))
+    msg_lbl = tk.Label(icon_row, text=message, font=(FONT, 10), bg=WHITE,
+                       fg=TEXT_DARK, justify=tk.LEFT, wraplength=380)
+    msg_lbl.pack(side=tk.LEFT, padx=(12, 0))
+    btn_frame = ttk.Frame(dlg)
+    btn_frame.pack(fill=tk.X, padx=24, pady=(0, 16))
+    def _press(val):
+        result[0] = val
+        dlg.destroy()
+    if cancel_text:
+        cancel = tk.Label(btn_frame, text=cancel_text, font=(FONT, 10, "bold"),
+                          bg=cancel_bg, fg=TEXT_DARK if cancel_bg != ACCENT else WHITE,
+                          padx=20, pady=6, cursor="hand2")
+        cancel.pack(side=tk.RIGHT, padx=(6, 0))
+        _bind_hover(cancel, cancel_bg, "#c0c0c0")
+        cancel.bind("<Button-1>", lambda e: _press(None))
+    no = tk.Label(btn_frame, text=no_text, font=(FONT, 10, "bold"),
+                  bg=no_bg, fg=TEXT_DARK if no_bg != ACCENT else WHITE,
+                  padx=20, pady=6, cursor="hand2")
+    no.pack(side=tk.RIGHT, padx=(6, 0))
+    _bind_hover(no, no_bg, "#c0c0c0")
+    no.bind("<Button-1>", lambda e: _press(False))
+    yes = tk.Label(btn_frame, text=yes_text, font=(FONT, 10, "bold"),
+                   bg=yes_bg, fg=WHITE, padx=20, pady=6, cursor="hand2")
+    yes.pack(side=tk.RIGHT, padx=(6, 0))
+    _bind_hover(yes, yes_bg, ACCENT_HOV)
+    yes.bind("<Button-1>", lambda e: _press(True))
+    dlg.wait_window()
+    return result[0]
+
+
+def _confirm_yesno(parent: tk.Toplevel, title: str, message: str) -> bool:
+    return _confirm_yesnocancel(parent, title, message,
+                                yes_text="Yes", no_text="No", cancel_text="") is True
+
+
+# ---------------------------------------------------------------------------
+# Interaction helpers
+# ---------------------------------------------------------------------------
+
+def _bind_hover(widget: tk.Label, normal_bg: str, hover_bg: str):
+    widget.bind("<Enter>", lambda e: widget.configure(bg=hover_bg))
+    widget.bind("<Leave>", lambda e: widget.configure(bg=normal_bg))
+
+
+def _center_on_parent(dlg: tk.Toplevel, parent: tk.Toplevel | tk.Tk):
+    dlg.update_idletasks()
+    pw, ph = parent.winfo_width(), parent.winfo_height()
+    px, py = parent.winfo_rootx(), parent.winfo_rooty()
+    dw, dh = dlg.winfo_width(), dlg.winfo_height()
+    x = px + (pw - dw) // 2
+    y = py + (ph - dh) // 2
+    dlg.geometry(f"+{x}+{y}")
+
+
+# ---------------------------------------------------------------------------
+# Styled entry
+# ---------------------------------------------------------------------------
+
+def _styled_entry(parent, **kw) -> tk.Entry:
+    fnt = kw.pop("font", (FONT, 10))
+    return tk.Entry(parent, font=fnt, bg=WHITE, fg=TEXT_DARK,
+                    relief=tk.FLAT, highlightbackground=BORDER,
+                    highlightcolor=ACCENT, highlightthickness=1,
+                    insertbackground=TEXT_DARK, **kw)
+
+
+# ---------------------------------------------------------------------------
+# Update Fatalities modal
+# ---------------------------------------------------------------------------

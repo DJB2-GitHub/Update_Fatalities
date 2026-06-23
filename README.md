@@ -127,6 +127,23 @@ If the format is unrecognized, the application blocks the save and displays a to
 
 ---
 
+## 🚀 Developer Quick Reference
+
+### Architecture & File Structure
+The application is built using a monolithic Tkinter architecture focused on direct DOM-like manipulation of widgets.
+- **`main.py`**: Entry point. Parses `.env`, renders the main menu, and spawns the editor.
+- **`update_fatalities.py`**: The core editor modal. Contains all UI bindings, coordinate parsing (`_try_parse_vietnam_mgrs`), session management (`session.json`), and the threaded AI Master Response pipeline (`_ai_lookup`).
+
+### AI Pipeline Flow (`_ai_lookup`)
+1. **Data Collection**: Extracts identity anchor values from `serviceRecordAuthority` (read-only truth).
+2. **Step 1 (Research)**: Uses `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE` with Google Search enabled to fetch raw historical prose.
+3. **Step 2 (Structuring)**: Passes the raw prose into a JSON-mode Gemini request (Search disabled) to force output into the `derived_details` JSON schema.
+4. **Resilience**: Automatically falls back to secondary models on 503/429 HTTP errors.
+
+### State Management (`session.json`)
+- Each JSON dataset has a corresponding `session.json` created in the same directory.
+- It tracks the user's last viewed record index (`pos`) and active search filter (`search`), ensuring they return exactly where they left off.
+
 ## 🚀 Running the App
 To run the application cleanly without an active terminal window, use the wrapper:
 ```bash
