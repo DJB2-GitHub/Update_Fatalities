@@ -84,14 +84,14 @@ def _get_archivist_prompt(params: dict) -> str:
         f"Fill all fields using the provided values and best-effort military-archivist historical reconstruction.\\n"
         f"If a field cannot be determined, leave it empty.\\n"
         f"references must be historically credible and directly relevant.\\n"
-        f"DERIVED FIELD \\"2_unit_served_with\\":\\n"
-        f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \\"extra_unit_served_with\\" in the following order:\\n"
+        f"DERIVED FIELD \"2_unit_served_with\":\\n"
+        f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\\n"
         f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\\n"
-        f"Separate each element with \\", \\" and skip empty fields.\\n"
+        f"Separate each element with \", \" and skip empty fields.\\n"
         f"Example:\\n"
-        f"\\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\\"\\n"
+        f"\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\"\\n"
         f"DERIVED DATA REQUIREMENTS:\\n"
-        f"2. Determine \\"service_status\\" as either \\"Regular\\" or \\"Conscript\\".\\n"
+        f"2. Determine \"service_status\" as either \"Regular\" or \"Conscript\".\\n"
         f"3. Identify the military operation underway at the time of death.\\n"
         f"4. Provide a full operational and tactical setting including mission objectives, terrain, enemy situation, friendly force disposition, and a narrative summary.\\n"
         f"5. State the cause of death.\\n"
@@ -132,13 +132,14 @@ def get_master_response_option_a_payload(params: dict, is_live_search: bool) -> 
         "generationConfig": {
             "temperature": 0.2,
             "maxOutputTokens": 8192,
-            "responseMimeType": "application/json",
-            "responseSchema": _get_json_schema(),
             "thinkingConfig": {"thinkingBudget": 0},
         }
     }
     if is_live_search:
         payload["tools"] = [{"google_search": {}}]
+    else:
+        payload["generationConfig"]["responseMimeType"] = "application/json"
+        payload["generationConfig"]["responseSchema"] = _get_json_schema()
 
     return {
         "is_two_step": False,

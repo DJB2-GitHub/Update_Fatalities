@@ -1,0 +1,45 @@
+{
+  "NZ_fatalities.json": {
+    "pos": 0,
+    "search": "",
+    "ai_option": "Option A: 1-Step (JSON Schema)",
+    "live_search": true,
+    "lastRefId": "NZ_37221",
+    "NZ_37221": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "fields": {
+        "serviceRecordAuthority.service_status": "Unassigned",
+        "derived_details.place_of_death": "Bien Hoa Province, South Vietnam",
+        "derived_details.grid_reference": "Unassigned",
+        "derived_details.circumstances_of_death": "Killed in action, 14 September 1965 – vehicle hit command detonated mine at Ben Cat.",
+        "derived_details.pre_service_occupation": "Unassigned",
+        "derived_details.unit_served_with": "161 Battery, Royal New Zealand Artillery",
+        "derived_details.references": [],
+        "derived_details.ai_response": "Unassigned",
+        "derived_details.authoritative_ai_override": "Test Override Value"
+      }
+    }
+  },
+  "AU_fatalities.json": {
+    "pos": 0,
+    "search": "",
+    "ai_option": "Option A: 1-Step (JSON Schema)",
+    "live_search": true,
+    "lastRefId": "AU_43326",
+    "AU_43326": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE"
+    },
+    "AU_218453": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE"
+    }
+  }
+}

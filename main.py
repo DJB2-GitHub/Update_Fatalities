@@ -347,8 +347,15 @@ class MainMenu(tk.Toplevel):
 
         self._on_update = on_update
         self._on_quit = on_quit
+        self._buttons_locked = False   # guard to prevent clicks while modal is open
 
         self.protocol("WM_DELETE_WINDOW", self._quit)
+
+        # Minimize / restore parent together with this modal
+        self.bind("<Unmap>", self._on_unmap)
+        self.bind("<Map>", self._on_map)
+        # When parent is restored from taskbar, restore this modal too
+        self._on_parent_map_id = parent.bind("<Map>", self._on_parent_map, add=True)
 
         self._build(datasets)
         self._centre(parent)
@@ -503,21 +510,80 @@ class MainMenu(tk.Toplevel):
         label.configure(bg=label._orig_bg, fg=label._orig_fg)
 
     def _update(self, arg):
+        if self._buttons_locked:
+            return  # prevent opening a second modal on top of an existing one
         if isinstance(arg, tuple):
             file_path, modal_title = arg
         else:
             file_path, modal_title = arg, None
-        self._set_buttons_state(tk.DISABLED)
-        self._on_update(file_path, modal_title)
-        self._set_buttons_state(tk.NORMAL)
+        self._set_buttons_locked(True)
+        try:
+            self._on_update(file_path, modal_title)
+        finally:
+            self._set_buttons_locked(False)
 
-    def _set_buttons_state(self, state):
+    def _set_buttons_locked(self, locked: bool):
+        """Disable / enable all buttons and show visual feedback."""
+        self._buttons_locked = locked
         for btn in self._all_buttons:
             if btn.winfo_exists():
                 for child in btn.winfo_children():
-                    child.configure(state=state)
+                    if locked:
+                        child.configure(state=tk.DISABLED, cursor="watch")
+                    else:
+                        child.configure(state=tk.NORMAL, cursor="hand2")
+
+    def _on_unmap(self, event=None):
+        """When this modal is minimised, minimise the parent too."""
+        # Release grab so Windows allows the title-bar minimise to proceed
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.after(100, self._sync_parent_iconify)
+
+    def _sync_parent_iconify(self):
+        try:
+            if self.winfo_exists() and self.state() == 'iconic':
+                parent = self.master
+                if parent and parent.winfo_exists():
+                    parent.iconify()
+        except Exception:
+            pass
+
+    def _on_map(self, event=None):
+        """When this modal is restored, restore the parent too."""
+        # Re-establish grab that was released on minimise
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+        try:
+            parent = self.master
+            if parent and parent.winfo_exists() and parent.state() == 'iconic':
+                parent.deiconify()
+        except Exception:
+            pass
+
+    def _on_parent_map(self, event=None):
+        """When the parent is restored (e.g. from taskbar), restore this modal too."""
+        try:
+            if self.winfo_exists() and self.state() == 'iconic':
+                self.deiconify()
+        except Exception:
+            pass
+
+    def destroy(self):
+        """Clean up parent bindings before destroying."""
+        try:
+            self.master.unbind("<Map>", self._on_parent_map_id)
+        except Exception:
+            pass
+        super().destroy()
 
     def _quit(self):
+        if self._buttons_locked:
+            return  # prevent quitting while a modal is open
         self._on_quit()
 
     def _centre(self, parent):

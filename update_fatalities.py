@@ -16,8 +16,9 @@ import tkinter as tk
 import urllib.request
 import urllib.error
 from tkinter import ttk
+import ai_master_prompts
+import ai_derived_details_prompts
 import session_manager
-from session_manager import _apply_field
 
 # ---------------------------------------------------------------------------
 # Design tokens
@@ -235,8 +236,40 @@ class UpdateFatalities(tk.Toplevel):
     def __init__(self, parent: tk.Tk | tk.Toplevel, file_path: str, *, modal_title: str | None = None):
         super().__init__(parent)
         self.configure(bg=BG_GREY)
+
+        # ── Window-level config (MUST be set before UI build, or Windows
+        #    may ignore changes to extended styles like -toolwindow / resizable) ──
+        # NOTE: do NOT call transient() — on Windows it forces WS_EX_TOOLWINDOW
+        #       which strips the minimise / maximise buttons from the title bar.
+        #       Use grab_set() alone for modal behaviour.
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+        self.resizable(True, True)
+        self.minsize(900, 600)
+
+        # Minimize / restore parent together with this modal
+        self.bind("<Unmap>", self._on_unmap)
+        self.bind("<Map>", self._on_map)
+        # When parent is restored from taskbar, restore this modal too
+        self._on_parent_map_id = parent.bind("<Map>", self._on_parent_map, add=True)
+
+        # ── Instance state & data loading ──
         self._loaded = False
         self._modal_title = modal_title
+        self._hotlink_combined_text = ""  # cached for AI field-derivation hotlinks
+        self._hotlink_active = False
+        try:
+            env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+            _env = {}
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as _f:
+                    for _line in _f:
+                        _line = _line.strip()
+                        if _line and not _line.startswith("#") and "=" in _line:
+                            _k, _, _v = _line.partition("=")
+                            _env[_k.strip()] = _v.strip().strip('"').strip("'")
+            self._copy_threshold = int(_env.get("SHOW_AI_MASTER_RESPONSE_COPY", "200"))
+        except (ValueError, OSError):
+            self._copy_threshold = 200
 
         data = _load_json(file_path)
         if data is None:
@@ -257,10 +290,11 @@ class UpdateFatalities(tk.Toplevel):
         self._entry_widgets: dict[str, tk.Entry] = {}
 
         self._build_ui()
-        self._apply_search()
 
         # ── Restore last-viewed record from session ──
         session = session_manager._load_session(file_path)
+        saved_pos = 0
+        saved_search = ""
         if session and isinstance(session, dict):
             saved_pos = session.get("pos", 0)
             saved_search = session.get("search", "")
@@ -272,19 +306,17 @@ class UpdateFatalities(tk.Toplevel):
             saved_live_search = session.get("live_search")
             if saved_live_search is not None:
                 self._live_search_var.set(saved_live_search)
-            if saved_search:
-                self._search_text = saved_search
-                self._search_var.set(saved_search)
-                self._apply_search()  # re-filter to match saved search
-                # Re-check saved_pos against re-filtered list
-                if 0 <= saved_pos < len(self._filtered):
-                    self._filtered_pos = saved_pos
-            else:
-                if 0 <= saved_pos < len(self._filtered):
-                    self._filtered_pos = saved_pos
-            self._show_record()
 
-            # ── Restore side-panel prompt/response for this reference ID ──
+        if saved_search:
+            self._search_text = saved_search
+            self._search_var.set(saved_search)
+        self._apply_search()
+        if 0 <= saved_pos < len(self._filtered):
+            self._filtered_pos = saved_pos
+        self._show_record()
+
+        # ── Restore side-panel prompt/response for this reference ID ──
+        if session and isinstance(session, dict):
             last_ref_id = session.get("lastRefId", "")
             if last_ref_id and last_ref_id in session:
                 ref_state = session[last_ref_id]
@@ -295,31 +327,11 @@ class UpdateFatalities(tk.Toplevel):
                         self._side_prompt.configure(state=tk.NORMAL)
                         self._side_prompt.delete("1.0", tk.END)
                         self._side_prompt.insert("1.0", saved_prompt)
-                        self._side_prompt_label.configure(text="PROMPT: All Derived Data")
+                        self._side_prompt_label.configure(text=ref_state.get("promptLabel", "PROMPT: All Derived Data"))
                     if saved_response:
-                        self._side_resp_label.configure(text="RESPONSE: All Derived Data")
+                        self._side_resp_label.configure(text=ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
                         self._side_resp_replace(saved_response)
                         self._show_side_panel()
-                    # Restore field values into working_data for this record
-                    fields = ref_state.get("fields", {})
-                    if fields:
-                        record = self.working_data[self._filtered[self._filtered_pos]]
-                        sra = record.setdefault("serviceRecordAuthority", {})
-                        dd = record.setdefault("derived_details", {})
-                        if isinstance(sra, dict) and isinstance(dd, dict):
-                            _apply_field(sra, "service_status", fields.get("serviceRecordAuthority.service_status"))
-                            _apply_field(dd, "place_of_death", fields.get("derived_details.place_of_death"))
-                            _apply_field(dd, "grid_reference", fields.get("derived_details.grid_reference"))
-                            _apply_field(dd, "circumstances_of_death", fields.get("derived_details.circumstances_of_death"))
-                            _apply_field(dd, "pre_service_occupation", fields.get("derived_details.pre_service_occupation"))
-                            _apply_field(dd, "unit_served_with", fields.get("derived_details.unit_served_with"))
-                            _apply_field(dd, "references", fields.get("derived_details.references"))
-                            _apply_field(dd, "ai_response", fields.get("derived_details.ai_response"))
-                            _apply_field(dd, "authoritative_ai_override", fields.get("derived_details.authoritative_ai_override"))
-                            self._show_record()
-
-        self.transient(parent)
-        self.protocol("WM_DELETE_WINDOW", self._cancel)
 
         self.update_idletasks()
         w = 1250
@@ -329,13 +341,13 @@ class UpdateFatalities(tk.Toplevel):
         x = (pw - w) // 2
         y = (ph - h) // 2
         self.geometry(f"{w}x{h}+{x}+{y}")
-        try:
-            self.state('zoomed')
-        except Exception:
-            pass
         self.grab_set()
 
         parent.wait_window(self)
+        try:
+            parent.unbind("<Map>", self._on_parent_map_id)
+        except Exception:
+            pass
 
     def _cancel(self):
         if self._record_dirty:
@@ -346,6 +358,504 @@ class UpdateFatalities(tk.Toplevel):
         extra = self._gather_ref_state()
         session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
         self.destroy()
+
+    def _on_unmap(self, event=None):
+        """When this modal is minimised, minimise the parent too."""
+        # Release grab so Windows allows the title-bar minimise to proceed
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.after(100, self._sync_parent_iconify)
+
+    def _sync_parent_iconify(self):
+        try:
+            if self.winfo_exists() and self.state() == 'iconic':
+                parent = self.master
+                if parent and parent.winfo_exists():
+                    parent.iconify()
+        except Exception:
+            pass
+
+    def _on_map(self, event=None):
+        """When this modal is restored, restore the parent too."""
+        # Re-establish grab that was released on minimise
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+        try:
+            parent = self.master
+            if parent and parent.winfo_exists() and parent.state() == 'iconic':
+                parent.deiconify()
+        except Exception:
+            pass
+
+    def _on_parent_map(self, event=None):
+        """When the parent is restored (e.g. from taskbar), restore this modal too."""
+        try:
+            if self.winfo_exists() and self.state() == 'iconic':
+                self.deiconify()
+        except Exception:
+            pass
+
+    def _minimize_all(self):
+        """Minimize this modal and the parent together (button-click handler)."""
+        try:
+            parent = self.master
+            if parent and parent.winfo_exists():
+                parent.iconify()
+            self.iconify()
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # AI field-derivation hotlinks
+    # ------------------------------------------------------------------
+
+    def _make_label_hotlink(self, label: tk.Label, field_name: str):
+        """Restyle a field label as a clickable hotlink if activation
+        condition is met (>50 words in ai_response or authoritative_ai_override)."""
+        if not self._hotlink_active:
+            return
+        label.configure(
+            fg="#4a90d9", cursor="hand2",
+            font=(FONT, 10, "underline"),
+        )
+        _ToolTip(label, f"Click to AI-derive {field_name}")
+        label.bind("<Button-1>", lambda e, fn=field_name: self._on_hotlink_click(fn))
+
+    def _on_hotlink_click(self, field_name: str):
+        """Handle a hotlink click: run AI derivation in background and show result."""
+        combined = self._hotlink_combined_text
+        if not combined.strip():
+            _error_dialog(self, "No Data",
+                          "No combined text available for AI derivation.")
+            return
+
+        prompt_fn = ai_derived_details_prompts.FIELD_PROMPTS.get(field_name)
+        if not prompt_fn:
+            return
+
+        result_tuple = prompt_fn(combined)
+        system_instruction, user_prompt = result_tuple
+
+        # Show prompt in side panel and start progress
+        self._side_resp_label.configure(text=f"AI: {field_name}")
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace("Deriving…")
+        self._show_side_panel()
+
+        def _task():
+            result = self._call_ai_for_field(system_instruction, user_prompt)
+            if isinstance(result, tuple):
+                text, model_name, usage_meta, elapsed = result
+            else:
+                text, model_name, usage_meta, elapsed = result, None, None, 0
+            self.after(0, lambda: self._show_derivation_result(
+                field_name, text, model_name, usage_meta, elapsed))
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def _all_hotlinks(self):
+        """Run all four hotlink derivations in a single AI call."""
+        combined = self._hotlink_combined_text
+        if not combined.strip():
+            _error_dialog(self, "No Data", "No combined text available for AI derivation.")
+            return
+
+        system_instruction, user_prompt = ai_derived_details_prompts.get_all_hotlinks_prompt(combined)
+
+        self._side_resp_label.configure(text="AI: All Hotlinks")
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace("Deriving all hotlinks…")
+        self._show_side_panel()
+
+        def _task():
+            result = self._call_ai_for_field(system_instruction, user_prompt)
+            if isinstance(result, tuple):
+                text, model_name, usage_meta, elapsed = result
+                try:
+                    cleaned = text.strip()
+                    if cleaned.startswith("```"):
+                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0]
+                    parsed = json.loads(cleaned)
+                except (json.JSONDecodeError, ValueError):
+                    parsed = None
+                self.after(0, lambda: self._show_all_hotlinks_result(
+                    parsed, text, model_name, usage_meta, elapsed))
+            else:
+                self.after(0, lambda: self._side_resp_replace(
+                    f"All Hotlinks Failed.\n\n{result}"))
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def _show_all_hotlinks_result(self, parsed: dict | None, raw_text: str,
+                                   model_name=None, usage_meta=None, elapsed=0.0):
+        """Show a dialog with checkboxes and editable text fields for each hotlink."""
+        if parsed is None:
+            self._side_resp_label.configure(text="AI: All Hotlinks — FAILED")
+            self._side_resp_replace(raw_text)
+            _error_dialog(self, "Parse Failed",
+                          "Could not parse JSON from AI response.\nRaw response shown in side panel.")
+            return
+
+        header = "AI: All Hotlinks"
+        if model_name and elapsed:
+            cost_str = ""
+            if usage_meta:
+                try:
+                    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                    env = {}
+                    if os.path.exists(env_path):
+                        with open(env_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line and not line.startswith("#") and "=" in line:
+                                    k, _, v = line.partition("=")
+                                    env[k.strip()] = v.strip().strip('"').strip("'")
+                    ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                    aud_usd = float(env.get("AUD_USD", "0.7"))
+                    if model_name in ai_rates:
+                        rate = ai_rates[model_name]
+                        pt = usage_meta.get("promptTokenCount", 0)
+                        ct = usage_meta.get("candidatesTokenCount", 0)
+                        cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                               (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                        cost_str = f", $A {cost:.4f}"
+                except Exception:
+                    pass
+            time_str = f"{elapsed:.0f}s" if elapsed else "??s"
+            cost_str = cost_str if cost_str else ", $A ?.????"
+            header = f"AI: All Hotlinks [{model_name} {time_str}{cost_str}]"
+
+        self._side_resp_label.configure(text=header)
+        self._side_resp_replace(raw_text)
+        self._copy_btn.pack_forget()  # only for master response, not hotlinks
+
+        dlg = tk.Toplevel(self)
+        dlg.title("All Hotlinks Results")
+        dlg.resizable(True, True)
+        dlg.configure(bg=WHITE)
+        dlg.transient(self)
+        _center_on_parent(dlg, self)
+        dlg.grab_set()
+
+        hdr = tk.Label(dlg, text="Edit results and select fields to update:",
+                       font=(FONT, 10, "bold"), bg=WHITE, fg=TEXT_DARK, anchor="w")
+        hdr.pack(fill=tk.X, padx=16, pady=(12, 8))
+
+        fields = [
+            ("service_status", "Service Status"),
+            ("place_of_death", "Place of Death"),
+            ("circumstances_of_death", "Circumstances of Death"),
+            ("unit_served_with", "Unit Served With"),
+        ]
+
+        check_vars = {}
+        text_widgets = {}
+
+        for key, label in fields:
+            row = tk.Frame(dlg, bg=WHITE)
+            row.pack(fill=tk.X, padx=16, pady=4)
+
+            var = tk.BooleanVar(value=True)
+            check_vars[key] = var
+            cb = tk.Checkbutton(row, text=label, variable=var,
+                                font=(FONT, 10, "bold"), bg=WHITE,
+                                activebackground=WHITE)
+            cb.pack(anchor="w")
+
+            tf = tk.Frame(dlg, bg=WHITE)
+            tf.pack(fill=tk.X, padx=32, pady=(0, 8))
+
+            value = str(parsed.get(key, ""))
+            tw = tk.Text(tf, font=(FONT, 10), wrap=tk.WORD,
+                         relief=tk.SOLID, borderwidth=1,
+                         padx=8, pady=4, height=3, width=70)
+            tw.pack(fill=tk.BOTH, expand=True)
+            tw.insert("1.0", value)
+            text_widgets[key] = tw
+
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill=tk.X, padx=16, pady=(8, 12))
+
+        def _update():
+            for key, var in check_vars.items():
+                if var.get():
+                    edited = text_widgets[key].get("1.0", "end-1c").strip()
+                    if edited:
+                        self._populate_field_value(key, edited)
+            dlg.destroy()
+
+        cancel_btn = tk.Label(btn_frame, text="Cancel", font=(FONT, 10, "bold"),
+                              bg=BORDER, fg=TEXT_DARK, padx=20, pady=6, cursor="hand2")
+        cancel_btn.pack(side=tk.RIGHT, padx=(6, 0))
+        _bind_hover(cancel_btn, BORDER, "#c0c0c0")
+        cancel_btn.bind("<Button-1>", lambda e: dlg.destroy())
+
+        update_btn = tk.Label(btn_frame, text="Update", font=(FONT, 10, "bold"),
+                              bg=ACCENT, fg=WHITE, padx=20, pady=6, cursor="hand2")
+        update_btn.pack(side=tk.RIGHT, padx=(6, 0))
+        _bind_hover(update_btn, ACCENT, ACCENT_HOV)
+        update_btn.bind("<Button-1>", lambda e: _update())
+
+        dlg.wait_window()
+
+    def _call_ai_for_field(self, system_instruction: str, user_prompt: str):
+        """Call the AI API with the field derivation prompt.
+        Routes to Gemini or DeepSeek based on AI_INTERNAL_MODEL-PROVIDER.
+        Returns (text, model_name, usage_meta, elapsed_seconds) on success,
+        or an error string on failure."""
+        import time as _time
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+        env = {}
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, _, v = line.partition("=")
+                        env[k.strip()] = v.strip().strip('"').strip("'")
+
+        provider = env.get("AI_INTERNAL_MODEL_PROVIDER", "Google")
+        allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek").split(",") if p.strip()]
+        if provider.lower() not in allowed:
+            return (f"In .env AI_INTERNAL_MODEL_PROVIDER constant \"{provider}\" is not a valid AI Provider\n"
+                    f"Contact system admin to fix")
+        timeout_secs = 15
+
+        if provider.lower() == "deepseek":
+            api_key = env.get("DEEPSEEK_API_KEY", "")
+            models_str = env.get("AI_DEEPSEEK_INTERNAL_ANALYSIS_MODELS", "deepseek-v4-flash")
+            if not api_key:
+                return "ERROR: DEEPSEEK_API_KEY not found in .env"
+        else:
+            # Google (default)
+            api_key = env.get("GEMINI_API_KEY", "")
+            models_str = env.get("AI_GEMINI_INTERNAL_ANALYSIS_MODELS", "gemini-2.5-flash")
+            if not api_key:
+                return "ERROR: GEMINI_API_KEY not found in .env"
+
+        models = [m.strip() for m in models_str.split(",") if m.strip()]
+        last_error = ""
+
+        for model in models:
+            retry_count = 0
+            max_retries = 2
+            while retry_count <= max_retries:
+                self.after(0, lambda m=model: self._side_resp_replace(
+                    f"Deriving …  (querying {m})" + (f" (Retry {retry_count}/{max_retries})" if retry_count else "")))
+                t0 = _time.time()
+                try:
+                    if provider.lower() == "deepseek":
+                        url = "https://api.deepseek.com/v1/chat/completions"
+                        body = json.dumps({
+                            "model": model,
+                            "temperature": 0,
+                            "messages": [
+                                {"role": "system", "content": system_instruction},
+                                {"role": "user", "content": user_prompt},
+                            ],
+                        }).encode("utf-8")
+                        req = urllib.request.Request(
+                            url, data=body,
+                            headers={
+                                "Content-Type": "application/json",
+                                "Authorization": f"Bearer {api_key}",
+                            },
+                        )
+                        with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            elapsed = _time.time() - t0
+                            text = data["choices"][0]["message"]["content"]
+                            ds_usage = data.get("usage", {})
+                            usage_meta = {
+                                "promptTokenCount": ds_usage.get("prompt_tokens", 0),
+                                "candidatesTokenCount": ds_usage.get("completion_tokens", 0),
+                            }
+                            return (text, model, usage_meta, elapsed)
+                    else:
+                        # Google Gemini
+                        url = (
+                            "https://generativelanguage.googleapis.com/v1beta/models/"
+                            f"{model}:generateContent?key={api_key}"
+                        )
+                        body = json.dumps({
+                            "systemInstruction": {"parts": [{"text": system_instruction}]},
+                            "contents": [{"parts": [{"text": user_prompt}]}],
+                            "generationConfig": {"temperature": 0, "maxOutputTokens": 1024},
+                        }).encode("utf-8")
+                        req = urllib.request.Request(
+                            url, data=body,
+                            headers={"Content-Type": "application/json"},
+                        )
+                        with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            elapsed = _time.time() - t0
+                            text = data["candidates"][0]["content"]["parts"][0]["text"]
+                            usage_meta = data.get("usageMetadata", {})
+                            return (text, model, usage_meta, elapsed)
+                except urllib.error.HTTPError as exc:
+                    if exc.code in (429, 503) and retry_count < max_retries:
+                        retry_count += 1
+                        import time as _stime
+                        _stime.sleep(2.5)
+                        continue
+                    last_error = f"{model}: HTTP Error {exc.code}: {exc.reason}"
+                    break
+                except Exception as exc:
+                    last_error = f"{model}: {exc}"
+                    break
+
+        return f"All models failed.\n\n{last_error}"
+
+    def _confirm_with_edit(self, title: str, field_name: str, text: str) -> str | None:
+        """Show a dialog with an editable text box containing the AI result.
+        Returns the (possibly edited) text on Yes, or None on Cancel."""
+        import tkinter.simpledialog as _sd
+        result = [None]
+        dlg = tk.Toplevel(self)
+        dlg.title(title)
+        dlg.resizable(True, True)
+        dlg.configure(bg=WHITE)
+        dlg.transient(self)
+        _center_on_parent(dlg, self)
+        dlg.grab_set()
+        pad = {"padx": 16, "pady": 12}
+
+        # Header
+        hdr = tk.Label(dlg, text=f"AI-derived '{field_name}'. Edit if needed:",
+                       font=(FONT, 10, "bold"), bg=WHITE, fg=TEXT_DARK, anchor="w")
+        hdr.pack(fill=tk.X, **pad)
+
+        # Editable text widget
+        frame = tk.Frame(dlg, bg=WHITE)
+        frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 12))
+        text_widget = tk.Text(frame, font=(FONT, 10), wrap=tk.WORD,
+                              relief=tk.SOLID, borderwidth=1,
+                              padx=8, pady=6, height=6, width=60)
+        text_widget.pack(fill=tk.BOTH, expand=True)
+        text_widget.insert("1.0", text)
+
+        # Buttons
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill=tk.X, padx=16, pady=(0, 16))
+
+        def _accept():
+            result[0] = text_widget.get("1.0", "end-1c").strip()
+            dlg.destroy()
+
+        def _cancel():
+            dlg.destroy()
+
+        cancel_btn = tk.Label(btn_frame, text="Cancel", font=(FONT, 10, "bold"),
+                              bg=BORDER, fg=TEXT_DARK, padx=20, pady=6, cursor="hand2")
+        cancel_btn.pack(side=tk.RIGHT, padx=(6, 0))
+        _bind_hover(cancel_btn, BORDER, "#c0c0c0")
+        cancel_btn.bind("<Button-1>", lambda e: _cancel())
+
+        yes_btn = tk.Label(btn_frame, text="Accept", font=(FONT, 10, "bold"),
+                           bg=ACCENT, fg=WHITE, padx=20, pady=6, cursor="hand2")
+        yes_btn.pack(side=tk.RIGHT, padx=(6, 0))
+        _bind_hover(yes_btn, ACCENT, ACCENT_HOV)
+        yes_btn.bind("<Button-1>", lambda e: _accept())
+
+        dlg.wait_window()
+        return result[0]
+
+    def _show_derivation_result(self, field_name: str, result_text: str,
+                                 model_name=None, usage_meta=None, elapsed=0.0):
+        """Show the AI-derived result and ask the user to accept or cancel."""
+        result_text = result_text.strip()
+
+        # ── Build cost/time header ──
+        header = f"AI: {field_name}"
+        if model_name and elapsed:
+            # Calculate cost
+            cost_str = ""
+            if usage_meta:
+                try:
+                    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                    env = {}
+                    if os.path.exists(env_path):
+                        with open(env_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line and not line.startswith("#") and "=" in line:
+                                    k, _, v = line.partition("=")
+                                    env[k.strip()] = v.strip().strip('"').strip("'")
+                    ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                    aud_usd = float(env.get("AUD_USD", "0.7"))
+                    if model_name in ai_rates:
+                        rate = ai_rates[model_name]
+                        pt = usage_meta.get("promptTokenCount", 0)
+                        ct = usage_meta.get("candidatesTokenCount", 0)
+                        cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                               (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                        cost_str = f", $A {cost:.4f}"
+                except Exception:
+                    pass
+            # Use ?? for unknown values
+            time_str = f"{elapsed:.0f}s" if elapsed else "??s"
+            cost_str = cost_str if cost_str else ", $A ?.????"
+            header = f"AI: {field_name} [{time_str}{cost_str}]"
+
+        self._side_resp_label.configure(text=header)
+        self._side_resp_replace(result_text)
+        self._copy_btn.pack_forget()  # only for master response, not hotlinks
+
+        # If the AI call failed, display the error clearly and stop —
+        # never show an accept/cancel dialog for an error.
+        if not model_name:
+            self._side_resp_label.configure(text=f"AI: {field_name} \u2014 FAILED")
+            _error_dialog(self, f"AI Derivation Failed",
+                          f"Could not derive '{field_name}'.\n\n{result_text}")
+            return
+
+        # Confirm with user — editable text box
+        title = f"AI Derived: {field_name}"
+        edited = self._confirm_with_edit(title, field_name, result_text)
+        if edited is not None:
+            self._populate_field_value(field_name, edited)
+
+    def _populate_field_value(self, field_name: str, value: str):
+        """Write the derived value into the corresponding form widget."""
+        if field_name == "service_status":
+            path = ("serviceRecordAuthority", "service_status")
+        else:
+            path = ("derived_details", field_name)
+
+        entry = self._entry_widgets.get(path)
+        if entry is None:
+            return
+
+        cleaned = value.strip()
+        if isinstance(entry, tk.Text):
+            entry.delete("1.0", tk.END)
+            entry.insert("1.0", cleaned)
+        elif isinstance(entry, ttk.Combobox):
+            status_values = ["Regular", "Conscript", "Other", "Unassigned"]
+            if cleaned in status_values:
+                entry.set(cleaned)
+            else:
+                for sv in status_values:
+                    if sv.lower() in cleaned.lower():
+                        entry.set(sv)
+                        break
+                else:
+                    entry.set("Other")
+        else:
+            entry.delete(0, tk.END)
+            entry.insert(0, cleaned)
+
+        self._on_field_edited()
 
     # ------------------------------------------------------------------
     # UI
@@ -421,15 +931,34 @@ class UpdateFatalities(tk.Toplevel):
             self._canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         self._canvas.bind_all("<MouseWheel>", _mw)
 
-        # Bottom buttons
+        # Bottom buttons — pinned to the bottom of the main panel
         bf = tk.Frame(main, bg=BG_GREY)
-        bf.pack(fill=tk.X)
-        self._flat_btn(bf, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
-        self._flat_btn(bf, "AI: Create a Master Response", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
-        
+        bf.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
+
+        # Top row: AI button + Live Search + Close
+        top_row = tk.Frame(bf, bg=BG_GREY)
+        top_row.pack(fill=tk.X)
+        self._flat_btn(top_row, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
+        self._flat_btn(top_row, "AI: Create a Master Response", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
+        self._all_hotlinks_btn = self._flat_btn(top_row, "All Hotlinks", self._all_hotlinks, bg="#e67e22", fg=WHITE, side=tk.LEFT, right_pad=10)
+
+        self._live_search_var = tk.BooleanVar(value=True)
+        self._live_search_chk = tk.Checkbutton(
+            top_row, text="Live Search", variable=self._live_search_var,
+            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9)
+        )
+        self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
+
+        self._copy_btn = self._flat_btn(
+            top_row, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
+            bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
+        )
+        self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
+
+        # Dropdown row below the top row
         self._payload_dropdown_var = tk.StringVar(value="Option A: 1-Step (JSON Schema)")
         self._payload_dropdown = ttk.Combobox(
-            bf, 
+            bf,
             textvariable=self._payload_dropdown_var,
             values=[
                 "Option A: 1-Step (JSON Schema)",
@@ -439,20 +968,7 @@ class UpdateFatalities(tk.Toplevel):
             state="readonly",
             width=40
         )
-        self._payload_dropdown.pack(side=tk.LEFT, padx=(10, 0))
-        
-        self._live_search_var = tk.BooleanVar(value=True)
-        self._live_search_chk = tk.Checkbutton(
-            bf, text="Live Search", variable=self._live_search_var,
-            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9)
-        )
-        self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
-
-        self._copy_btn = self._flat_btn(
-            bf, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
-            bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
-        )
-        self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
+        self._payload_dropdown.pack(fill=tk.X, pady=(4, 0))
 
         self.bind("<Escape>", lambda _e: self._cancel())
 
@@ -571,6 +1087,13 @@ class UpdateFatalities(tk.Toplevel):
     def _show_record(self):
         for child in self._fields_frame.winfo_children():
             child.destroy()
+        # Clear side-panel AI results when switching records
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt_label.configure(text="PROMPT")
+        self._side_resp_label.configure(text="RESPONSE")
+        self._side_resp_replace("")
+        self._hide_side_panel()
         total = len(self._filtered)
         full_total = len(self.working_data)
         if self._search_text:
@@ -600,6 +1123,16 @@ class UpdateFatalities(tk.Toplevel):
         if grid_val:
             self.clipboard_clear()
             self.clipboard_append(grid_val)
+
+        # ── Compute hotlink activation state ──
+        ai_resp = (dd.get("ai_response", "") or "").strip()
+        override_raw = (dd.get("authoritative_ai_override", "") or "").strip()
+        override = override_raw if override_raw and override_raw.lower() != "unassigned" else ""
+        self._hotlink_combined_text = f"{override}\n\n{ai_resp}".strip() if override else ai_resp
+        word_count = len(self._hotlink_combined_text.split())
+        self._hotlink_active = word_count > 50
+        self._all_hotlinks_btn.pack_forget() if not self._hotlink_active else None
+
         self._entry_widgets = {}
 
         def _render_fields(parent_frame, data_dict, prefix_path=()):
@@ -622,6 +1155,10 @@ class UpdateFatalities(tk.Toplevel):
                                            bg=WHITE, fg=TEXT_DARK,
                                            width=label_width, anchor=tk.E)
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
+                    _HOTLINK_FIELDS = {"service_status", "place_of_death",
+                                       "circumstances_of_death", "unit_served_with"}
+                    if field_name in _HOTLINK_FIELDS:
+                        self._make_label_hotlink(field_label, field_name)
                     # Format list values (e.g. references) as newline-separated text
                     if isinstance(raw_value, list):
                         dv = "\n".join(str(item) for item in raw_value)
@@ -948,20 +1485,26 @@ class UpdateFatalities(tk.Toplevel):
         is_live_search = self._live_search_var.get()
         selected_option = self._payload_dropdown_var.get()
         
-        confirm_msg = (
-            f"Clear & Direct\n\n"
-            f"[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]\n\n"
-            f"// Live Search is currently: {'ON' if is_live_search else 'OFF'}\n"
-            f"// Pipeline: {selected_option}\n\n"
-            f"[The AI's built-in knowledge stops at its last major update (roughly 1-2 years ago). \n"
-            f"Live Search fills that missing window with anything new or recently updated. \n"
-            f"Turn it on if you need modern information-just note it may increase overall response time by about 25%.]"
-        )
-        if not _confirm_yesno(self, "Confirm AI", confirm_msg):
-            return
-
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
+
+        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
+        existing = dd.get("ai_response", "").strip()
+        warning = (
+            "\n\nWarning: 'ai_response' data already exists in this record. "
+            "Running this process will re-create it again for review, but not immediately overwrite it."
+        ) if existing else ""
+
+        confirm_msg = (
+            f"This is a lengthy process (~2 minutes). Execute?\n\n"
+            f"// Live Search is currently: {'ON' if is_live_search else 'OFF'}\n"
+            f"[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]\n\n"
+            f"// AI processing Pipeline Selected : {selected_option}"
+            f"{warning}"
+        )
+        result = _confirm_yesnocancel(self, "Confirm AI — Master Response", confirm_msg)
+        if result is None or result is False:
+            return
 
         sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
         ref_id = record.get("referenceID", "")
@@ -1046,7 +1589,8 @@ class UpdateFatalities(tk.Toplevel):
                 total = c1 + c2
                 total_secs = time.time() - start_time
                 
-                lines = [f"Created {ts} $A {total:.4f} ({total_secs:.0f}s) - {selected_option}"]
+                provider_label = model_name.split("-")[0] if model_name else "gemini"
+                lines = [f"Created {ts} used {provider_label} $A {total:.4f} ({total_secs:.0f}s) - {selected_option}"]
                 if config["is_two_step"]:
                     lines.append(f"Step 1 ({step1_model}): $A {c1:.4f} ({step1_secs:.0f}s)")
                     lines.append(f"Step 2 ({model_name}): $A {c2:.4f} ({time.time()-step2_start:.0f}s)")
@@ -1294,8 +1838,7 @@ class UpdateFatalities(tk.Toplevel):
     def _side_resp_replace(self, text: str):
         self._side_resp.delete("1.0", tk.END)
         self._side_resp.insert("1.0", text)
-        # Show COPY button when response exceeds 200 characters
-        if len(text) > 200:
+        if len(text) > self._copy_threshold:
             try:
                 self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
             except tk.TclError:
@@ -1325,7 +1868,7 @@ class UpdateFatalities(tk.Toplevel):
         self._set_locked(True)
 
     def _gather_ref_state(self) -> dict | None:
-        """Collect side-panel prompt/response and key field values for the current record."""
+        """Collect side-panel prompt/response text and labels for the current record."""
         if not self._filtered:
             return None
         actual_idx = self._filtered[self._filtered_pos]
@@ -1338,25 +1881,10 @@ class UpdateFatalities(tk.Toplevel):
         prompt_text = self._side_prompt.get("1.0", "end-1c").strip()
         resp_text = self._side_resp.get("1.0", "end-1c").strip()
 
-        # Field values
-        sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
-        dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
-
-        fields = {
-            "serviceRecordAuthority.service_status": sra.get("service_status", ""),
-            "derived_details.place_of_death": dd.get("place_of_death", ""),
-            "derived_details.grid_reference": dd.get("grid_reference", ""),
-            "derived_details.circumstances_of_death": dd.get("circumstances_of_death", ""),
-            "derived_details.pre_service_occupation": dd.get("pre_service_occupation", ""),
-            "derived_details.unit_served_with": dd.get("unit_served_with", ""),
-            "derived_details.references": dd.get("references", ""),
-            "derived_details.ai_response": dd.get("ai_response", ""),
-            "derived_details.authoritative_ai_override": dd.get("authoritative_ai_override", ""),
-        }
-
         ref_state = {
             "prompt": prompt_text,
             "response": resp_text,
-            "fields": fields,
+            "promptLabel": self._side_prompt_label.cget("text"),
+            "responseLabel": self._side_resp_label.cget("text"),
         }
         return {"lastRefId": ref_id, ref_id: ref_state}

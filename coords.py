@@ -156,6 +156,8 @@ def _try_parse_vietnam_mgrs(coord_str: str):
     #
     #     SVN60 Easting + 205 m ≈ WGS84 Easting
     #     SVN60 Northing + 75 m ≈ WGS84 Northing
+    _DATUM_SHIFT_E = 205
+    _DATUM_SHIFT_N = 75
     easting += _DATUM_SHIFT_E
     northing += _DATUM_SHIFT_N
 

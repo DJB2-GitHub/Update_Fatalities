@@ -105,15 +105,16 @@ The **Live Search** checkbox in the bottom bar toggles search grounding on/off.
 In the Update Fatalities modal, the application enforces strict data integrity by locking core identity information. Only specific fields are presented as editable.
 
 ### Editable Fields
-Any field nested under the `derived_details` object in the JSON record is fully editable. Commonly, this includes:
+Any field nested under the `derived_details` (or `derived_data`) object in the JSON record is fully editable. Commonly, this includes:
 - `pre_service_occupation`
 - `service_type`
 - `unit_served_with`
 - `circumstances_of_death`
-- `summary`
+- `ai_response`
+- `authoritative_ai_override`
 - `grid_reference` (or other GPS/coordinate fields)
 
-*Note: `circumstances_of_death` and `summary` are rendered as multi-line text boxes for easier narrative entry, and `summary` is explicitly pinned to the bottom of the form for layout consistency.*
+*Note: `circumstances_of_death`, `ai_response`, and `authoritative_ai_override` are rendered as multi-line text boxes for easier narrative entry, with `ai_response` and `authoritative_ai_override` supporting taller heights (8 and 5 rows respectively) with scrollbars.*
 
 ### Edit Checking & Validation
 When you click **Update Record**, the application runs the following safety checks before saving:
