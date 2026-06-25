@@ -7,6 +7,21 @@ import tkinter as tk
 from tkinter import ttk
 
 # ---------------------------------------------------------------------------
+# Known 100 km MGRS squares in zone 48P (southern / III Corps Vietnam).
+# Any square NOT in this set is assumed to be in 48Q (northern / I & II Corps).
+# ---------------------------------------------------------------------------
+_VIETNAM_48P_SQUARES = {
+    # Y-series squares (eastern side of zone 48, lat band P)
+    "YS", "YT", "YU", "YV", "YW", "YX", "YY", "YZ",
+    # X-series squares (western side of zone 48, lat band P)
+    "XR", "XS", "XT", "XU", "XV", "XW", "XX", "XY", "XZ",
+    # These straddle the P/Q boundary; listed in 48P because the majority
+    # of their populated area lies in III Corps territory.
+    "YQ", "YR",
+    "XQ",
+}
+
+# ---------------------------------------------------------------------------
 # _try_parse_vietnam_mgrs(coord_str: str) → (float, float) | None
 # ---------------------------------------------------------------------------
 #
@@ -251,6 +266,12 @@ def validate_and_parse_coordinate(coord_str: str):
     # spaces — the regex patterns handle those themselves).
     coord_str = str(coord_str).strip()
 
+    # ── Pre-normalisation: strip degree symbols and trailing annotation ──
+    # Users sometimes paste coordinates like "10.455° N  107.270° E MGRS".
+    # Remove ° and trailing keywords so the parsers see clean numbers.
+    coord_str = re.sub(r'°', '', coord_str)
+    coord_str = re.sub(r'\s+(MGRS|UTM|DMS)\s*$', '', coord_str, flags=re.IGNORECASE)
+
     # =========================================================================
     # PARSER 1 — Decimal Degrees
     # =========================================================================
@@ -261,6 +282,7 @@ def validate_and_parse_coordinate(coord_str: str):
     # Accepted forms:
     #     "10.34694, 107.07263"
     #     "10.34694 N, 107.07263 E"
+    #     "10.455 N  107.270 E"          (degree symbols already stripped)
     #     "-33.8688, 151.2093"           (bare negatives for S/W)
     #
     # The regex captures:
@@ -374,14 +396,43 @@ def validate_and_parse_coordinate(coord_str: str):
     # simply validates the *format* so the user doesn't get an "unrecognized"
     # error when pasting DMS coordinates.
     #
-    # If you need DMS → decimal conversion, integrate `dms-to-decimal` or
-    # write the arc-second arithmetic here.
+    # Now implements degrees + decimal-minutes → decimal conversion.
+    # Each match captures (degrees, minutes, optional N/S/E/W).
     dms_regex = re.compile(
         r"(\d+)[^0-9A-Z]+(\d+)[^0-9A-Z]*([NSEW]?)", re.IGNORECASE
     )
     matches = list(dms_regex.finditer(coord_str))
 
     if len(matches) >= 2:
+        # Collect (degrees, minutes, hemisphere) triples
+        dms_parts = []
+        for m in matches:
+            deg = int(m.group(1))
+            min_val = float(m.group(2))
+            hem = m.group(3).upper() if m.group(3) else ""
+            dms_parts.append((deg, min_val, hem))
+        # Assign latitude / longitude by hemisphere letter when present,
+        # otherwise assume first two parts are (lat, lon).
+        lat_part = None
+        lon_part = None
+        for deg, min_val, hem in dms_parts:
+            if hem in ("N", "S"):
+                lat_part = (deg, min_val, hem)
+            elif hem in ("E", "W"):
+                lon_part = (deg, min_val, hem)
+        if lat_part is None and len(dms_parts) >= 1:
+            lat_part = dms_parts[0]
+        if lon_part is None and len(dms_parts) >= 2:
+            lon_part = dms_parts[1]
+        if lat_part and lon_part:
+            lat = lat_part[0] + lat_part[1] / 60.0
+            if lat_part[2] == "S":
+                lat = -lat
+            lon = lon_part[0] + lon_part[1] / 60.0
+            if lon_part[2] == "W":
+                lon = -lon
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                return True, "Valid DMS (Degrees/Minutes)", (round(lat, 5), round(lon, 5))
         return True, "Valid DMS (Degrees/Minutes)", None
 
     # =========================================================================

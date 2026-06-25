@@ -1,117 +1,47 @@
-# rAI_PROGRESS — Session Summary & Next Steps
+# rAI_PROGRESS.md
 
-> Auto-generated 2026-06-24 from the Kun agent session.
-> Covers all file changes across `main.py`, `update_fatalities.py`, and new module `ai_derived_details_prompts.py`.
+## Session Summary (2025-06-25) — prior session
+*(see below for latest session)*
 
----
-
-## Session Accomplishments
-
-### 1. Window minimise / restore (both forms)
-- **Main Menu** (`main.py`) — added `<Unmap>` / `<Map>` bindings so the title-bar minimise button iconifies the root `App` window to the taskbar and restores correctly.
-- **Update modal** (`update_fatalities.py`) — same sync pattern; removed `transient()` call (which forced `WS_EX_TOOLWINDOW` on Windows, stripping the minimise & maximise buttons from the title bar); removed `event.widget is not self` guards that were silently dropping `<Unmap>` events; added `grab_release()` / `grab_set()` around minimise/restore so the title-bar button works while a local grab is active.
-
-### 2. Button locking on Main Menu
-- Replaced the old `state=tk.DISABLED` hack (Labels ignore `state` for click blocking) with a `_buttons_locked` boolean flag.
-- All main-menu buttons (dataset buttons + Quit) are **truly disabled** (clicks ignored, dimmed visually, `watch` cursor) while the Update modal is open.  Only one modal at a time.
-
-### 3. Bottom-bar layout restructure (Update modal)
-- Option A/B/C dropdown now sits on its own row directly under the "AI: Create a Master Response" button.
-- "Live Search" checkbox moved next to the right of the AI button.
-
-### 4. AI-derived detail hotlinks (new feature)
-#### New module: `ai_derived_details_prompts.py`
-Four prompt templates with override-precedence rule:
-| Field | Function |
-|---|---|
-| `service_status` | `get_service_status_prompt()` |
-| `place_of_death` | `get_place_of_death_prompt()` |
-| `circumstances_of_death` | `get_circumstances_of_death_prompt()` |
-| `unit_served_with` | `get_unit_served_with_prompt()` |
-
-#### Hotlink behaviour (`update_fatalities.py`)
-- **Provider selection**: reads `AI_INTERNAL_MODEL_PROVIDER` (validated against `AI_MODEL_PROVIDERS`), routes to Gemini API or DeepSeek API accordingly.
-- **Activation**: field label turns blue + underlined + hand cursor when `ai_response` OR `authoritative_ai_override` contains >50 words.
-- **Click**: combines both texts (override first), sends prompt to selected provider, shows progress in side panel.
-- **Result**: cost/time header (e.g. `AI: service_status [2s, $A 0.0003]`), Yes/No accept dialog, populates field on accept.
-- **Error handling**: failures show a clear error dialog — never silently swallowed or fed into the accept/cancel flow.
-- **Timeout**: 15 s (hardcoded — appropriate for single-field derivations).
-- **Cost unknown**: `??s, $A ?.????` placeholders when rates are missing.
-- **API routing**: DeepSeek uses `api.deepseek.com/v1/chat/completions` (OpenAI-compatible); Gemini uses `generativelanguage.googleapis.com` (generateContent). Usage metadata normalized to common format for cost calc.
+### Completed (prior)
+1. **grid_reference / co-ordinates_decimal architecture** — raw input stays in `grid_reference`; decimal output auto-populates `co-ordinates_decimal` on Update. Only overwrites when grid_reference changed.
+2. **Coordinate hotlink** — moved from grid_reference to co-ordinates_decimal (blue link, double-click → Google Maps).
+3. **grid_reference info icon** — ℹ️ dialog explaining input/output flow between the two fields.
+4. **co-ordinates_decimal validation** — rejects invalid format with clear message; blank or valid decimal only.
+5. **Unable-to-convert warning** — dialog when grid_reference format is recognised but can't produce decimal (points to co-ordinates_decimal info button).
+6. **coords.py parser fixes** — strips `°` symbols and trailing MGRS/UTM/DMS tags; DMS-to-decimal conversion implemented; `_VIETNAM_48P_SQUARES` table added (was missing, causing NameError).
+7. **All Hotlinks button** — fixed to re-appear when hotlinks become active after AI response is copied.
+8. **grid_reference hotlink** — added as 5th hotlink field (single-click + All Hotlinks) with best-estimate GPS prompt.
+9. **unit_served_with prompt** — replaced with comprehensive AU/NZ/US Army/Navy/Air Force abbreviation rules.
+10. **User prompt template** — changed from ```text fences to `<source>` tags with source labelling.
+11. **Side panel scrollbars** — vertical scrollbars added to both PROMPT and RESPONSE text widgets.
+12. **Side panel visibility** — saved/restored across sessions via `sidePanelVisible` flag.
+13. **Parent window focus** — main menu lifted/focused when update modal closes.
+14. **ai_response overwrite warning** — suppressed for placeholders ("Unassigned", <10 chars).
+15. **COPY RESPONSE spacing** — increased header-to-JSON gap for readability.
+16. **_set_buttons_locked crash** — guarded with try/except TclError for destroyed Tk instances.
 
 ---
 
-## Current System State (architectural rules)
+## Session Summary (2025-06-25) — latest
 
-| Rule | Detail |
-|---|---|
-| **Single modal** | `MainMenu._buttons_locked` flag + `grab_set()` enforce one Update modal at a time |
-| **Window controls** | Never call `transient()` on Windows Toplevels — it forces `WS_EX_TOOLWINDOW` which removes minimise/maximise |
-| **Minimise chain** | Update modal → MainMenu → App root (each `<Unmap>` iconifies its parent; `<Map>` on parent restores child) |
-| **Grab + minimise** | Must `grab_release()` on `<Unmap>` / `grab_set()` on `<Map>` or Windows ignores the title-bar minimise click |
-| **Hotlink provider** | Reads `AI_INTERNAL_MODEL_PROVIDER` from `.env`; validated against `AI_MODEL_PROVIDERS` (case-insensitive). Defaults to `"Google"`. |\n| **Hotlink models (Google)** | `AI_GEMINI_INTERNAL_ANALYSIS_MODELS` — Gemini models, API key `GEMINI_API_KEY` |\n| **Hotlink models (DeepSeek)** | `AI_DEEPSEEK_INTERNAL_ANALYSIS_MODELS` — DeepSeek models, API key `DEEPSEEK_API_KEY` |\n| **Master Response models** | Uses `AI_MASTER_MODEL_PROVIDER` / `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE` or `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE` — entirely separate from hotlink config |
-| **Hotlink activation** | >50 words in combined `ai_response` + `authoritative_ai_override` |
-| **Override precedence** | `authoritative_ai_override` text placed first in combined prompt; all prompts include the override rule |
-| **Click blocking** | Use boolean flags, not `state=DISABLED` on Labels (Labels don't block `<Button-1>`) |
+### Completed
+1. **OpenRouter API provider** — full integration as third AI provider alongside Google & Deepseek. Both `AI_MASTER_MODEL_PROVIDER` and `AI_INTERNAL_MODEL_PROVIDER` accept `"OpenRouter"`. Provider validated against `AI_MODEL_PROVIDERS` allowlist; unrecognized providers show error dialog.
+2. **OpenRouter API call** — endpoint `https://openrouter.ai/api/v1/chat/completions`, OpenAI-compatible payload. Headers include `HTTP-Referer` and `X-Title` per OpenRouter requirements. Applied to both internal analysis (hotlinks) and master response flows.
+3. **Master response provider switching** — `_run_request` now branches on `master_provider` (google/deepseek/openrouter). Gemini-format payloads (`systemInstruction`/`contents`/`parts`) auto-converted to OpenAI `messages` format for Deepseek & OpenRouter.
+4. **OpenRouter `/auto` response parsing** — extracts actual routed model from `response.model` (e.g., `deepseek-v4-flash`). Reads full cost breakdown from `usage.total_cost`, `input_cost`, `output_cost` (body), with `x-openrouter-cost` header fallback. Token counts read from `usage.input_tokens`/`output_tokens`/`total_tokens`, with OpenAI `prompt_tokens`/`completion_tokens` fallback.
+5. **Provider prefix in model display** — OpenRouter models shown as `OpenRouter-{routed_model}` (e.g., `OpenRouter-deepseek-v4-flash`) so provider is always visible next to the model name.
+6. **Cost precision** — all `$A` cost displays changed from `.4f` → `.6f` for micro-cost visibility (OpenRouter costs typically sub-cent).
+7. **Hotlink & All-Hotlinks dialog headers** — now show `[{model}]  {time}s  $A {cost}` in side-panel label, dialog title bar, and header label. Previously missing model name.
+8. **All-Hotlinks cost display** — `_show_all_hotlinks_result` now has full OpenRouter `totalCost` support (was duplicated legacy code missing the check).
+9. **`.env` fix** — `OPENROUTER_API_KEY` corrected (was mislabeled as duplicate `DEEPSEEK_API_KEY`). New `.env` keys recognized: `OPENROUTER_API_KEY`, `OPENROUTER_TEXT_TO_TEXT_MODELS_TO_USE`, `AI_OPENROUTER_INTERNAL_ANALYSIS_MODELS`.
 
----
+### Current System State
+- **OpenRouter API**: cost auto-returned in `usage.total_cost` (USD). Converted to AUD via `AUD_USD` env var. No `AI_RATES` entry needed for OpenRouter models — cost comes straight from response.
+- **Cost display paths** (3 locations, all consistent): `_show_derivation_result` (single hotlink), `_show_all_hotlinks_result` (all hotlinks), `_make_header` (master response). All check `"totalCost" in usage_meta` first → use it directly × `AUD_USD`. Fall back to `AI_RATES` calculation for Google/Deepseek.
+- **Provider/model flow**: internal analysis → `AI_INTERNAL_MODEL_PROVIDER` env var; master response → `AI_MASTER_MODEL_PROVIDER` env var. Model list per provider loaded from respective `*_TEXT_TO_TEXT_MODELS_TO_USE` or `*_INTERNAL_ANALYSIS_MODELS` env keys.
+- **`.env` required for OpenRouter**: `AI_MODEL_PROVIDERS="Google,Deepseek,OpenRouter"`, `OPENROUTER_API_KEY`, `OPENROUTER_TEXT_TO_TEXT_MODELS_TO_USE`, `AI_OPENROUTER_INTERNAL_ANALYSIS_MODELS`. Also set `AI_MASTER_MODEL_PROVIDER="OpenRouter"` and/or `AI_INTERNAL_MODEL_PROVIDER="OpenRouter"`.
+- **Display format**: `AI: {field}  [OpenRouter-{routed_model}]  {elapsed}s  $A {cost}` — provider prefix always prepended for OpenRouter models. Google/Deepseek models self-identify by model name prefix.
 
-## Files Changed
-
-| File | Change |
-|---|---|
-| `main.py` | Minimise sync, button locking (`_buttons_locked`), grab release/restore |
-| `update_fatalities.py` | Remove `transient()`, minimise sync, grab handling, bottom-bar layout, hotlink infrastructure (5 new methods) |
-| `ai_derived_details_prompts.py` | **New** — 4 prompt templates + `FIELD_PROMPTS` dispatch dict |
-
----
-
-## Carry-Over / Incomplete Work
-
-**None.** All ticket items are implemented and compiling clean.
-
-## AI Model Configuration: Master Response vs Hotlinks
-
-These two pipelines use **completely independent** provider/model config.
-
-### Master Response ("AI: Create a Master Response" button)
-| Env Key | Purpose |
-|---|---|
-| `AI_MASTER_MODEL_PROVIDER` | Provider selector (`"Google"` or `"Deepseek"`) |
-| `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE` | Gemini models when provider is Google |
-| `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE` | DeepSeek models when provider is DeepSeek |
-| `AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS` | Timeout for master response generation |
-
-### Hotlinks (clickable blue field labels)
-| Env Key | Purpose |
-|---|---|
-| `AI_INTERNAL_MODEL_PROVIDER` | Provider selector (`"Google"` or `"Deepseek"`) |
-| `AI_MODEL_PROVIDERS` | Allowed provider list (case-insensitive, comma-separated) |
-| `AI_GEMINI_INTERNAL_ANALYSIS_MODELS` | Gemini models for hotlinks |
-| `AI_DEEPSEEK_INTERNAL_ANALYSIS_MODELS` | DeepSeek models for hotlinks |
-| `AI_INTERNAL_RESPONSE_MODEL_CUTOFF_SECONDS` | Timeout for hotlink derivations (currently hardcoded to 15s in code) |
-| `SHOW_AI_MASTER_RESPONSE_COPY` | Character threshold for showing "COPY RESPONSE" button on master response (default 200) |
-
-### All Hotlinks (batch derivation)
-- **Button**: "All Hotlinks" (orange, only visible when hotlinks are active — >50 words in `ai_response` + `authoritative_ai_override`).
-- **Click**: sends a single combined prompt to derive all four hotlink fields at once (`service_status`, `place_of_death`, `circumstances_of_death`, `unit_served_with`).
-- **Result dialog**: shows each field with:
-  - A **checkbox** (checked by default) — only checked fields are updated.
-  - An **editable text box** — edit the AI result before accepting.
-  - **Update** / **Cancel** buttons.
-- **Session persistence**: All Hotlinks prompt + response + labels saved per `referenceID`.
-- **Prompt**: `ai_derived_details_prompts.get_all_hotlinks_prompt()` — returns JSON `{service_status, place_of_death, circumstances_of_death, unit_served_with}`.
-
----
-
-## Next Steps (absolute)
-
-1. [x] **Rename `.env` key**: `AI_INTERNAL_ANALYSIS_MODEL` → `AI_GEMINI_INTERNAL_ANALYSIS_MODELS` ✅ Done
-2. [ ] **Launch the app** (`python main.py` or `python main.pyw`) and verify:
-   - Main Menu minimise → taskbar → restore works
-   - Update modal minimise → taskbar → restore works (both windows together)
-   - Click a dataset button → modal opens → main-menu buttons locked → close modal → buttons unlocked
-   - Navigate to a record with >50 words in `ai_response` → field labels turn blue/underlined
-   - Click a hotlink → side panel shows progress → result displayed with cost/time → accept populates field
-3. [ ] **Test all four hotlink fields**: `service_status`, `place_of_death`, `circumstances_of_death`, `unit_served_with`
-4. [ ] **Test error path**: temporarily set `GEMINI_API_KEY` to a bad value in `.env` → verify clear error dialog appears
+### Incomplete Work
+None. All tasks completed.

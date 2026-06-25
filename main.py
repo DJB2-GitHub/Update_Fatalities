@@ -526,12 +526,16 @@ class MainMenu(tk.Toplevel):
         """Disable / enable all buttons and show visual feedback."""
         self._buttons_locked = locked
         for btn in self._all_buttons:
-            if btn.winfo_exists():
+            try:
+                if not btn.winfo_exists():
+                    continue
                 for child in btn.winfo_children():
                     if locked:
                         child.configure(state=tk.DISABLED, cursor="watch")
                     else:
                         child.configure(state=tk.NORMAL, cursor="hand2")
+            except tk.TclError:
+                pass  # Tk instance destroyed, nothing to clean up
 
     def _on_unmap(self, event=None):
         """When this modal is minimised, minimise the parent too."""

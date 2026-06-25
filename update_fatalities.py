@@ -323,6 +323,7 @@ class UpdateFatalities(tk.Toplevel):
                 if isinstance(ref_state, dict):
                     saved_prompt = ref_state.get("prompt", "")
                     saved_response = ref_state.get("response", "")
+                    side_panel_visible = ref_state.get("sidePanelVisible", False)
                     if saved_prompt:
                         self._side_prompt.configure(state=tk.NORMAL)
                         self._side_prompt.delete("1.0", tk.END)
@@ -331,6 +332,8 @@ class UpdateFatalities(tk.Toplevel):
                     if saved_response:
                         self._side_resp_label.configure(text=ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
                         self._side_resp_replace(saved_response)
+                    # Restore side-panel visibility independently of content
+                    if side_panel_visible or saved_response:
                         self._show_side_panel()
 
         self.update_idletasks()
@@ -357,6 +360,15 @@ class UpdateFatalities(tk.Toplevel):
                 return
         extra = self._gather_ref_state()
         session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
+        # Bring the parent (main menu) to the front before closing
+        try:
+            parent = self.master
+            if parent and parent.winfo_exists():
+                parent.deiconify()
+                parent.lift()
+                parent.focus_set()
+        except Exception:
+            pass
         self.destroy()
 
     def _on_unmap(self, event=None):
@@ -507,47 +519,63 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         header = "AI: All Hotlinks"
+        time_str = ""
+        cost_str = ""
         if model_name and elapsed:
-            cost_str = ""
             if usage_meta:
                 try:
-                    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-                    env = {}
-                    if os.path.exists(env_path):
-                        with open(env_path, "r", encoding="utf-8") as f:
-                            for line in f:
-                                line = line.strip()
-                                if line and not line.startswith("#") and "=" in line:
-                                    k, _, v = line.partition("=")
-                                    env[k.strip()] = v.strip().strip('"').strip("'")
-                    ai_rates = json.loads(env.get("AI_RATES", "{}"))
-                    aud_usd = float(env.get("AUD_USD", "0.7"))
-                    if model_name in ai_rates:
-                        rate = ai_rates[model_name]
-                        pt = usage_meta.get("promptTokenCount", 0)
-                        ct = usage_meta.get("candidatesTokenCount", 0)
-                        cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
-                               (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
-                        cost_str = f", $A {cost:.4f}"
+                    # OpenRouter returns cost directly in response — use it
+                    if "totalCost" in usage_meta:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        cost = usage_meta["totalCost"] * aud_usd
+                        cost_str = f"$A {cost:.6f}"
+                    else:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        if model_name in ai_rates:
+                            rate = ai_rates[model_name]
+                            pt = usage_meta.get("promptTokenCount", 0)
+                            ct = usage_meta.get("candidatesTokenCount", 0)
+                            cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                                   (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                            cost_str = f"$A {cost:.6f}"
                 except Exception:
                     pass
             time_str = f"{elapsed:.0f}s" if elapsed else "??s"
-            cost_str = cost_str if cost_str else ", $A ?.????"
-            header = f"AI: All Hotlinks [{model_name} {time_str}{cost_str}]"
+            cost_str = cost_str if cost_str else "$A ?.????"
+            header = f"AI: All Hotlinks  [{model_name}]  {time_str}  {cost_str}"
 
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(raw_text)
         self._copy_btn.pack_forget()  # only for master response, not hotlinks
 
         dlg = tk.Toplevel(self)
-        dlg.title("All Hotlinks Results")
+        dlg.title(f"All Hotlinks Results  [{model_name}]  {time_str}  {cost_str}")
         dlg.resizable(True, True)
         dlg.configure(bg=WHITE)
         dlg.transient(self)
         _center_on_parent(dlg, self)
         dlg.grab_set()
 
-        hdr = tk.Label(dlg, text="Edit results and select fields to update:",
+        hdr = tk.Label(dlg, text=f"Edit results and select fields to update:  [{model_name}]  {time_str}  {cost_str}",
                        font=(FONT, 10, "bold"), bg=WHITE, fg=TEXT_DARK, anchor="w")
         hdr.pack(fill=tk.X, padx=16, pady=(12, 8))
 
@@ -636,6 +664,11 @@ class UpdateFatalities(tk.Toplevel):
             models_str = env.get("AI_DEEPSEEK_INTERNAL_ANALYSIS_MODELS", "deepseek-v4-flash")
             if not api_key:
                 return "ERROR: DEEPSEEK_API_KEY not found in .env"
+        elif provider.lower() == "openrouter":
+            api_key = env.get("OPENROUTER_API_KEY", "")
+            models_str = env.get("AI_OPENROUTER_INTERNAL_ANALYSIS_MODELS", "openrouter/auto")
+            if not api_key:
+                return "ERROR: OPENROUTER_API_KEY not found in .env"
         else:
             # Google (default)
             api_key = env.get("GEMINI_API_KEY", "")
@@ -681,6 +714,47 @@ class UpdateFatalities(tk.Toplevel):
                                 "candidatesTokenCount": ds_usage.get("completion_tokens", 0),
                             }
                             return (text, model, usage_meta, elapsed)
+                    elif provider.lower() == "openrouter":
+                        url = "https://openrouter.ai/api/v1/chat/completions"
+                        body = json.dumps({
+                            "model": model,
+                            "temperature": 0,
+                            "messages": [
+                                {"role": "system", "content": system_instruction},
+                                {"role": "user", "content": user_prompt},
+                            ],
+                        }).encode("utf-8")
+                        req = urllib.request.Request(
+                            url, data=body,
+                            headers={
+                                "Content-Type": "application/json",
+                                "Authorization": f"Bearer {api_key}",
+                                "HTTP-Referer": "https://github.com/kun-app",
+                                "X-Title": "Update Fatalities",
+                            },
+                        )
+                        with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            elapsed = _time.time() - t0
+                            text = data["choices"][0]["message"]["content"]
+                            or_usage = data.get("usage", {})
+                            # OpenRouter returns full cost breakdown in response body
+                            actual_model = f"OpenRouter-{data.get('model', model)}"
+                            usage_meta = {
+                                "promptTokenCount": int(or_usage.get("input_tokens") or or_usage.get("prompt_tokens", 0)),
+                                "candidatesTokenCount": int(or_usage.get("output_tokens") or or_usage.get("completion_tokens", 0)),
+                                "totalTokenCount": int(or_usage.get("total_tokens", 0)),
+                                "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or 0),
+                                "inputCost": float(or_usage.get("input_cost", 0)),
+                                "outputCost": float(or_usage.get("output_cost", 0)),
+                            }
+                            # Fallback: try HTTP header if body cost is zero
+                            if usage_meta["totalCost"] == 0:
+                                try:
+                                    usage_meta["totalCost"] = float(resp.info().get("x-openrouter-cost", "0"))
+                                except (ValueError, TypeError):
+                                    pass
+                            return (text, actual_model, usage_meta, elapsed)
                     else:
                         # Google Gemini
                         url = (
@@ -777,35 +851,51 @@ class UpdateFatalities(tk.Toplevel):
 
         # ── Build cost/time header ──
         header = f"AI: {field_name}"
+        time_str = ""
+        cost_str = ""
         if model_name and elapsed:
             # Calculate cost
-            cost_str = ""
             if usage_meta:
                 try:
-                    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-                    env = {}
-                    if os.path.exists(env_path):
-                        with open(env_path, "r", encoding="utf-8") as f:
-                            for line in f:
-                                line = line.strip()
-                                if line and not line.startswith("#") and "=" in line:
-                                    k, _, v = line.partition("=")
-                                    env[k.strip()] = v.strip().strip('"').strip("'")
-                    ai_rates = json.loads(env.get("AI_RATES", "{}"))
-                    aud_usd = float(env.get("AUD_USD", "0.7"))
-                    if model_name in ai_rates:
-                        rate = ai_rates[model_name]
-                        pt = usage_meta.get("promptTokenCount", 0)
-                        ct = usage_meta.get("candidatesTokenCount", 0)
-                        cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
-                               (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
-                        cost_str = f", $A {cost:.4f}"
+                    # OpenRouter returns cost directly in response — use it
+                    if "totalCost" in usage_meta:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        cost = usage_meta["totalCost"] * aud_usd
+                        cost_str = f"$A {cost:.6f}"
+                    else:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        if model_name in ai_rates:
+                            rate = ai_rates[model_name]
+                            pt = usage_meta.get("promptTokenCount", 0)
+                            ct = usage_meta.get("candidatesTokenCount", 0)
+                            cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                                   (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                            cost_str = f"$A {cost:.6f}"
                 except Exception:
                     pass
             # Use ?? for unknown values
             time_str = f"{elapsed:.0f}s" if elapsed else "??s"
-            cost_str = cost_str if cost_str else ", $A ?.????"
-            header = f"AI: {field_name} [{time_str}{cost_str}]"
+            cost_str = cost_str if cost_str else "$A ?.????"
+            header = f"AI: {field_name}  [{model_name}]  {time_str}  {cost_str}"
 
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(result_text)
@@ -820,7 +910,7 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         # Confirm with user — editable text box
-        title = f"AI Derived: {field_name}"
+        title = f"AI Derived: {field_name}  [{model_name}]  {time_str}  {cost_str}"
         edited = self._confirm_with_edit(title, field_name, result_text)
         if edited is not None:
             self._populate_field_value(field_name, edited)
@@ -989,18 +1079,28 @@ class UpdateFatalities(tk.Toplevel):
             bg="#f0f2f5", fg=TEXT_MUTED, anchor="w",
         )
         self._side_prompt_label.pack(fill=tk.X, padx=12, pady=(10, 2))
-        self._side_prompt = tk.Text(self._side_panel, font=(FONT, 8), wrap=tk.WORD,
-                                    bg=WHITE, fg=TEXT_DARK, padx=8, pady=6, height=12,
+        prompt_frame = tk.Frame(self._side_panel, bg=WHITE)
+        prompt_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 6))
+        self._side_prompt = tk.Text(prompt_frame, font=(FONT, 8), wrap=tk.WORD,
+                                    bg=WHITE, fg=TEXT_DARK, padx=8, pady=6,
                                     relief=tk.FLAT, highlightthickness=0)
-        self._side_prompt.pack(fill=tk.X, padx=12, pady=(0, 6))
+        prompt_scroll = tk.Scrollbar(prompt_frame, command=self._side_prompt.yview)
+        self._side_prompt.configure(yscrollcommand=prompt_scroll.set)
+        prompt_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self._side_prompt.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self._side_resp_label = tk.Label(self._side_panel, text="RESPONSE", font=(FONT, 8, "bold"),
                                           bg="#f0f2f5", fg=TEXT_MUTED, anchor="w")
         self._side_resp_label.pack(fill=tk.X, padx=12, pady=(4, 2))
-        self._side_resp = tk.Text(self._side_panel, font=(FONT, 9), wrap=tk.WORD,
+        resp_frame = tk.Frame(self._side_panel, bg=WHITE)
+        resp_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 10))
+        self._side_resp = tk.Text(resp_frame, font=(FONT, 9), wrap=tk.WORD,
                                   bg=WHITE, fg=TEXT_DARK, padx=8, pady=6,
                                   relief=tk.FLAT, highlightthickness=0)
-        self._side_resp.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 10))
+        resp_scroll = tk.Scrollbar(resp_frame, command=self._side_resp.yview)
+        self._side_resp.configure(yscrollcommand=resp_scroll.set)
+        resp_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self._side_resp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     # ------------------------------------------------------------------
     # Flat button helper
@@ -1114,15 +1214,15 @@ class UpdateFatalities(tk.Toplevel):
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
         self._record_snapshot = copy.deepcopy(record)
-        # Copy grid_reference to clipboard on every record change
-        # so the user can always paste back the last-seen original
+        # Copy co-ordinates_decimal (or grid_reference as fallback) to
+        # clipboard on every record change
         dd = record.get("derived_details", {}) if isinstance(
             record.get("derived_details"), dict
         ) else {}
-        grid_val = str(dd.get("grid_reference", ""))
-        if grid_val:
+        coord_val = str(dd.get("co-ordinates_decimal", "") or dd.get("grid_reference", ""))
+        if coord_val:
             self.clipboard_clear()
-            self.clipboard_append(grid_val)
+            self.clipboard_append(coord_val)
 
         # ── Compute hotlink activation state ──
         ai_resp = (dd.get("ai_response", "") or "").strip()
@@ -1131,7 +1231,10 @@ class UpdateFatalities(tk.Toplevel):
         self._hotlink_combined_text = f"{override}\n\n{ai_resp}".strip() if override else ai_resp
         word_count = len(self._hotlink_combined_text.split())
         self._hotlink_active = word_count > 50
-        self._all_hotlinks_btn.pack_forget() if not self._hotlink_active else None
+        if self._hotlink_active:
+            self._all_hotlinks_btn.pack(side=tk.LEFT, padx=(0, 10), before=self._live_search_chk)
+        else:
+            self._all_hotlinks_btn.pack_forget()
 
         self._entry_widgets = {}
 
@@ -1156,7 +1259,8 @@ class UpdateFatalities(tk.Toplevel):
                                            width=label_width, anchor=tk.E)
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
                     _HOTLINK_FIELDS = {"service_status", "place_of_death",
-                                       "circumstances_of_death", "unit_served_with"}
+                                       "circumstances_of_death", "unit_served_with",
+                                       "grid_reference"}
                     if field_name in _HOTLINK_FIELDS:
                         self._make_label_hotlink(field_label, field_name)
                     # Format list values (e.g. references) as newline-separated text
@@ -1219,7 +1323,35 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", _on_list_edited)
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
-                        elif field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
+                        elif field_name == "grid_reference":
+                            # Info icon explaining the relationship to co-ordinates_decimal
+                            info_btn = tk.Label(
+                                rf, text="\u2139", font=(FONT, 11),
+                                bg=WHITE, fg="#4a90d9", cursor="hand2",
+                            )
+                            info_btn.pack(side=tk.LEFT, padx=(0, 6))
+                            info_btn.bind(
+                                "<Button-1>",
+                                lambda e: _error_dialog(
+                                    self, "About grid_reference",
+                                    "This field stores the raw grid reference as originally\n"
+                                    "recorded — MGRS (e.g. YS 426 694), decimal degrees\n"
+                                    "(e.g. 10.6895, 107.3305), or DMS notation.\n\n"
+                                    "When you click Update Record, the editor inspects this\n"
+                                    "value.  If it recognises a valid coordinate format, it\n"
+                                    "converts the reference to signed decimal degrees and\n"
+                                    "writes the result to the \"co-ordinates_decimal\" field.\n\n"
+                                    "Think of grid_reference as the input and\n"
+                                    "co-ordinates_decimal as the calculated output.\n\n"
+                                    "Accepted formats are listed in the Info button on the\n"
+                                    "co-ordinates_decimal field."
+                                )
+                            )
+                            entry = _styled_entry(rf, width=42, font=entry_font)
+                            entry.insert(0, dv)
+                            entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
+                            entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal"):
                             # Small info button that opens the MGRS reference doc
                             info_btn = tk.Label(
                                 rf, text="\u2139", font=(FONT, 11),
@@ -1232,8 +1364,7 @@ class UpdateFatalities(tk.Toplevel):
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
                             _ToolTip(entry,
-                                     "Replace current value with new reference "
-                                     "to convert to decimal format")
+                                     "Double-click to open this location in Google Maps")
 
                             def _update_link_style(*args, w=entry):
                                 val_str = w.get().strip()
@@ -1323,6 +1454,7 @@ class UpdateFatalities(tk.Toplevel):
         
         import copy
         result = copy.deepcopy(original)
+        _grid_decimal = None  # (parent_path_tuple, "lat, lon") when grid_reference converts
         
         for path_tuple, entry in self._entry_widgets.items():
             if isinstance(entry, tk.Text):
@@ -1363,31 +1495,59 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         val = raw_value
                         
-                        # Apply coordinate GPS validation (skip non-coordinate placeholders)
-                        if field_name and any(kw in field_name.lower() for kw in ('gps', 'coordinate', 'grid')):
+                        # ── grid_reference: validate & convert, write decimal to co-ordinates_decimal ──
+                        if field_name == "grid_reference":
                             val_str = str(val).strip()
                             if val_str and not re.match(r'^[A-Za-z]+$', val_str):
-                                # Copy original to clipboard so the user can
+                                # Copy raw value to clipboard so the user can
                                 # revert immediately after the update if needed
                                 self.clipboard_clear()
                                 self.clipboard_append(val_str)
-                                # Strip existing {original} suffix before validating
-                                clean_val, existing = _split_coord_display(val_str)
+                                # Strip any legacy {original} suffix before validating
+                                clean_val, _ = _split_coord_display(val_str)
                                 is_valid, msg, parsed = coords.validate_and_parse_coordinate(clean_val)
                                 if not is_valid:
                                     _error_dialog(self, "Invalid Coordinate Format", msg)
                                     return None
                                 if parsed is not None:
                                     formatted = f"{parsed[0]}, {parsed[1]}"
-                                    # Preserve or create plain-text annotation
-                                    if existing:
-                                        val = f"{formatted} {{{existing}}}"
-                                    elif clean_val != formatted:
-                                        val = f"{formatted} {{{clean_val}}}"
-                                    else:
-                                        val = formatted
+                                    # Save for writing to co-ordinates_decimal after the loop
+                                    _grid_decimal = (path_tuple[:-1], formatted, val_str)
                                 else:
-                                    val = val_str
+                                    # Format was recognised but could not be converted
+                                    # (e.g. DMS without enough parts).  Warn the user.
+                                    _error_dialog(
+                                        self, "Cannot deduce decimal GPS",
+                                        "Cannot deduce a decimal GPS from the supplied\n"
+                                        "\"grid_reference\" data.\n\n"
+                                        "Check the Info button attached to\n"
+                                        "\"co-ordinates_decimal\" for accepted formats."
+                                    )
+                                # Keep raw input as-is in grid_reference (val unchanged)
+
+                        # ── co-ordinates_decimal: validate / normalise decimal format ──
+                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal"):
+                            val_str = str(val).strip()
+                            if val_str and not re.match(r'^[A-Za-z]+$', val_str):
+                                clean_val, _ = _split_coord_display(val_str)
+                                is_valid, msg, parsed = coords.validate_and_parse_coordinate(clean_val)
+                                if not is_valid:
+                                    _error_dialog(
+                                        self, "Invalid co-ordinates_decimal",
+                                        "\"co-ordinates_decimal\" requires a valid decimal\n"
+                                        "coordinate in \"latitude, longitude\" format.\n\n"
+                                        "Examples:\n"
+                                        "  10.6895, 107.3305\n"
+                                        "  -33.8688, 151.2093\n\n"
+                                        "The value you entered could not be parsed:\n"
+                                        f"  \"{val_str}\"\n\n"
+                                        "Leave the field blank or enter a correct decimal\n"
+                                        "coordinate.  To convert a grid reference, enter it\n"
+                                        "in the \"grid_reference\" field and click Update Record."
+                                    )
+                                    return None
+                                if parsed is not None:
+                                    val = f"{parsed[0]}, {parsed[1]}"
 
                         # Prevent saving with an empty unit field
                         if field_name == "unit" and not str(val).strip():
@@ -1410,7 +1570,28 @@ class UpdateFatalities(tk.Toplevel):
                     target[key] = {}
                 target = target[key]
             target[path_tuple[-1]] = val
-            
+        
+        # ── Post-loop: write grid_reference → co-ordinates_decimal ──
+        # Only overwrite co-ordinates_decimal if grid_reference was actually
+        # changed by the user (preserves manual edits to the decimal field).
+        if _grid_decimal is not None:
+            parent_path, formatted, new_grid_val = _grid_decimal
+            # Get the original grid_reference value before this edit
+            orig = original
+            for key in parent_path:
+                if isinstance(orig, dict):
+                    orig = orig.get(key, "")
+                else:
+                    orig = ""
+            orig_grid_val = str(orig).strip() if orig else ""
+            if orig_grid_val != new_grid_val:
+                target = result
+                for key in parent_path:
+                    if key not in target or not isinstance(target[key], dict):
+                        target[key] = {}
+                    target = target[key]
+                target["co-ordinates_decimal"] = formatted
+        
         return result
 
     def _update_record(self):
@@ -1490,10 +1671,12 @@ class UpdateFatalities(tk.Toplevel):
 
         dd = record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}
         existing = dd.get("ai_response", "").strip()
+        # Only warn if there is substantive content (ignore placeholders like "Unassigned")
+        has_substantive = existing and existing.lower() != "unassigned" and len(existing) > 10
         warning = (
             "\n\nWarning: 'ai_response' data already exists in this record. "
             "Running this process will re-create it again for review, but not immediately overwrite it."
-        ) if existing else ""
+        ) if has_substantive else ""
 
         confirm_msg = (
             f"This is a lengthy process (~2 minutes). Execute?\n\n"
@@ -1539,8 +1722,34 @@ class UpdateFatalities(tk.Toplevel):
             if line and not line.startswith("#") and "=" in line
         } if os.path.exists(env_path) else {}
 
-        api_key = env.get("GEMINI_API_KEY", "")
-        models_str = env.get("GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-flash")
+        master_provider = env.get("AI_MASTER_MODEL_PROVIDER", "Google").lower()
+        allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek,OpenRouter").split(",") if p.strip()]
+        if master_provider not in allowed:
+            _error_dialog(self, "AI Error",
+                          f"AI_MASTER_MODEL_PROVIDER \"{master_provider}\" is not a valid AI Provider.\n"
+                          f"Allowed: {', '.join(allowed)}")
+            return
+
+        if master_provider == "deepseek":
+            api_key = env.get("DEEPSEEK_API_KEY", "")
+            models_str = env.get("DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE", "deepseek-v4-pro,deepseek-v4-flash")
+            if not api_key:
+                _error_dialog(self, "AI Error", "DEEPSEEK_API_KEY not found in .env")
+                return
+        elif master_provider == "openrouter":
+            api_key = env.get("OPENROUTER_API_KEY", "")
+            models_str = env.get("OPENROUTER_TEXT_TO_TEXT_MODELS_TO_USE", "openrouter/auto")
+            if not api_key:
+                _error_dialog(self, "AI Error", "OPENROUTER_API_KEY not found in .env")
+                return
+        else:
+            # Google (default)
+            api_key = env.get("GEMINI_API_KEY", "")
+            models_str = env.get("GEMINI_TEXT_TO_TEXT_MODELS_TO_USE", "gemini-2.5-pro,gemini-3.5-flash,gemini-2.5-flash")
+            if not api_key:
+                _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
+                return
+
         models = [m.strip() for m in models_str.split(",") if m.strip()]
         master_timeout = int(env.get("AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS", "150"))
 
@@ -1554,7 +1763,7 @@ class UpdateFatalities(tk.Toplevel):
             aud_usd = 0.7
 
         if not api_key:
-            _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
+            _error_dialog(self, "AI Error", f"{master_provider.upper()}_API_KEY not found in .env")
             return
 
         self._side_prompt_label.configure(text=f"PROMPT: {selected_option}")
@@ -1577,7 +1786,12 @@ class UpdateFatalities(tk.Toplevel):
                 ts = now.strftime("%d:%b:%Y %H:%M")
                 
                 def _calc_cost(mn, um):
-                    if not um or mn not in ai_rates: return 0.0
+                    if not um: return 0.0
+                    # OpenRouter: cost auto-returned in usage_meta
+                    if "totalCost" in um:
+                        return um["totalCost"] * aud_usd
+                    # Other providers: calculate from AI_RATES
+                    if mn not in ai_rates: return 0.0
                     rate = ai_rates[mn]
                     pt = um.get("promptTokenCount", 0)
                     ct = um.get("candidatesTokenCount", 0)
@@ -1589,12 +1803,12 @@ class UpdateFatalities(tk.Toplevel):
                 total = c1 + c2
                 total_secs = time.time() - start_time
                 
-                provider_label = model_name.split("-")[0] if model_name else "gemini"
+                provider_label = {"openrouter": "OpenRouter", "deepseek": "Deepseek", "google": "Google"}.get(master_provider, master_provider.capitalize())
                 lines = [f"Created {ts} used {provider_label} $A {total:.4f} ({total_secs:.0f}s) - {selected_option}"]
                 if config["is_two_step"]:
                     lines.append(f"Step 1 ({step1_model}): $A {c1:.4f} ({step1_secs:.0f}s)")
                     lines.append(f"Step 2 ({model_name}): $A {c2:.4f} ({time.time()-step2_start:.0f}s)")
-                return "\n".join(lines) + "\n\n"
+                return "\n".join(lines) + "\n\n\n"
 
             def _fmt_err(exc):
                 if isinstance(exc, urllib.error.HTTPError):
@@ -1612,14 +1826,88 @@ class UpdateFatalities(tk.Toplevel):
                         self.after(0, lambda m=msg: self._side_resp_replace(m))
                         
                         try:
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                            body = json.dumps(payload).encode("utf-8")
-                            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-                            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                                data = json.loads(resp.read().decode("utf-8"))
-                                text = data["candidates"][0]["content"]["parts"][0]["text"]
-                                um = data.get("usageMetadata", {})
-                                return model, text, um
+                            if master_provider == "deepseek":
+                                # Convert Gemini-format payload to OpenAI format
+                                sys_text = payload.get("systemInstruction", {}).get("parts", [{}])[0].get("text", "")
+                                user_text = payload.get("contents", [{}])[0].get("parts", [{}])[0].get("text", "")
+                                gen_config = payload.get("generationConfig", {})
+                                openai_payload = {
+                                    "model": model,
+                                    "temperature": gen_config.get("temperature", 0.3),
+                                    "max_tokens": gen_config.get("maxOutputTokens", 2048),
+                                    "messages": [
+                                        {"role": "system", "content": sys_text},
+                                        {"role": "user", "content": user_text},
+                                    ],
+                                }
+                                url = "https://api.deepseek.com/v1/chat/completions"
+                                body = json.dumps(openai_payload).encode("utf-8")
+                                req = urllib.request.Request(url, data=body, headers={
+                                    "Content-Type": "application/json",
+                                    "Authorization": f"Bearer {api_key}",
+                                })
+                                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                                    data = json.loads(resp.read().decode("utf-8"))
+                                    text = data["choices"][0]["message"]["content"]
+                                    ds_usage = data.get("usage", {})
+                                    um = {
+                                        "promptTokenCount": ds_usage.get("prompt_tokens", 0),
+                                        "candidatesTokenCount": ds_usage.get("completion_tokens", 0),
+                                    }
+                                    return model, text, um
+                            elif master_provider == "openrouter":
+                                # Convert Gemini-format payload to OpenAI format
+                                sys_text = payload.get("systemInstruction", {}).get("parts", [{}])[0].get("text", "")
+                                user_text = payload.get("contents", [{}])[0].get("parts", [{}])[0].get("text", "")
+                                gen_config = payload.get("generationConfig", {})
+                                openai_payload = {
+                                    "model": model,
+                                    "temperature": gen_config.get("temperature", 0.3),
+                                    "max_tokens": gen_config.get("maxOutputTokens", 2048),
+                                    "messages": [
+                                        {"role": "system", "content": sys_text},
+                                        {"role": "user", "content": user_text},
+                                    ],
+                                }
+                                url = "https://openrouter.ai/api/v1/chat/completions"
+                                body = json.dumps(openai_payload).encode("utf-8")
+                                req = urllib.request.Request(url, data=body, headers={
+                                    "Content-Type": "application/json",
+                                    "Authorization": f"Bearer {api_key}",
+                                    "HTTP-Referer": "https://github.com/kun-app",
+                                    "X-Title": "Update Fatalities",
+                                })
+                                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                                    data = json.loads(resp.read().decode("utf-8"))
+                                    text = data["choices"][0]["message"]["content"]
+                                    or_usage = data.get("usage", {})
+                                    # OpenRouter returns full cost breakdown in response body
+                                    actual_model = f"OpenRouter-{data.get('model', model)}"
+                                    um = {
+                                        "promptTokenCount": int(or_usage.get("input_tokens") or or_usage.get("prompt_tokens", 0)),
+                                        "candidatesTokenCount": int(or_usage.get("output_tokens") or or_usage.get("completion_tokens", 0)),
+                                        "totalTokenCount": int(or_usage.get("total_tokens", 0)),
+                                        "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or 0),
+                                        "inputCost": float(or_usage.get("input_cost", 0)),
+                                        "outputCost": float(or_usage.get("output_cost", 0)),
+                                    }
+                                    # Fallback: try HTTP header if body cost is zero
+                                    if um["totalCost"] == 0:
+                                        try:
+                                            um["totalCost"] = float(resp.info().get("x-openrouter-cost", "0"))
+                                        except (ValueError, TypeError):
+                                            pass
+                                    return actual_model, text, um
+                            else:
+                                # Google Gemini
+                                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                                body = json.dumps(payload).encode("utf-8")
+                                req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+                                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                                    data = json.loads(resp.read().decode("utf-8"))
+                                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                                    um = data.get("usageMetadata", {})
+                                    return model, text, um
                         except urllib.error.HTTPError as exc:
                             if exc.code in [429, 503] and retry_count < max_retries:
                                 retry_count += 1
@@ -1886,5 +2174,6 @@ class UpdateFatalities(tk.Toplevel):
             "response": resp_text,
             "promptLabel": self._side_prompt_label.cget("text"),
             "responseLabel": self._side_resp_label.cget("text"),
+            "sidePanelVisible": self._side_panel.winfo_ismapped(),
         }
         return {"lastRefId": ref_id, ref_id: ref_state}
