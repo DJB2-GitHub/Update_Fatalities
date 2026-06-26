@@ -242,7 +242,9 @@ def get_all_hotlinks_prompt(combined_text: str) -> tuple:
 FIELD_PROMPTS = {
     "service_status":          get_service_status_prompt,
     "place_of_death":          get_place_of_death_prompt,
+    "death_location":          get_place_of_death_prompt,
     "circumstances_of_death":  get_circumstances_of_death_prompt,
     "unit_served_with":        get_unit_served_with_prompt,
     "grid_reference":          get_grid_reference_prompt,
+    "incident_location":       get_grid_reference_prompt,
 }

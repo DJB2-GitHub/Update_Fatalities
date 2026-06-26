@@ -617,7 +617,7 @@ class UpdateFatalities(tk.Toplevel):
 
         fields = [
             ("service_status", "Service Status"),
-            ("place_of_death", "Place of Death"),
+            ("place_of_death", "Death Location"),
             ("circumstances_of_death", "Circumstances of Death"),
             ("unit_served_with", "Unit Served With"),
         ]
@@ -780,7 +780,7 @@ class UpdateFatalities(tk.Toplevel):
                                 "promptTokenCount": int(or_usage.get("input_tokens") or or_usage.get("prompt_tokens", 0)),
                                 "candidatesTokenCount": int(or_usage.get("output_tokens") or or_usage.get("completion_tokens", 0)),
                                 "totalTokenCount": int(or_usage.get("total_tokens", 0)),
-                                "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or 0),
+                                "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or or_usage.get("cost") or 0),
                                 "inputCost": float(or_usage.get("input_cost", 0)),
                                 "outputCost": float(or_usage.get("output_cost", 0)),
                             }
@@ -790,6 +790,13 @@ class UpdateFatalities(tk.Toplevel):
                                     usage_meta["totalCost"] = float(resp.info().get("x-openrouter-cost", "0"))
                                 except (ValueError, TypeError):
                                     pass
+                            # Log full OpenRouter response for cost verification
+                            try:
+                                with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "openrouter.log"), "a", encoding="utf-8") as _log:
+                                    _log.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} [internal] model={actual_model} ---\n")
+                                    _log.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n\n")
+                            except Exception:
+                                pass
                             return (text, actual_model, usage_meta, elapsed)
                     else:
                         # Google Gemini
@@ -955,6 +962,12 @@ class UpdateFatalities(tk.Toplevel):
         """Write the derived value into the corresponding form widget."""
         if field_name == "service_status":
             path = ("serviceRecordAuthority", "service_status")
+        elif field_name in ("place_of_death", "death_location"):
+            path = ("derived_details", "fatality_locations", "death_location")
+        elif field_name in ("grid_reference", "incident_location"):
+            path = ("derived_details", "fatality_locations", "incident_location")
+        elif field_name in ("co-ordinates_decimal", "coordinates_decimal", "incident_coordinates"):
+            path = ("derived_details", "fatality_locations", "incident_coordinates")
         else:
             path = ("derived_details", field_name)
 
@@ -1330,12 +1343,13 @@ class UpdateFatalities(tk.Toplevel):
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
         self._record_snapshot = copy.deepcopy(record)
-        # Copy co-ordinates_decimal (or grid_reference as fallback) to
+        # Copy incident_coordinates (or incident_location as fallback) to
         # clipboard on every record change
         dd = record.get("derived_details", {}) if isinstance(
             record.get("derived_details"), dict
         ) else {}
-        coord_val = str(dd.get("co-ordinates_decimal", "") or dd.get("grid_reference", ""))
+        fl = dd.get("fatality_locations", {}) if isinstance(dd.get("fatality_locations"), dict) else {}
+        coord_val = str(fl.get("incident_coordinates", "") or fl.get("incident_location", ""))
         if coord_val:
             self.clipboard_clear()
             self.clipboard_append(coord_val)
@@ -1344,7 +1358,10 @@ class UpdateFatalities(tk.Toplevel):
         ai_resp = (dd.get("ai_response", "") or "").strip()
         override_raw = (dd.get("authoritative_ai_override", "") or "").strip()
         override = override_raw if override_raw and override_raw.lower() != "unassigned" else ""
-        self._hotlink_combined_text = f"{override}\n\n{ai_resp}".strip() if override else ai_resp
+        if override:
+            self._hotlink_combined_text = f"authoritative_ai_override:\n{override}\n\nai_response:\n{ai_resp}".strip()
+        else:
+            self._hotlink_combined_text = ai_resp
         # Strip **[...]** metadata header produced by _make_header (see README
         # § Hotlink Metadata Filtering).  Tags must appear within the first 80
         # characters; if found the entire tagged block is removed so only the
@@ -1380,9 +1397,9 @@ class UpdateFatalities(tk.Toplevel):
                     field_label = tk.Label(rf, text=f"{field_name}", font=(FONT, 10),
                                            bg=WHITE, fg=TEXT_DARK)
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
-                    _HOTLINK_FIELDS = {"service_status", "place_of_death",
+                    _HOTLINK_FIELDS = {"service_status", "death_location",
                                        "circumstances_of_death", "unit_served_with",
-                                       "grid_reference"}
+                                       "incident_location"}
                     if field_name in _HOTLINK_FIELDS:
                         self._make_label_hotlink(field_label, field_name)
                     # Format list values (e.g. references) as newline-separated text
@@ -1447,8 +1464,8 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", _on_list_edited)
                             self._apply_hotlinks(entry)
                             entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=4)
-                        elif field_name == "grid_reference":
-                            # Info icon explaining the relationship to co-ordinates_decimal
+                        elif field_name == "incident_location":
+                            # Info icon explaining the relationship to incident_coordinates
                             info_btn = tk.Label(
                                 rf, text="\u2139", font=(FONT, 11),
                                 bg=WHITE, fg="#4a90d9", cursor="hand2",
@@ -1457,25 +1474,25 @@ class UpdateFatalities(tk.Toplevel):
                             info_btn.bind(
                                 "<Button-1>",
                                 lambda e: _error_dialog(
-                                    self, "About grid_reference",
+                                    self, "About incident_location",
                                     "This field stores the raw grid reference as originally\n"
                                     "recorded — MGRS (e.g. YS 426 694), decimal degrees\n"
                                     "(e.g. 10.6895, 107.3305), or DMS notation.\n\n"
                                     "When you click Update Record, the editor inspects this\n"
                                     "value.  If it recognises a valid coordinate format, it\n"
                                     "converts the reference to signed decimal degrees and\n"
-                                    "writes the result to the \"co-ordinates_decimal\" field.\n\n"
-                                    "Think of grid_reference as the input and\n"
-                                    "co-ordinates_decimal as the calculated output.\n\n"
+                                    "writes the result to the \"incident_coordinates\" field.\n\n"
+                                    "Think of incident_location as the input and\n"
+                                    "incident_coordinates as the calculated output.\n\n"
                                     "Accepted formats are listed in the Info button on the\n"
-                                    "co-ordinates_decimal field."
+                                    "incident_coordinates field."
                                 )
                             )
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal"):
+                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal", "incident_coordinates"):
                             # Small info button that opens the MGRS reference doc
                             info_btn = tk.Label(
                                 rf, text="\u2139", font=(FONT, 11),
@@ -1518,7 +1535,7 @@ class UpdateFatalities(tk.Toplevel):
                                         
                             entry.bind("<Double-Button-1>", _open_map)
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                        elif field_name == "place_of_death":
+                        elif field_name == "death_location":
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
@@ -1601,7 +1618,7 @@ class UpdateFatalities(tk.Toplevel):
         
         import copy
         result = copy.deepcopy(original)
-        _grid_decimal = None  # (parent_path_tuple, "lat, lon") when grid_reference converts
+        _grid_decimal = None  # (parent_path_tuple, "lat, lon") when incident_location converts
         
         for path_tuple, entry in self._entry_widgets.items():
             if isinstance(entry, tk.Text):
@@ -1642,8 +1659,8 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         val = raw_value
                         
-                        # ── grid_reference: validate & convert, write decimal to co-ordinates_decimal ──
-                        if field_name == "grid_reference":
+                        # ── incident_location: validate & convert, write decimal to incident_coordinates ──
+                        if field_name == "incident_location":
                             val_str = str(val).strip()
                             if val_str and not re.match(r'^[A-Za-z]+$', val_str):
                                 # Copy raw value to clipboard so the user can
@@ -1662,7 +1679,7 @@ class UpdateFatalities(tk.Toplevel):
                                         return None
                                 if parsed is not None:
                                     formatted = f"{parsed[0]}, {parsed[1]}"
-                                    # Save for writing to co-ordinates_decimal after the loop
+                                    # Save for writing to incident_coordinates after the loop
                                     _grid_decimal = (path_tuple[:-1], formatted, val_str)
                                 else:
                                     # Format was recognised but could not be converted
@@ -1670,22 +1687,22 @@ class UpdateFatalities(tk.Toplevel):
                                     _error_dialog(
                                         self, "Cannot deduce decimal GPS",
                                         "Cannot deduce a decimal GPS from the supplied\n"
-                                        "\"grid_reference\" data.\n\n"
+                                        "\"incident_location\" data.\n\n"
                                         "Check the Info button attached to\n"
-                                        "\"co-ordinates_decimal\" for accepted formats."
+                                        "\"incident_coordinates\" for accepted formats."
                                     )
-                                # Keep raw input as-is in grid_reference (val unchanged)
+                                # Keep raw input as-is in incident_location (val unchanged)
 
-                        # ── co-ordinates_decimal: validate / normalise decimal format ──
-                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal"):
+                        # ── incident_coordinates: validate / normalise decimal format ──
+                        elif field_name in ("co-ordinates_decimal", "coordinates_decimal", "incident_coordinates"):
                             val_str = str(val).strip()
                             if val_str and not re.match(r'^[A-Za-z]+$', val_str):
                                 clean_val, _ = _split_coord_display(val_str)
                                 is_valid, msg, parsed = coords.validate_and_parse_coordinate(clean_val)
                                 if not is_valid:
                                     _error_dialog(
-                                        self, "Invalid co-ordinates_decimal",
-                                        "\"co-ordinates_decimal\" requires a valid decimal\n"
+                                        self, "Invalid incident_coordinates",
+                                        "\"incident_coordinates\" requires a valid decimal\n"
                                         "coordinate in \"latitude, longitude\" format.\n\n"
                                         "Examples:\n"
                                         "  10.6895, 107.3305\n"
@@ -1694,7 +1711,7 @@ class UpdateFatalities(tk.Toplevel):
                                         f"  \"{val_str}\"\n\n"
                                         "Leave the field blank or enter a correct decimal\n"
                                         "coordinate.  To convert a grid reference, enter it\n"
-                                        "in the \"grid_reference\" field and click Update Record."
+                                        "in the \"incident_location\" field and click Update Record."
                                     )
                                     return None
                                 if parsed is not None:
@@ -1722,12 +1739,12 @@ class UpdateFatalities(tk.Toplevel):
                 target = target[key]
             target[path_tuple[-1]] = val
         
-        # ── Post-loop: write grid_reference → co-ordinates_decimal ──
-        # Only overwrite co-ordinates_decimal if grid_reference was actually
+        # ── Post-loop: write incident_location → incident_coordinates ──
+        # Only overwrite incident_coordinates if incident_location was actually
         # changed by the user (preserves manual edits to the decimal field).
         if _grid_decimal is not None:
             parent_path, formatted, new_grid_val = _grid_decimal
-            # Get the original grid_reference value before this edit
+            # Get the original incident_location value before this edit
             orig = original
             for key in parent_path:
                 if isinstance(orig, dict):
@@ -1741,7 +1758,7 @@ class UpdateFatalities(tk.Toplevel):
                     if key not in target or not isinstance(target[key], dict):
                         target[key] = {}
                     target = target[key]
-                target["co-ordinates_decimal"] = formatted
+                target["incident_coordinates"] = formatted
         
         return result
 
@@ -1890,7 +1907,7 @@ class UpdateFatalities(tk.Toplevel):
             "unit": sra.get("unit", ""),
             "ftype": sra.get("fatality_type", ""),
             "af": forces_map.get(ref_id[:2], ref_id[:2] if ref_id else ""),
-            "pod": (record.get("derived_details", {}) if isinstance(record.get("derived_details"), dict) else {}).get("place_of_death", "")
+            "pod": (record.get("derived_details", {}).get("fatality_locations", {}).get("death_location", "") if isinstance(record.get("derived_details"), dict) else "")
         }
 
         if "Option A" in selected_option:
@@ -2069,7 +2086,7 @@ class UpdateFatalities(tk.Toplevel):
                                         "promptTokenCount": int(or_usage.get("input_tokens") or or_usage.get("prompt_tokens", 0)),
                                         "candidatesTokenCount": int(or_usage.get("output_tokens") or or_usage.get("completion_tokens", 0)),
                                         "totalTokenCount": int(or_usage.get("total_tokens", 0)),
-                                        "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or 0),
+                                        "totalCost": float(or_usage.get("total_cost") or or_usage.get("totalCost") or or_usage.get("cost") or 0),
                                         "inputCost": float(or_usage.get("input_cost", 0)),
                                         "outputCost": float(or_usage.get("output_cost", 0)),
                                     }
@@ -2079,6 +2096,13 @@ class UpdateFatalities(tk.Toplevel):
                                             um["totalCost"] = float(resp.info().get("x-openrouter-cost", "0"))
                                         except (ValueError, TypeError):
                                             pass
+                                    # Log full OpenRouter response for cost verification
+                                    try:
+                                        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "openrouter.log"), "a", encoding="utf-8") as _log:
+                                            _log.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} [master] model={actual_model} ---\n")
+                                            _log.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n\n")
+                                    except Exception:
+                                        pass
                                     return actual_model, text, um
                             else:
                                 # Google Gemini
