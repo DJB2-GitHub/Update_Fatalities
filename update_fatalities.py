@@ -976,11 +976,18 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         cleaned = value.strip()
+        # Strip AI "best_estimate_gps" wrapper if present — the grid_reference /
+        # incident_location prompt returns '"best_estimate_gps": "LAT, LON [GRID]"'.
+        # Extract just the inner coordinate value.
+        if field_name in ("grid_reference", "incident_location"):
+            m = re.match(r'^"best_estimate_gps":\s*"([^"]*)"$', cleaned)
+            if m:
+                cleaned = m.group(1)
         if isinstance(entry, tk.Text):
             entry.delete("1.0", tk.END)
             entry.insert("1.0", cleaned)
         elif isinstance(entry, ttk.Combobox):
-            status_values = ["Regular", "Conscript", "Other", "Unassigned"]
+            status_values = ["Regular", "National Service", "Conscript", "Other", "Unassigned"]
             if cleaned in status_values:
                 entry.set(cleaned)
             else:
@@ -1541,7 +1548,7 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         elif field_name == "service_status":
-                            status_values = ["Regular", "Conscript", "Other", "Unassigned"]
+                            status_values = ["Regular", "National Service", "Conscript", "Other", "Unassigned"]
                             entry = ttk.Combobox(rf, values=status_values, state="readonly",
                                                  font=entry_font, width=40)
                             current_val = dv.strip()
@@ -1669,7 +1676,7 @@ class UpdateFatalities(tk.Toplevel):
                                 self.clipboard_append(val_str)
                                 # Strip any legacy {original} suffix before validating
                                 clean_val, _ = _split_coord_display(val_str)
-                                is_valid, msg, parsed = coords.validate_and_parse_coordinate(clean_val)
+                                is_valid, msg, parsed, snippet_text = coords.parse_with_snippet(clean_val)
                                 if not is_valid:
                                     ok = _confirm_yesno(
                                         self, "Unrecognized Coordinate Format",
@@ -1679,8 +1686,32 @@ class UpdateFatalities(tk.Toplevel):
                                         return None
                                 if parsed is not None:
                                     formatted = f"{parsed[0]}, {parsed[1]}"
+                                    # If a snippet was auto-extracted, wrap it with
+                                    # //...// in incident_location so the user can see
+                                    # what was used.  Skip if the user already has
+                                    # // delimiters in the text.
+                                    if snippet_text and "//" not in val_str:
+                                        # Try exact match first
+                                        if snippet_text in val_str:
+                                            val = val_str.replace(
+                                                snippet_text,
+                                                f"//{snippet_text}//", 1
+                                            )
+                                        else:
+                                            # Flexible: match the coord numbers with
+                                            # optional whitespace and hemisphere letters
+                                            flex_pat = re.compile(
+                                                r'(' + re.escape(str(parsed[0]).lstrip('-')) + r')'
+                                                r'\s*([NSns]?)\s*[,;\s]\s*'
+                                                r'(' + re.escape(str(parsed[1]).lstrip('-')) + r')'
+                                                r'\s*([EWew]?)',
+                                                re.IGNORECASE
+                                            )
+                                            val = flex_pat.sub(
+                                                r'//\1\2, \3\4//', str(val), count=1
+                                            )
                                     # Save for writing to incident_coordinates after the loop
-                                    _grid_decimal = (path_tuple[:-1], formatted, val_str)
+                                    _grid_decimal = (path_tuple[:-1], formatted, str(val))
                                 else:
                                     # Format was recognised but could not be converted
                                     # (e.g. DMS without enough parts).  Warn the user.

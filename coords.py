@@ -257,6 +257,29 @@ def _try_parse_vietnam_mgrs(coord_str: str):
 #   message     Human-readable validation result
 #   coordinates (lat, lon) if parseable, else None
 # ---------------------------------------------------------------------------
+
+def _extract_coordinate_snippets(text: str):
+    """Scan free-form text for embedded decimal-coordinate pairs.
+
+    Returns a list of (lat_str, lat_hem, lon_str, lon_hem) tuples found
+    in the text, ordered by occurrence.  Each tuple contains the raw
+    number strings and optional N/S/E/W hemisphere letters.
+
+    Matches patterns like:
+        "16.75, 107.15"
+        "16.75 N, 107.15 E"
+        "16.75N, 107.15E"
+        "-33.8688, 151.2093"
+    Does NOT match integer-only pairs (avoids MGRS false positives).
+    """
+    # Two decimal-containing numbers, optionally signed, optionally with
+    # N/S/E/W hemisphere letters, separated by comma, semicolon, or whitespace.
+    pat = re.compile(
+        r'(-?\d+\.\d+)\s*([NSns]?)\s*[,;\s]+\s*(-?\d+\.\d+)\s*([EWew]?)'
+    )
+    return pat.findall(text)
+
+
 def validate_and_parse_coordinate(coord_str: str):
     # Guard: reject empty or whitespace-only input immediately.
     if not coord_str or not str(coord_str).strip():
@@ -266,11 +289,22 @@ def validate_and_parse_coordinate(coord_str: str):
     # spaces — the regex patterns handle those themselves).
     coord_str = str(coord_str).strip()
 
+    # ── Explicit //...// delimiter: user-wrapped coordinate takes priority ──
+    # If the text contains //lat, lon// or //MGRS//, extract the content
+    # between the first pair and parse only that.  The user can wrap any
+    # coordinate they want the system to use with //...//.
+    delim = re.search(r'//(.+?)//', coord_str)
+    if delim:
+        coord_str = delim.group(1).strip()
+
     # ── Pre-normalisation: strip degree symbols and trailing annotation ──
     # Users sometimes paste coordinates like "10.455° N  107.270° E MGRS".
     # Remove ° and trailing keywords so the parsers see clean numbers.
     coord_str = re.sub(r'°', '', coord_str)
     coord_str = re.sub(r'\s+(MGRS|UTM|DMS)\s*$', '', coord_str, flags=re.IGNORECASE)
+    # Strip trailing [...] grid-reference fragments so the decimal parser
+    # sees a clean "lat, lon" (e.g. "10.500, 107.200 [48 234567]").
+    coord_str = re.sub(r'\s*\[[^]]*\]\s*$', '', coord_str).strip()
 
     # =========================================================================
     # PARSER 1 — Decimal Degrees
@@ -391,10 +425,12 @@ def validate_and_parse_coordinate(coord_str: str):
     # =========================================================================
     #
     # Lightweight detection: looks for at least two degree-minute pairs
-    # with optional hemisphere letters.  Full mathematical conversion is
-    # not implemented (the `mgrs` library doesn't handle DMS); this parser
-    # simply validates the *format* so the user doesn't get an "unrecognized"
-    # error when pasting DMS coordinates.
+    # with at least one hemisphere letter (N/S/E/W).  Without a hemisphere
+    # letter the input is too ambiguous — plain decimal coordinates like
+    # "10.500, 107.200" would otherwise be misinterpreted as DMS.
+    # Full mathematical conversion is not implemented (the `mgrs` library
+    # doesn't handle DMS); this parser simply validates the *format* so the
+    # user doesn't get an "unrecognized" error when pasting DMS coordinates.
     #
     # Now implements degrees + decimal-minutes → decimal conversion.
     # Each match captures (degrees, minutes, optional N/S/E/W).
@@ -403,7 +439,11 @@ def validate_and_parse_coordinate(coord_str: str):
     )
     matches = list(dms_regex.finditer(coord_str))
 
-    if len(matches) >= 2:
+    # Require at least one hemisphere letter — without it, numbers like
+    # "10.500, 107.200" would be falsely interpreted as DMS (10°500', 107°200').
+    has_hemisphere = any(m.group(3).upper() for m in matches)
+
+    if len(matches) >= 2 and has_hemisphere:
         # Collect (degrees, minutes, hemisphere) triples
         dms_parts = []
         for m in matches:
@@ -433,10 +473,46 @@ def validate_and_parse_coordinate(coord_str: str):
                 lon = -lon
             if -90 <= lat <= 90 and -180 <= lon <= 180:
                 return True, "Valid DMS (Degrees/Minutes)", (round(lat, 5), round(lon, 5))
-        return True, "Valid DMS (Degrees/Minutes)", None
+        # DMS format was recognised but the computed coordinates were
+        # out of range (e.g. decimal degrees mistaken for DMS).
+        # Fall through to the snippet-extraction fallback instead of
+        # returning — decimal-with-hemisphere often parses there.
 
     # =========================================================================
-    # FALLBACK — nothing matched
+    # FALLBACK 1 — try extracting a coordinate snippet from free-form text
+    # =========================================================================
+    #
+    # When the user pastes prose like "Best estimate: 16.75, 107.15 ; Ben Het",
+    # none of the strict parsers above will match the full string.  Scan for
+    # embedded decimal-degree pairs and try parsing each one.
+    snippets = _extract_coordinate_snippets(coord_str)
+    for lat_str, lat_hem, lon_str, lon_hem in snippets:
+        lat_hem = lat_hem.upper()
+        lon_hem = lon_hem.upper()
+        # Reconstruct a clean "lat, lon" string for the decimal parser
+        candidate = f"{lat_str} {lat_hem}, {lon_str} {lon_hem}".strip()
+        # Remove trailing comma if hemisphere letters are empty
+        candidate = candidate.rstrip(",").strip()
+        # Try the decimal parser (regex from PARSER 1 above)
+        dec_regex = re.compile(
+            r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$",
+            re.IGNORECASE
+        )
+        m = dec_regex.match(candidate)
+        if m:
+            lat = float(m.group(1))
+            lat_dir = m.group(2).upper() if m.group(2) else ""
+            lon = float(m.group(3))
+            lon_dir = m.group(4).upper() if m.group(4) else ""
+            if lat_dir == 'S':
+                lat *= -1
+            if lon_dir == 'W':
+                lon *= -1
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                return True, "Extracted from free-form text", (round(lat, 5), round(lon, 5))
+
+    # =========================================================================
+    # FALLBACK 2 — nothing matched
     # =========================================================================
     #
     # Show the user which formats are accepted so they can retype or
@@ -448,9 +524,68 @@ def validate_and_parse_coordinate(coord_str: str):
         " or '10.34694, 107.07263'\n"
         "  2. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
         "  3. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
-        "  4. DMS: '10° 20' N, 107° 04' E'"
+        "  4. DMS: '10\u00b0 20' N, 107\u00b0 04' E'"
     )
     return False, error_msg, None
+
+
+def parse_with_snippet(text: str):
+    """Parse coordinate text and also return the extracted snippet for wrapping.
+
+    Works like validate_and_parse_coordinate but additionally returns the
+    raw coordinate text that was extracted, so the caller can wrap it in
+    //...// delimiters for user visibility.
+
+    Returns (is_valid, msg, parsed, snippet_text) where snippet_text is
+    the raw coordinate substring extracted (or None if full-string parse).
+    """
+    text = str(text).strip() if text else ""
+    if not text:
+        return False, "Input is empty.", None, None
+
+    # 1) Try explicit //...// delimiters first
+    delim = re.search(r'//(.+?)//', text)
+    if delim:
+        inner = delim.group(1).strip()
+        is_valid, msg, parsed = validate_and_parse_coordinate(inner)
+        return is_valid, msg, parsed, inner
+
+    # 2) Try full-string parse
+    is_valid, msg, parsed = validate_and_parse_coordinate(text)
+    if is_valid and parsed is not None and msg == "Extracted from free-form text":
+        # Find which snippet was used so we can wrap it
+        snippets = _extract_coordinate_snippets(text)
+        for lat_str, lat_hem, lon_str, lon_hem in snippets:
+            lat_hem = lat_hem.upper()
+            lon_hem = lon_hem.upper()
+            candidate = f"{lat_str} {lat_hem}, {lon_str} {lon_hem}".strip()
+            candidate = candidate.rstrip(",").strip()
+            # If no hemisphere letters, remove the stray space before comma
+            if not lat_hem and not lon_hem:
+                candidate = re.sub(r'\s+,', ',', candidate)
+            dec_regex = re.compile(
+                r"^(-?\d+\.\d+)\s*([NS]?)[,\s]+(-?\d+\.\d+)\s*([EW]?)$",
+                re.IGNORECASE
+            )
+            m = dec_regex.match(candidate)
+            if m:
+                lat = float(m.group(1))
+                lat_dir = m.group(2).upper() if m.group(2) else ""
+                lon = float(m.group(3))
+                lon_dir = m.group(4).upper() if m.group(4) else ""
+                if lat_dir == 'S':
+                    lat *= -1
+                if lon_dir == 'W':
+                    lon *= -1
+                if (-90 <= lat <= 90 and -180 <= lon <= 180
+                        and round(lat, 5) == parsed[0]
+                        and round(lon, 5) == parsed[1]):
+                    # Reconstruct the exact substring from original text
+                    # Use the raw match boundaries for accuracy
+                    return is_valid, msg, parsed, candidate
+        return is_valid, msg, parsed, None
+
+    return is_valid, msg, parsed, None
 
 
 def _load_json(path: str) -> list[dict] | None:
