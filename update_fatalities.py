@@ -7,6 +7,7 @@ Side panel for AI results (revealed on demand).
 
 from __future__ import annotations
 
+from datetime import date
 import json
 import os
 import re
@@ -285,6 +286,10 @@ class UpdateFatalities(tk.Toplevel):
         self._record_snapshot: dict | None = None
 
         self._search_text = ""
+        today = date.today()
+        self._on_this_day_month_var = tk.StringVar(value=str(today.month).zfill(2))
+        self._on_this_day_day_var = tk.StringVar(value=str(today.day).zfill(2))
+        self._on_this_day_chk_var = tk.BooleanVar(value=False)
         self._filtered = list(range(len(self.working_data)))
         self._filtered_pos = 0
         self._entry_widgets: dict[str, tk.Entry] = {}
@@ -306,6 +311,34 @@ class UpdateFatalities(tk.Toplevel):
             saved_live_search = session.get("live_search")
             if saved_live_search is not None:
                 self._live_search_var.set(saved_live_search)
+
+            saved_on_this_day_month = session.get("on_this_day_month")
+            if saved_on_this_day_month:
+                self._on_this_day_month_var.set(saved_on_this_day_month)
+            saved_on_this_day_day = session.get("on_this_day_day")
+            if saved_on_this_day_day:
+                self._on_this_day_day_var.set(saved_on_this_day_day)
+            saved_on_this_day = session.get("on_this_day")
+            if saved_on_this_day is not None:
+                self._on_this_day_chk_var.set(saved_on_this_day)
+
+            saved_side_panel = session.get("side_panel_visible")
+            if saved_side_panel is not None:
+                self._side_panel_visible_var.set(saved_side_panel)
+                # Apply side panel visibility
+                if saved_side_panel:
+                    self._show_side_panel()
+                else:
+                    self._hide_side_panel()
+
+        # Apply OnThisDay mutual-exclusivity state after session restore
+        if self._on_this_day_chk_var.get():
+            self._search_entry.configure(state=tk.DISABLED)
+            self._on_this_day_month_entry.configure(state=tk.NORMAL)
+            self._on_this_day_day_entry.configure(state=tk.NORMAL)
+        else:
+            self._on_this_day_month_entry.configure(state=tk.DISABLED)
+            self._on_this_day_day_entry.configure(state=tk.DISABLED)
 
         if saved_search:
             self._search_text = saved_search
@@ -359,6 +392,9 @@ class UpdateFatalities(tk.Toplevel):
             if not ok:
                 return
         extra = self._gather_ref_state()
+        if extra is None:
+            extra = {}
+        extra["side_panel_visible"] = self._side_panel_visible_var.get()
         session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
         # Bring the parent (main menu) to the front before closing
         try:
@@ -494,7 +530,7 @@ class UpdateFatalities(tk.Toplevel):
             if isinstance(result, tuple):
                 text, model_name, usage_meta, elapsed = result
                 try:
-                    cleaned = text.strip()
+                    cleaned = (text or "").strip()
                     if cleaned.startswith("```"):
                         cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0]
                     parsed = json.loads(cleaned)
@@ -847,7 +883,7 @@ class UpdateFatalities(tk.Toplevel):
     def _show_derivation_result(self, field_name: str, result_text: str,
                                  model_name=None, usage_meta=None, elapsed=0.0):
         """Show the AI-derived result and ask the user to accept or cancel."""
-        result_text = result_text.strip()
+        result_text = (result_text or "").strip()
 
         # ── Build cost/time header ──
         header = f"AI: {field_name}"
@@ -977,6 +1013,28 @@ class UpdateFatalities(tk.Toplevel):
         self._search_var.trace_add("write", lambda *_: self._on_search_changed())
         self._search_entry = _styled_entry(sf, width=24, textvariable=self._search_var)
         self._search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # OnThisDay date filter: month + day entries (defaults today) + checkbox
+        tk.Label(sf, text="  Use OnThisDay", font=(FONT, 9), bg=BG_GREY, fg=TEXT_MUTED).pack(side=tk.LEFT, padx=(8, 2))
+        self._on_this_day_month_entry = tk.Entry(sf, width=3, font=(FONT, 9), bg=WHITE, fg=TEXT_DARK,
+                                                  textvariable=self._on_this_day_month_var,
+                                                  justify=tk.CENTER)
+        self._on_this_day_month_entry.pack(side=tk.LEFT)
+        tk.Label(sf, text="-", font=(FONT, 9), bg=BG_GREY, fg=TEXT_MUTED).pack(side=tk.LEFT)
+        self._on_this_day_day_entry = tk.Entry(sf, width=3, font=(FONT, 9), bg=WHITE, fg=TEXT_DARK,
+                                                textvariable=self._on_this_day_day_var,
+                                                justify=tk.CENTER)
+        self._on_this_day_day_entry.pack(side=tk.LEFT)
+        self._on_this_day_chk = tk.Checkbutton(
+            sf, text="", variable=self._on_this_day_chk_var,
+            bg=BG_GREY, activebackground=BG_GREY,
+            command=self._on_this_day_toggled
+        )
+        self._on_this_day_chk.pack(side=tk.LEFT, padx=(2, 0))
+        self._on_this_day_month_var.trace_add("write", lambda *_: self._on_this_day_changed())
+        self._on_this_day_day_var.trace_add("write", lambda *_: self._on_this_day_changed())
+        # Initial state: date picker disabled (OnThisDay unchecked by default)
+        self._on_this_day_month_entry.configure(state=tk.DISABLED)
+        self._on_this_day_day_entry.configure(state=tk.DISABLED)
         self._search_count = tk.Label(sf, text="", font=(FONT, 9), bg=BG_GREY, fg=TEXT_MUTED)
         self._search_count.pack(side=tk.RIGHT, padx=(8, 0))
 
@@ -1039,8 +1097,16 @@ class UpdateFatalities(tk.Toplevel):
         )
         self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
 
+        self._side_panel_visible_var = tk.BooleanVar(value=True)
+        self._side_panel_chk = tk.Checkbutton(
+            top_row, text="Side Panel", variable=self._side_panel_visible_var,
+            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9),
+            command=self._toggle_side_panel
+        )
+        self._side_panel_chk.pack(side=tk.LEFT, padx=(10, 0))
+
         self._copy_btn = self._flat_btn(
-            top_row, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
+            top_row, "AI: COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
             bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
         )
         self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
@@ -1123,6 +1189,26 @@ class UpdateFatalities(tk.Toplevel):
         self._search_text = self._search_var.get().strip().lower()
         self._apply_search()
 
+    def _on_this_day_changed(self):
+        # Date entry changed while checkbox is checked — re-apply filter
+        self._apply_search()
+
+    def _on_this_day_toggled(self):
+        """Mutually exclusive: text search OR OnThisDay filter, never both."""
+        if self._on_this_day_chk_var.get():
+            # OnThisDay ON → clear & disable text search
+            self._search_var.set("")
+            self._search_text = ""
+            self._search_entry.configure(state=tk.DISABLED)
+            self._on_this_day_month_entry.configure(state=tk.NORMAL)
+            self._on_this_day_day_entry.configure(state=tk.NORMAL)
+        else:
+            # OnThisDay OFF → enable text search, disable date picker
+            self._on_this_day_month_entry.configure(state=tk.DISABLED)
+            self._on_this_day_day_entry.configure(state=tk.DISABLED)
+            self._search_entry.configure(state=tk.NORMAL)
+        self._apply_search()
+
     def _apply_search(self):
         if not self._search_text:
             self._filtered = list(range(len(self.working_data)))
@@ -1139,11 +1225,37 @@ class UpdateFatalities(tk.Toplevel):
                     return False
                 if _search_dict(record):
                     self._filtered.append(i)
+        # OnThisDay filter: restrict to records with date_of_death matching mm-dd
+        if self._on_this_day_chk_var.get():
+            m_str = self._on_this_day_month_var.get().strip()
+            d_str = self._on_this_day_day_var.get().strip()
+            if m_str and d_str:
+                try:
+                    m = int(m_str)
+                    d = int(d_str)
+                    if 1 <= m <= 12 and 1 <= d <= 31:
+                        target_ddmm = f"{m:02d}-{d:02d}"
+                        self._filtered = [
+                            i for i in self._filtered
+                            if (dod := (self.working_data[i]
+                                        .get("serviceRecordAuthority", {})
+                                        .get("date_of_death", "")))
+                            and dod[-5:] == target_ddmm
+                        ]
+                except ValueError:
+                    pass  # invalid input → no filter applied
         self._filtered_pos = 0
         total = len(self._filtered)
-        self._search_count.configure(text=f"{total} match{'es' if total != 1 else ''}" if self._search_text else "")
+        self._search_count.configure(text=f"{total} match{'es' if total != 1 else ''}" if (self._search_text or self._on_this_day_chk_var.get()) else "")
         self._show_record()
-        session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={"ai_option": self._payload_dropdown_var.get(), "live_search": self._live_search_var.get()})
+        session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
+            "ai_option": self._payload_dropdown_var.get(),
+            "live_search": self._live_search_var.get(),
+            "on_this_day": self._on_this_day_chk_var.get(),
+            "on_this_day_month": self._on_this_day_month_var.get(),
+            "on_this_day_day": self._on_this_day_day_var.get(),
+            "side_panel_visible": self._side_panel_visible_var.get(),
+        })
 
     # ------------------------------------------------------------------
     # Record display
@@ -1185,15 +1297,19 @@ class UpdateFatalities(tk.Toplevel):
         text_widget.tag_bind("link", "<Leave>", _on_leave)
 
     def _show_record(self):
+        # ── Save current side-panel state for the outgoing record ──
+        self._save_side_panel_state()
         for child in self._fields_frame.winfo_children():
             child.destroy()
-        # Clear side-panel AI results when switching records
+        # Clear side-panel for the incoming record
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt_label.configure(text="PROMPT")
         self._side_resp_label.configure(text="RESPONSE")
         self._side_resp_replace("")
-        self._hide_side_panel()
+        # Respect Side Panel checkbox
+        if self._side_panel_visible_var.get():
+            self._show_side_panel()
         total = len(self._filtered)
         full_total = len(self.working_data)
         if self._search_text:
@@ -1229,6 +1345,14 @@ class UpdateFatalities(tk.Toplevel):
         override_raw = (dd.get("authoritative_ai_override", "") or "").strip()
         override = override_raw if override_raw and override_raw.lower() != "unassigned" else ""
         self._hotlink_combined_text = f"{override}\n\n{ai_resp}".strip() if override else ai_resp
+        # Strip **[...]** metadata header produced by _make_header (see README
+        # § Hotlink Metadata Filtering).  Tags must appear within the first 80
+        # characters; if found the entire tagged block is removed so only the
+        # payload reaches hotlink AI queries.
+        if "**[" in self._hotlink_combined_text[:80]:
+            end = self._hotlink_combined_text.find("]**")
+            if end != -1:
+                self._hotlink_combined_text = self._hotlink_combined_text[end + 3:]
         word_count = len(self._hotlink_combined_text.split())
         self._hotlink_active = word_count > 50
         if self._hotlink_active:
@@ -1253,10 +1377,8 @@ class UpdateFatalities(tk.Toplevel):
                 else:
                     rf = tk.Frame(parent_frame, bg=WHITE)
                     rf.pack(fill=tk.X, padx=16 if not prefix_path else 0, pady=4)
-                    label_width = 24 if not prefix_path else 22
                     field_label = tk.Label(rf, text=f"{field_name}", font=(FONT, 10),
-                                           bg=WHITE, fg=TEXT_DARK,
-                                           width=label_width, anchor=tk.E)
+                                           bg=WHITE, fg=TEXT_DARK)
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
                     _HOTLINK_FIELDS = {"service_status", "place_of_death",
                                        "circumstances_of_death", "unit_served_with",
@@ -1269,6 +1391,8 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         dv = str(raw_value) if raw_value is not None else ""
                     is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
+                    if field_name == "last_change_updated_to_firestore":
+                        is_editable = True
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -1410,6 +1534,12 @@ class UpdateFatalities(tk.Toplevel):
                                 entry.set("Other")
                             entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                        elif field_name == "last_change_updated_to_firestore":
+                            entry = ttk.Combobox(rf, values=["Yes", "No"], state="readonly",
+                                                 font=entry_font, width=8)
+                            entry.set(dv.strip() if dv.strip() in ("Yes", "No") else "No")
+                            entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
+                            entry.pack(side=tk.LEFT)
                         else:
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
@@ -1436,7 +1566,24 @@ class UpdateFatalities(tk.Toplevel):
         state = tk.DISABLED if locked else tk.NORMAL
         self._prev_btn.configure(state=state)
         self._next_btn.configure(state=state)
-        self._search_entry.configure(state=state)
+        if locked:
+            self._search_entry.configure(state=tk.DISABLED)
+            self._on_this_day_month_entry.configure(state=tk.DISABLED)
+            self._on_this_day_day_entry.configure(state=tk.DISABLED)
+            self._on_this_day_chk.configure(state=tk.DISABLED)
+            self._side_panel_chk.configure(state=tk.DISABLED)
+        else:
+            # Mutual exclusivity: enable only the active filter widget
+            if self._on_this_day_chk_var.get():
+                self._search_entry.configure(state=tk.DISABLED)
+                self._on_this_day_month_entry.configure(state=tk.NORMAL)
+                self._on_this_day_day_entry.configure(state=tk.NORMAL)
+            else:
+                self._search_entry.configure(state=tk.NORMAL)
+                self._on_this_day_month_entry.configure(state=tk.DISABLED)
+                self._on_this_day_day_entry.configure(state=tk.DISABLED)
+            self._on_this_day_chk.configure(state=tk.NORMAL)
+            self._side_panel_chk.configure(state=tk.NORMAL)
         if locked:
             self._lock_frame.pack(fill=tk.X, pady=(0, 6), before=self._card)
         else:
@@ -1470,7 +1617,7 @@ class UpdateFatalities(tk.Toplevel):
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "last_change_updated_to_firestore")
             
             if not is_editable:
                 val = orig_val
@@ -1507,8 +1654,12 @@ class UpdateFatalities(tk.Toplevel):
                                 clean_val, _ = _split_coord_display(val_str)
                                 is_valid, msg, parsed = coords.validate_and_parse_coordinate(clean_val)
                                 if not is_valid:
-                                    _error_dialog(self, "Invalid Coordinate Format", msg)
-                                    return None
+                                    ok = _confirm_yesno(
+                                        self, "Unrecognized Coordinate Format",
+                                        f"{msg}\n\nSave anyway without conversion?"
+                                    )
+                                    if not ok:
+                                        return None
                                 if parsed is not None:
                                     formatted = f"{parsed[0]}, {parsed[1]}"
                                     # Save for writing to co-ordinates_decimal after the loop
@@ -1602,6 +1753,8 @@ class UpdateFatalities(tk.Toplevel):
         ok = _confirm_yesno(self, "Confirm Update", f'Please confirm update for "{record_id}"')
         if not ok:
             return
+        # Always reset Firestore sync flag on successful update
+        updated["last_change_updated_to_firestore"] = "No"
         actual_idx = self._filtered[self._filtered_pos]
         self.working_data[actual_idx] = updated
         if not _save_json(self.file_path, self.working_data):
@@ -1631,7 +1784,14 @@ class UpdateFatalities(tk.Toplevel):
         if self._filtered_pos > 0:
             self._filtered_pos -= 1
             self._show_record()
-            session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={"ai_option": self._payload_dropdown_var.get(), "live_search": self._live_search_var.get()})
+            session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
+                "ai_option": self._payload_dropdown_var.get(),
+                "live_search": self._live_search_var.get(),
+                "on_this_day": self._on_this_day_chk_var.get(),
+                "on_this_day_month": self._on_this_day_month_var.get(),
+                "on_this_day_day": self._on_this_day_day_var.get(),
+                "side_panel_visible": self._side_panel_visible_var.get(),
+            })
 
     def _next(self):
         if self._record_dirty:
@@ -1639,7 +1799,14 @@ class UpdateFatalities(tk.Toplevel):
         if self._filtered_pos < len(self._filtered) - 1:
             self._filtered_pos += 1
             self._show_record()
-            session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={"ai_option": self._payload_dropdown_var.get(), "live_search": self._live_search_var.get()})
+            session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
+                "ai_option": self._payload_dropdown_var.get(),
+                "live_search": self._live_search_var.get(),
+                "on_this_day": self._on_this_day_chk_var.get(),
+                "on_this_day_month": self._on_this_day_month_var.get(),
+                "on_this_day_day": self._on_this_day_day_var.get(),
+                "side_panel_visible": self._side_panel_visible_var.get(),
+            })
 
     # ------------------------------------------------------------------
     # Side panel
@@ -1650,6 +1817,13 @@ class UpdateFatalities(tk.Toplevel):
 
     def _hide_side_panel(self):
         self._side_panel.pack_forget()
+
+    def _toggle_side_panel(self):
+        """Toggle side panel visibility from the checkbox."""
+        if self._side_panel_visible_var.get():
+            self._show_side_panel()
+        else:
+            self._hide_side_panel()
 
     # ------------------------------------------------------------------
     # AI Lookup
@@ -1678,7 +1852,18 @@ class UpdateFatalities(tk.Toplevel):
             "Running this process will re-create it again for review, but not immediately overwrite it."
         ) if has_substantive else ""
 
+        # Read provider for confirmation dialog
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+        env = {
+            line.partition("=")[0].strip(): line.partition("=")[2].strip().strip('"').strip("'")
+            for line in (l.strip() for l in open(env_path, "r", encoding="utf-8"))
+            if line and not line.startswith("#") and "=" in line
+        } if os.path.exists(env_path) else {}
+
         confirm_msg = (
+            f"Get a new dataset using "
+            f"{env.get('AI_MASTER_MODEL_PROVIDER', 'Google')}\n"
+            f"-----"
             f"This is a lengthy process (~2 minutes). Execute?\n\n"
             f"// Live Search is currently: {'ON' if is_live_search else 'OFF'}\n"
             f"[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]\n\n"
@@ -1714,13 +1899,6 @@ class UpdateFatalities(tk.Toplevel):
             config = ai_master_prompts.get_master_response_option_b_payloads(params, is_live_search)
         else:
             config = ai_master_prompts.get_master_response_option_c_payload(params, is_live_search)
-
-        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-        env = {
-            line.partition("=")[0].strip(): line.partition("=")[2].strip().strip('"').strip("'")
-            for line in (l.strip() for l in open(env_path, "r", encoding="utf-8"))
-            if line and not line.startswith("#") and "=" in line
-        } if os.path.exists(env_path) else {}
 
         master_provider = env.get("AI_MASTER_MODEL_PROVIDER", "Google").lower()
         allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek,OpenRouter").split(",") if p.strip()]
@@ -1767,7 +1945,7 @@ class UpdateFatalities(tk.Toplevel):
             return
 
         self._side_prompt_label.configure(text=f"PROMPT: {selected_option}")
-        self._side_resp_label.configure(text=f"RESPONSE: {selected_option}")
+        self._side_resp_label.configure(text=f"RESPONSE: MASTER {selected_option}")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", config["user_prompt"])
@@ -1804,11 +1982,15 @@ class UpdateFatalities(tk.Toplevel):
                 total_secs = time.time() - start_time
                 
                 provider_label = {"openrouter": "OpenRouter", "deepseek": "Deepseek", "google": "Google"}.get(master_provider, master_provider.capitalize())
-                lines = [f"Created {ts} used {provider_label} $A {total:.4f} ({total_secs:.0f}s) - {selected_option}"]
+                display_model = model_name if master_provider == "openrouter" else f"{provider_label} {model_name}"
+                lines = [f"Created {ts} used {display_model} $A {total:.6f} ({total_secs:.0f}s) - {selected_option}"]
                 if config["is_two_step"]:
-                    lines.append(f"Step 1 ({step1_model}): $A {c1:.4f} ({step1_secs:.0f}s)")
-                    lines.append(f"Step 2 ({model_name}): $A {c2:.4f} ({time.time()-step2_start:.0f}s)")
-                return "\n".join(lines) + "\n\n\n"
+                    lines.append(f"Step 1 ({step1_model}): $A {c1:.6f} ({step1_secs:.0f}s)")
+                    lines.append(f"Step 2 ({model_name}): $A {c2:.6f} ({time.time()-step2_start:.0f}s)")
+                # Metadata tagged with sentinel delimiters so _apply_hotlinks can
+                # strip it before feeding data into AI field-derivation queries.
+                # Display format: **[ Created {ts} used ... ]**\n{payload}
+                return "**[" + "\n".join(lines) + "]**" + "\n"
 
             def _fmt_err(exc):
                 if isinstance(exc, urllib.error.HTTPError):
@@ -2126,7 +2308,10 @@ class UpdateFatalities(tk.Toplevel):
     def _side_resp_replace(self, text: str):
         self._side_resp.delete("1.0", tk.END)
         self._side_resp.insert("1.0", text)
-        if len(text) > self._copy_threshold:
+        # Only show COPY RESPONSE button for master responses, never for hotlinks.
+        # Identified by the side-panel label starting with "RESPONSE: MASTER".
+        is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+        if len(text) > self._copy_threshold and is_master:
             try:
                 self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
             except tk.TclError:
@@ -2177,3 +2362,9 @@ class UpdateFatalities(tk.Toplevel):
             "sidePanelVisible": self._side_panel.winfo_ismapped(),
         }
         return {"lastRefId": ref_id, ref_id: ref_state}
+
+    def _save_side_panel_state(self):
+        """Persist current side-panel content to session for the active record."""
+        extra = self._gather_ref_state()
+        if extra:
+            session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
