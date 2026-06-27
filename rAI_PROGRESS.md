@@ -1,21 +1,47 @@
 # rAI_PROGRESS.md
 
-## Session Summary (2026-06-26)
+## Session Summary (2026-06-27)
 
 ### Completed
-1. **Location fields restructured** — `place_of_death`, `grid_reference`, `co-ordinates_decimal` migrated from flat `derived_details` keys to nested `derived_details.fatality_locations.{death_location, incident_location, incident_coordinates}`. Updated: display widgets, validation logic, info dialogs, clipboard copy, post-loop write, master `pod` param, All-Hotlinks dialog label. Backward-compat aliases preserved in `_populate_field_value`, `_render_fields`, and `_read_form`.
-2. **OpenRouter cost key fix** — `usage.cost` added to extraction chain (`total_cost` → `totalCost` → `cost` → `0`). Cost was showing $0 because OpenRouter returns `cost` not `total_cost`.
-3. **OpenRouter response logging** — `openrouter.log` appended at both call sites (internal + master) with timestamp and full JSON for cost/response verification.
-4. **authoritative_ai_override not recognized** — combined hotlink text now label-prefixed (`authoritative_ai_override:\n{value}\n\nai_response:\n{value}`) so AI can identify the override section.
+
+1. **`record_status` replaces `last_change_updated_to_firestore`**
+   - Deleted the top-level `last_change_updated_to_firestore` field from all code paths
+   - `record_status` nested object (`changed`, `update_to_firestore`) now lives under each record in AU/NZ JSONs
+   - On Update Record: `record_status.changed` = `date.today()` in `yyyy-mm-dd`; `update_to_firestore` left untouched (managed by external process)
+   - Both fields are **read-only** in the Update modal; `record_status` section sorted to bottom of display
+
+2. **Master Response prompt overhaul** (`ai_master_prompts.py`)
+   - Added `surname` computed field — portion of `full_name` before the first comma (e.g., `"PETTIT, Leslie James"` → `"PETTIT"`)
+   - `surname` passed in `params` dict in `update_fatalities.py`
+   - New **IDENTITY LOCK** section: 7 rules instructing the AI to treat identity fields as authoritative, never validate/reject/fictionalise
+   - Last rule: *"You must accept Australia had National Service during the Vietnam War period 1965 and 1972."*
+   - All prompt f-strings now use real `\n` newlines (`.replace("\\n", "\n")` at return) — displays correctly in side panel
+
+3. **`incident_location` / `incident_coordinates` workflow**
+   - Removed `coords.mask_coordinates` (auto `//` insertion) and auto-conversion from `_read_form` / Update Record
+   - `incident_coordinates` is now a **hotlink** — clicking it reads `incident_location` for `//...//` snippets, converts locally via `coords.parse_with_snippet`, writes result
+   - `incident_coordinates` added to `_HOTLINK_FIELDS` and All Hotlinks batch
+   - AI grid_reference prompt now **requires** physical place names in output: `"best_estimate_gps": "LAT, LON [GRID] — location_names"` (FSB/LZ names included)
+   - Enhanced error dialog with MGRS grid-square reference table (YS/XT/YT) when conversion fails
+
+4. **All Hotlinks now includes `grid_reference`** — 5th field in results dialog, writes to `incident_location`
+
+5. **Error dialog improvements** (`coords.py`)
+   - Long messages (>10 lines) now render in a **scrollable Text widget** with **basic markdown**: `## heading`, `**bold**`, `` `code` ``, `---` separator
+   - `_side_resp_replace` guarded against `None` text
 
 ### Current System State
-- **Storage paths**: `derived_details.fatality_locations.death_location`, `.incident_location`, `.incident_coordinates`
-- **Backward compat**: `_populate_field_value`, `_render_fields`, `_read_form` accept both old (`place_of_death`, `grid_reference`, `co-ordinates_decimal`) and new leaf names
-- **AI prompts**: still output legacy keys; mapping layer translates to new paths
-- **Hotlinks**: work with both old and new display names via `FIELD_PROMPTS` aliases
-- **OpenRouter cost**: extracted from `usage.cost` key (observed: `deepseek-r1` ~0.67¢ USD/call)
-- **Override identification**: labeled sections in combined text enable AI to locate and apply `authoritative_ai_override`
-- **Logging**: `openrouter.log` captures every OpenRouter response for debugging
+
+| Area | Detail |
+|---|---|
+| **record_status** | `{changed, update_to_firestore}` nested under record root; read-only in UI; `changed` auto-set to today on save |
+| **surname** | Computed from `full_name` (pre-comma portion); passed in `params["surname"]` to all Master Response options |
+| **IDENTITY LOCK** | 7 rules in `_get_archivist_prompt`; also applies to Option B step 2 via same function |
+| **incident_location → incident_coordinates** | Manual-only via `incident_coordinates` hotlink; user types `//...//` delimiters manually; no auto-conversion on Update |
+| **grid_reference prompt** | Outputs `"GPS [GRID] — place_names"` format; location names mandatory when info exists |
+| **Error dialogs** | Scrollable + markdown when >10 lines via `_render_markdown()` |
+| **Prompt display** | Real `\n` newlines in side panel (`.replace("\\n", "\n")` at source) |
+| **Files touched** | `update_fatalities.py`, `ai_master_prompts.py`, `ai_derived_details_prompts.py`, `coords.py` |
 
 ### Incomplete Work
 None.

@@ -7,6 +7,83 @@ import tkinter as tk
 from tkinter import ttk
 
 # ---------------------------------------------------------------------------
+# Update {incident_location} value by scanning the input text for any substring
+# that resembles a coordinate and applying masking rules to protect location data.
+#
+# The function performs the following steps:
+# 1. Identify coordinate‑like patterns using a broad fuzzy matcher. These include:
+#    - decimal pairs (e.g., "12.34 56.78")
+#    - grid references (e.g., "12345 2345")
+#    - degrees/minutes/seconds fragments
+#    - shorthand formats with N/S/E/W
+#
+# 2. For each detected snippet, apply masking rules:
+#    - If the snippet is already fully masked (//text//), leave it unchanged.
+#    - If the snippet begins with "//", do not prepend another "//".
+#    - If the snippet ends with "//", do not append another "//".
+#    - Only wrap clean, unmasked snippets in "//" on both sides.
+#
+# 3. Multiple coordinate‑like snippets in the same line are processed independently.
+#
+# This ensures {incident_location} is consistently masked while preventing
+# double‑masking, malformed masks, or accidental extension of existing masks.
+# The transformation is idempotent: running it multiple times will not alter
+# already‑masked content.
+# ---------------------------------------------------------------------------
+
+COORD_FUZZY = re.compile(
+    r"""
+    ([-+]?\d{1,3}\.\d{1,8}\s*[,;/\-\s]\s*[-+]?\d{1,3}\.\d{1,8} |
+     \b\d{1,3}\s*[-/,;: ]\s*\d{1,3}\b |
+     \d{1,3}°\s*\d{1,3}'\s*\d{0,3}"? |
+     \d{1,3}°\s*\d{1,3}' |
+     \d{1,3}°\s*\d{1,3}\.\d+' |
+     [NS]\s*\d{1,3}(\.\d+)? |
+     [EW]\s*\d{1,3}(\.\d+)? |
+     \d{1,3}(\.\d+)?\s*[NSEW] |
+     \b\d{1,2}[A-Z]{2}\s*\d{3,5}\s*\d{3,5}\b |
+     \b[A-Z]{2}\s*\d{3,5}\s*\d{3,5}\b |
+     \b[A-Z]{2}\d{2,3}\s*\d{3,5}\b |
+     \b[A-Z]{2}\d{4,6}\b |
+     \b\d{3,6}\s*[-/ ]\s*\d{3,6}\b)
+    """,
+    re.VERBOSE | re.IGNORECASE
+)
+
+
+def mask_coordinates(line: str) -> str:
+    """Mask coordinate-like substrings with // // unless already masked or inside // //."""
+
+    # Locate all existing //...// spans so nested matches are not re-wrapped.
+    existing_spans = [(m.start(), m.end()) for m in re.finditer(r'//.+?//', line)]
+
+    def replacer(m):
+        text = m.group(0)
+        pos, end = m.start(), m.end()
+
+        # If the match text itself is already fully masked
+        if text.startswith("//") and text.endswith("//"):
+            return text
+
+        # If left side already masked, don't prepend
+        if text.startswith("//"):
+            return text
+
+        # If right side already masked, don't append
+        if text.endswith("//"):
+            return text
+
+        # If the match falls entirely inside an existing //...// span, skip it
+        for sp_start, sp_end in existing_spans:
+            if sp_start <= pos and end <= sp_end:
+                return text
+
+        # Otherwise wrap normally
+        return f"//{text}//"
+
+    return COORD_FUZZY.sub(replacer, line)
+
+# ---------------------------------------------------------------------------
 # Known 100 km MGRS squares in zone 48P (southern / III Corps Vietnam).
 # Any square NOT in this set is assumed to be in 48Q (northern / I & II Corps).
 # ---------------------------------------------------------------------------
@@ -629,6 +706,33 @@ BORDER      = "#dcdcdc"
 FONT        = "Segoe UI"
 
 
+def _render_markdown(text_widget: tk.Text, message: str):
+    """Insert message into a Text widget with basic markdown formatting.
+    Supports: **bold**, ## heading, `code`, --- separator."""
+    text_widget.configure(state="normal")
+    text_widget.delete("1.0", tk.END)
+    text_widget.tag_configure("bold", font=(FONT, 10, "bold"))
+    text_widget.tag_configure("h2", font=(FONT, 11, "bold"), foreground=ACCENT)
+    text_widget.tag_configure("code", font=(FONT, 9), foreground="#555555")
+    lines = message.split("\n")
+    for line in lines:
+        if line.startswith("## "):
+            text_widget.insert(tk.END, line[3:] + "\n", "h2")
+        elif line.strip() and all(c in "\u2500-" for c in line.strip()):
+            text_widget.insert(tk.END, "\n")
+        else:
+            parts = re.split(r'(\*\*.*?\*\*|`.*?`)', line)
+            for part in parts:
+                if part.startswith("**") and part.endswith("**"):
+                    text_widget.insert(tk.END, part[2:-2], "bold")
+                elif part.startswith("`") and part.endswith("`"):
+                    text_widget.insert(tk.END, part[1:-1], "code")
+                else:
+                    text_widget.insert(tk.END, part)
+            text_widget.insert(tk.END, "\n")
+    text_widget.configure(state="disabled")
+
+
 def _error_dialog(parent: tk.Toplevel | None, title: str, message: str):
     dlg = tk.Toplevel(parent)
     dlg.title(title)
@@ -646,9 +750,23 @@ def _error_dialog(parent: tk.Toplevel | None, title: str, message: str):
     canvas.create_oval(2, 2, 26, 26, fill=ACCENT, outline="")
     canvas.create_line(9, 9, 19, 19, fill=WHITE, width=2)
     canvas.create_line(19, 9, 9, 19, fill=WHITE, width=2)
-    msg_lbl = tk.Label(icon_row, text=message, font=(FONT, 10), bg=WHITE,
-                       fg=TEXT_DARK, justify=tk.LEFT, wraplength=380)
-    msg_lbl.pack(side=tk.LEFT, padx=(12, 0))
+    # Use a scrollable Text widget for long messages (> 10 lines)
+    line_count = message.count("\n") + 1
+    if line_count > 10:
+        msg_frame = ttk.Frame(dlg)
+        msg_frame.pack(fill=tk.BOTH, expand=True, padx=24, pady=(0, 8))
+        msg_text = tk.Text(msg_frame, font=(FONT, 10), wrap=tk.WORD,
+                           bg=WHITE, fg=TEXT_DARK, relief=tk.FLAT,
+                           width=52, height=min(line_count + 1, 20))
+        _render_markdown(msg_text, message)
+        scrollbar = ttk.Scrollbar(msg_frame, command=msg_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        msg_text.configure(yscrollcommand=scrollbar.set)
+        msg_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    else:
+        msg_lbl = tk.Label(icon_row, text=message, font=(FONT, 10), bg=WHITE,
+                           fg=TEXT_DARK, justify=tk.LEFT, wraplength=380)
+        msg_lbl.pack(side=tk.LEFT, padx=(12, 0))
     btn_frame = ttk.Frame(dlg)
     btn_frame.pack(fill=tk.X, padx=24, pady=(0, 16))
     ok = tk.Label(btn_frame, text="OK", font=(FONT, 10, "bold"),

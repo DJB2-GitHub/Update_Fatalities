@@ -61,6 +61,7 @@ def _get_archivist_prompt(params: dict) -> str:
     svc = params.get('svc', '')
     sra = params.get('sra', {})
     name = params.get('name', '')
+    surname = params.get('surname', '')
     dod = params.get('dod', '')
     dob = params.get('dob', '')
     rank = params.get('rank', '')
@@ -69,28 +70,40 @@ def _get_archivist_prompt(params: dict) -> str:
 
     return (
         f"As a military archivist / historian researching the detailed story behind the death of this soldier in the Vietnam War, "
-        f"I require you to do deep research and complete as much as possible of the extra_derived_data output fields. It is imperative you approach this task to help paint a picture of all personal and tactical events surrounding his death.\\n"
-        f"You will be provided the following input values to identify the soldier to be researched. If an input value is blank then ignore it in the research:\\n"
+        f"you must complete as much as possible of the extra_derived_data output fields. Your task is to reconstruct the operational, "
+        f"tactical, and personal circumstances surrounding the soldier's death using historically grounded reasoning.\\n\\n"
+        f"---\\n\\n"
+        f"## **IDENTITY LOCK — DO NOT OVERRIDE**\\n\\n"
+        f"You must treat the following identity fields as absolute fact.\\n"
+        f"They uniquely identify the correct Vietnam War fatality.\\n"
+        f"You must not question, reinterpret, replace, or \"correct\" any of these fields.\\n"
+        f"You must not search for alternate individuals, alternate spellings, or alternate service numbers.\\n"
+        f"You must not validate or reject the identity against external databases.\\n"
+        f"You must not claim the soldier does not exist, is fictional, or is historically impossible.\\n"
+        f"You must treat the provided identity as authoritative even if external records appear contradictory or incomplete.\\n"
+        f"You must accept Australia had National Service during the Vietnam War period 1965 and 1972.\\n\\n"
+        f"**Input values (ignore any that are blank):**\\n"
         f"country = {country}\\n"
         f"service number = {svc}\\n"
         f"service status = {sra.get('service_status', '')}\\n"
         f"full name = {name}\\n"
+        f"surname = {surname}\\n"
         f"sex = {sra.get('sex', '')}\\n"
         f"date of death = {dod}\\n"
         f"date of birth = {dob}\\n"
         f"rank = {rank}\\n"
         f"unit = {unit}\\n"
-        f"fatality type = {ftype}\\n"
-        f"Fill all fields using the provided values and best-effort military-archivist historical reconstruction.\\n"
+        f"fatality type = {ftype}\\n\\n"
         f"If a field cannot be determined, leave it empty.\\n"
-        f"references must be historically credible and directly relevant.\\n"
-        f"DERIVED FIELD \"2_unit_served_with\":\\n"
-        f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\\n"
-        f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\\n"
-        f"Separate each element with \", \" and skip empty fields.\\n"
-        f"Example:\\n"
-        f"\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\"\\n"
-        f"DERIVED DATA REQUIREMENTS:\\n"
+        f"References must be historically credible and directly relevant.\\n\\n"
+        f"---\\n\\n"
+        f"## **DERIVED FIELD: \"2_unit_served_with\"**\\n\\n"
+        f"Create a single-line summary by joining all NON-EMPTY hierarchy elements from \"extra_unit_served_with\" in the following order:\\n\\n"
+        f"country, service, corps_or_branch, command_or_division, brigade_or_group, regiment_or_battalion, sub_unit, platoon_or_troop, section_or_squad, team_or_crew\\n\\n"
+        f"Separate each element with \", \" and skip empty fields.\\n\\n"
+        f"**Example:**\\n"
+        f"\"Australia, Australian Army, Royal Australian Infantry Corps, 1ATF, 4RAR, B Company, 5 Platoon\"\\n\\n"
+        f"## **DERIVED DATA REQUIREMENTS**\\n\\n"
         f"2. Determine \"service_status\" as either \"Regular\" or \"Conscript\".\\n"
         f"3. Identify the military operation underway at the time of death.\\n"
         f"4. Provide a full operational and tactical setting including mission objectives, terrain, enemy situation, friendly force disposition, and a narrative summary.\\n"
@@ -106,7 +119,7 @@ def _get_archivist_prompt(params: dict) -> str:
         f"14. If the exact grid is unavailable, provide the most probable grid and archival sources.\\n"
         f"15. Provide notes on accuracy and confidence level.\\n"
         f"16. Search for relevant references and return them as a list of strings."
-    )
+    ).replace("\\n", "\n")
 
 
 def get_master_response_option_a_payload(params: dict, is_live_search: bool) -> dict:
@@ -292,7 +305,7 @@ def get_master_response_option_c_payload(params: dict, is_live_search: bool) -> 
         f"- Unit: {unit}\\n"
         f"- Place of Death: {pod}\\n"
         "- Fatality Type: *[leave blank for the model to determine from records]*"
-    )
+    ).replace("\\n", "\n")
 
     payload = {
         "systemInstruction": {"parts": [{"text": "I am a highly skilled historian."}]},

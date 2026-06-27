@@ -16,10 +16,25 @@ import time
 import tkinter as tk
 import urllib.request
 import urllib.error
+import urllib.parse
+import webbrowser
 from tkinter import ttk
 import ai_master_prompts
 import ai_derived_details_prompts
 import session_manager
+
+# ---------------------------------------------------------------------------
+
+def _open_url(url: str):
+    """Open URL in Chrome if available, otherwise the system default browser."""
+    for candidate in ("chrome", "google-chrome", "chromium", "chromium-browser"):
+        try:
+            browser = webbrowser.get(candidate)
+            browser.open(url)
+            return
+        except webbrowser.Error:
+            continue
+    webbrowser.open(url)
 
 # ---------------------------------------------------------------------------
 # Design tokens
@@ -475,6 +490,11 @@ class UpdateFatalities(tk.Toplevel):
 
     def _on_hotlink_click(self, field_name: str):
         """Handle a hotlink click: run AI derivation in background and show result."""
+        # ── incident_coordinates: local conversion from incident_location, no AI ──
+        if field_name == "incident_coordinates":
+            self._convert_incident_coordinates()
+            return
+
         combined = self._hotlink_combined_text
         if not combined.strip():
             _error_dialog(self, "No Data",
@@ -543,6 +563,57 @@ class UpdateFatalities(tk.Toplevel):
                     f"All Hotlinks Failed.\n\n{result}"))
 
         threading.Thread(target=_task, daemon=True).start()
+
+    def _convert_incident_coordinates(self):
+        """Read incident_location, extract //...// snippet, convert, write to incident_coordinates."""
+        loc_path = ("derived_details", "fatality_locations", "incident_location")
+        coord_path = ("derived_details", "fatality_locations", "incident_coordinates")
+        loc_entry = self._entry_widgets.get(loc_path)
+        coord_entry = self._entry_widgets.get(coord_path)
+        if loc_entry is None or coord_entry is None:
+            return
+        # Read current incident_location value from the widget
+        if isinstance(loc_entry, tk.Text):
+            loc_val = loc_entry.get("1.0", "end-1c").strip()
+        else:
+            loc_val = loc_entry.get().strip()
+        if not loc_val or loc_val.lower() == "unassigned":
+            _error_dialog(self, "No Location",
+                          "The incident_location field is empty.\n\n"
+                          "Enter a coordinate enclosed in //...// delimiters first.")
+            return
+        # Look for //...// delimiters
+        if "//" not in loc_val:
+            _error_dialog(self, "No Delimiters",
+                          "No //...// delimiters found in incident_location.\n\n"
+                          "Wrap your coordinate in // delimiters, e.g.\n"
+                          "//-13.313, 107.370// or //48Q 328 456//")
+            return
+        is_valid, msg, parsed, snippet = coords.parse_with_snippet(loc_val)
+        if not is_valid or parsed is None:
+            attempted = snippet.strip() if snippet else loc_val
+            _error_dialog(self, "Unable to calculate coordinates",
+                          f"{msg}\n\n"
+                          "---\n\n"
+                          "## MGRS Grid-Square Reference (Vietnam War)\n\n"
+                          "If using an MGRS coordinate, include the **100 km "
+                          "grid-square letters** after the UTM zone.\n\n"
+                          "**YS** — Phuoc Tuy, Long Khanh\n"
+                          "`Nui Dat, Long Tan, Long Phuoc, Horseshoe`\n\n"
+                          "**XT** — Tay Ninh, Binh Duong, Hau Nghia\n"
+                          "`Tay Ninh, Nui Ba Den, War Zone C, Ho Bo Woods`\n\n"
+                          "**YT** — Long Khanh, Bien Hoa, NW Phuoc Tuy\n"
+                          "`Xuan Loc, Hat Dich, Courtenay Plantation`\n\n"
+                          "Example: `//YS 328 456//` or `//48Q YS 328 456//`")
+            return
+        formatted = f"{parsed[0]}, {parsed[1]}"
+        if isinstance(coord_entry, tk.Text):
+            coord_entry.delete("1.0", tk.END)
+            coord_entry.insert("1.0", formatted)
+        else:
+            coord_entry.delete(0, tk.END)
+            coord_entry.insert(0, formatted)
+        self._on_field_edited()
 
     def _show_all_hotlinks_result(self, parsed: dict | None, raw_text: str,
                                    model_name=None, usage_meta=None, elapsed=0.0):
@@ -620,6 +691,7 @@ class UpdateFatalities(tk.Toplevel):
             ("place_of_death", "Death Location"),
             ("circumstances_of_death", "Circumstances of Death"),
             ("unit_served_with", "Unit Served With"),
+            ("grid_reference", "incident_location"),
         ]
 
         check_vars = {}
@@ -1021,9 +1093,46 @@ class UpdateFatalities(tk.Toplevel):
         main = tk.Frame(outer, bg=BG_GREY, padx=20, pady=16)
         main.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Title
-        tk.Label(main, text=f"Update {filename}", font=(FONT, 16, "bold"),
-                 bg=BG_GREY, fg=TEXT_DARK, anchor=tk.W).pack(fill=tk.X, pady=(0, 12))
+        # Title (with KEY_REFERENCE_LINK hotlink)
+        title_frame = tk.Frame(main, bg=BG_GREY)
+        title_frame.pack(fill=tk.X, pady=(0, 12))
+        tk.Label(title_frame, text=f"Update {filename}", font=(FONT, 16, "bold"),
+                 bg=BG_GREY, fg=TEXT_DARK).pack(side=tk.LEFT)
+        # Parse KEY_REFERENCE_LINK from .env for country-specific quick link
+        country_code = filename[:2] if len(filename) >= 2 else ""
+        if country_code:
+            env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as _env_f:
+                    for line in _env_f:
+                        line = line.strip()
+                        if line.startswith("KEY_REFERENCE_LINK="):
+                            raw = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            for m in re.finditer(
+                                r'([A-Z]{2})_(https?://[^\s\]]+)\s*\[([^\]]*)\]', raw
+                            ):
+                                if m.group(1) == country_code:
+                                    url, link_name = m.group(2), m.group(3)
+                                    link_lbl = tk.Label(
+                                        title_frame, text=f"\U0001F517 {link_name}",
+                                        font=(FONT, 10, "underline"), bg=BG_GREY,
+                                        fg="#4a90d9", cursor="hand2"
+                                    )
+                                    link_lbl.pack(side=tk.LEFT, padx=(12, 0))
+                                    link_lbl.bind("<Button-1>", lambda e, u=url: _open_url(u))
+                                    break
+                            break
+
+        # Web query link — updated per record in _show_record
+        country_map_full = {"AU": "Australia", "NZ": "New Zealand"}
+        country_name = country_map_full.get(country_code, country_code)
+        self._web_query_link = tk.Label(
+            title_frame, text="\U0001F310 Web query",
+            font=(FONT, 10, "underline"), bg=BG_GREY,
+            fg="#4a90d9", cursor="hand2"
+        )
+        self._web_query_link.pack(side=tk.LEFT, padx=(12, 0))
+        self._web_query_country = country_name
 
         # Search
         sf = tk.Frame(main, bg=BG_GREY)
@@ -1349,6 +1458,16 @@ class UpdateFatalities(tk.Toplevel):
         import copy
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
+        # ── Update web query link for this record ──
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(
+            record.get("serviceRecordAuthority"), dict
+        ) else {}
+        full_name = sra.get("full_name", "").strip()
+        if hasattr(self, "_web_query_link") and full_name:
+            query = urllib.parse.quote(f"{full_name} {self._web_query_country} Vietnam War")
+            url = f"https://www.google.com/search?q={query}"
+            self._web_query_link.unbind("<Button-1>")
+            self._web_query_link.bind("<Button-1>", lambda e, u=url: _open_url(u))
         self._record_snapshot = copy.deepcopy(record)
         # Copy incident_coordinates (or incident_location as fallback) to
         # clipboard on every record change
@@ -1388,7 +1507,7 @@ class UpdateFatalities(tk.Toplevel):
 
         def _render_fields(parent_frame, data_dict, prefix_path=()):
             items = list(data_dict.items())
-            items.sort(key=lambda x: 1 if x[0] == 'summary' else 0)
+            items.sort(key=lambda x: 1 if x[0] in ('summary', 'record_status') else 0)
             for field_name, raw_value in items:
                 current_path = prefix_path + (field_name,)
                 if isinstance(raw_value, dict):
@@ -1406,7 +1525,7 @@ class UpdateFatalities(tk.Toplevel):
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
                     _HOTLINK_FIELDS = {"service_status", "death_location",
                                        "circumstances_of_death", "unit_served_with",
-                                       "incident_location"}
+                                       "incident_location", "incident_coordinates"}
                     if field_name in _HOTLINK_FIELDS:
                         self._make_label_hotlink(field_label, field_name)
                     # Format list values (e.g. references) as newline-separated text
@@ -1415,8 +1534,6 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         dv = str(raw_value) if raw_value is not None else ""
                     is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
-                    if field_name == "last_change_updated_to_firestore":
-                        is_editable = True
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -1485,10 +1602,13 @@ class UpdateFatalities(tk.Toplevel):
                                     "This field stores the raw grid reference as originally\n"
                                     "recorded — MGRS (e.g. YS 426 694), decimal degrees\n"
                                     "(e.g. 10.6895, 107.3305), or DMS notation.\n\n"
-                                    "When you click Update Record, the editor inspects this\n"
-                                    "value.  If it recognises a valid coordinate format, it\n"
-                                    "converts the reference to signed decimal degrees and\n"
-                                    "writes the result to the \"incident_coordinates\" field.\n\n"
+                                    "NOTE: GPS snippets must be enclosed in (bounded by)\n"
+                                    "//....// within the text string.\n\n"
+                                    "When you click Update Record, the editor inspects the\n"
+                                    "FIRST //value// it finds.  It attempts to convert the\n"
+                                    "value enclosed in \"//\" to a signed decimal degrees\n"
+                                    "co-ordinate and if successful writes the result to the\n"
+                                    "\"incident_coordinates\" field.\n\n"
                                     "Think of incident_location as the input and\n"
                                     "incident_coordinates as the calculated output.\n\n"
                                     "Accepted formats are listed in the Info button on the\n"
@@ -1558,12 +1678,6 @@ class UpdateFatalities(tk.Toplevel):
                                 entry.set("Other")
                             entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                        elif field_name == "last_change_updated_to_firestore":
-                            entry = ttk.Combobox(rf, values=["Yes", "No"], state="readonly",
-                                                 font=entry_font, width=8)
-                            entry.set(dv.strip() if dv.strip() in ("Yes", "No") else "No")
-                            entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
-                            entry.pack(side=tk.LEFT)
                         else:
                             entry = _styled_entry(rf, width=42, font=entry_font)
                             entry.insert(0, dv)
@@ -1625,7 +1739,6 @@ class UpdateFatalities(tk.Toplevel):
         
         import copy
         result = copy.deepcopy(original)
-        _grid_decimal = None  # (parent_path_tuple, "lat, lon") when incident_location converts
         
         for path_tuple, entry in self._entry_widgets.items():
             if isinstance(entry, tk.Text):
@@ -1641,7 +1754,7 @@ class UpdateFatalities(tk.Toplevel):
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "last_change_updated_to_firestore")
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
             
             if not is_editable:
                 val = orig_val
@@ -1666,63 +1779,12 @@ class UpdateFatalities(tk.Toplevel):
                     else:
                         val = raw_value
                         
-                        # ── incident_location: validate & convert, write decimal to incident_coordinates ──
+                        # ── incident_location: copy to clipboard for reference ──
                         if field_name == "incident_location":
                             val_str = str(val).strip()
-                            if val_str and not re.match(r'^[A-Za-z]+$', val_str):
-                                # Copy raw value to clipboard so the user can
-                                # revert immediately after the update if needed
+                            if val_str and val_str.lower() != "unassigned" and not re.match(r'^[A-Za-z]+$', val_str):
                                 self.clipboard_clear()
                                 self.clipboard_append(val_str)
-                                # Strip any legacy {original} suffix before validating
-                                clean_val, _ = _split_coord_display(val_str)
-                                is_valid, msg, parsed, snippet_text = coords.parse_with_snippet(clean_val)
-                                if not is_valid:
-                                    ok = _confirm_yesno(
-                                        self, "Unrecognized Coordinate Format",
-                                        f"{msg}\n\nSave anyway without conversion?"
-                                    )
-                                    if not ok:
-                                        return None
-                                if parsed is not None:
-                                    formatted = f"{parsed[0]}, {parsed[1]}"
-                                    # If a snippet was auto-extracted, wrap it with
-                                    # //...// in incident_location so the user can see
-                                    # what was used.  Skip if the user already has
-                                    # // delimiters in the text.
-                                    if snippet_text and "//" not in val_str:
-                                        # Try exact match first
-                                        if snippet_text in val_str:
-                                            val = val_str.replace(
-                                                snippet_text,
-                                                f"//{snippet_text}//", 1
-                                            )
-                                        else:
-                                            # Flexible: match the coord numbers with
-                                            # optional whitespace and hemisphere letters
-                                            flex_pat = re.compile(
-                                                r'(' + re.escape(str(parsed[0]).lstrip('-')) + r')'
-                                                r'\s*([NSns]?)\s*[,;\s]\s*'
-                                                r'(' + re.escape(str(parsed[1]).lstrip('-')) + r')'
-                                                r'\s*([EWew]?)',
-                                                re.IGNORECASE
-                                            )
-                                            val = flex_pat.sub(
-                                                r'//\1\2, \3\4//', str(val), count=1
-                                            )
-                                    # Save for writing to incident_coordinates after the loop
-                                    _grid_decimal = (path_tuple[:-1], formatted, str(val))
-                                else:
-                                    # Format was recognised but could not be converted
-                                    # (e.g. DMS without enough parts).  Warn the user.
-                                    _error_dialog(
-                                        self, "Cannot deduce decimal GPS",
-                                        "Cannot deduce a decimal GPS from the supplied\n"
-                                        "\"incident_location\" data.\n\n"
-                                        "Check the Info button attached to\n"
-                                        "\"incident_coordinates\" for accepted formats."
-                                    )
-                                # Keep raw input as-is in incident_location (val unchanged)
 
                         # ── incident_coordinates: validate / normalise decimal format ──
                         elif field_name in ("co-ordinates_decimal", "coordinates_decimal", "incident_coordinates"):
@@ -1770,27 +1832,6 @@ class UpdateFatalities(tk.Toplevel):
                 target = target[key]
             target[path_tuple[-1]] = val
         
-        # ── Post-loop: write incident_location → incident_coordinates ──
-        # Only overwrite incident_coordinates if incident_location was actually
-        # changed by the user (preserves manual edits to the decimal field).
-        if _grid_decimal is not None:
-            parent_path, formatted, new_grid_val = _grid_decimal
-            # Get the original incident_location value before this edit
-            orig = original
-            for key in parent_path:
-                if isinstance(orig, dict):
-                    orig = orig.get(key, "")
-                else:
-                    orig = ""
-            orig_grid_val = str(orig).strip() if orig else ""
-            if orig_grid_val != new_grid_val:
-                target = result
-                for key in parent_path:
-                    if key not in target or not isinstance(target[key], dict):
-                        target[key] = {}
-                    target = target[key]
-                target["incident_coordinates"] = formatted
-        
         return result
 
     def _update_record(self):
@@ -1801,8 +1842,11 @@ class UpdateFatalities(tk.Toplevel):
         ok = _confirm_yesno(self, "Confirm Update", f'Please confirm update for "{record_id}"')
         if not ok:
             return
-        # Always reset Firestore sync flag on successful update
-        updated["last_change_updated_to_firestore"] = "No"
+        # Update record_status: mark as changed (today's date)
+        # record_status.update_to_firestore is managed by a separate process — leave as-is
+        if "record_status" not in updated:
+            updated["record_status"] = {}
+        updated["record_status"]["changed"] = date.today().strftime("%Y-%m-%d")
         actual_idx = self._filtered[self._filtered_pos]
         self.working_data[actual_idx] = updated
         if not _save_json(self.file_path, self.working_data):
@@ -1812,7 +1856,19 @@ class UpdateFatalities(tk.Toplevel):
         self.dirty = False
         self._record_dirty = False
         self._set_locked(False)
+        # ── Preserve side-panel content across the _show_record clear ──
+        saved_prompt = self._side_prompt.get("1.0", "end-1c").strip()
+        saved_prompt_label = self._side_prompt_label.cget("text")
+        saved_resp = self._side_resp.get("1.0", "end-1c").strip()
+        saved_resp_label = self._side_resp_label.cget("text")
         self._show_record()
+        # Restore side-panel — same record, content should persist
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", saved_prompt)
+        self._side_prompt_label.configure(text=saved_prompt_label)
+        self._side_resp_label.configure(text=saved_resp_label)
+        self._side_resp_replace(saved_resp)
 
     def _discard_record(self):
         if self._record_snapshot is not None:
@@ -1927,11 +1983,15 @@ class UpdateFatalities(tk.Toplevel):
         forces_map = {"AU": "Australian Armed Forces", "NZ": "New Zealand Armed Forces"}
         country_map = {"AU": "Australia", "NZ": "New Zealand"}
         
+        full_name = sra.get("full_name", "")
+        surname = full_name.split(",")[0].strip() if "," in full_name else full_name.strip()
+        
         params = {
             "country": country_map.get(ref_id[:2], ""),
             "svc": sra.get("service_number", ""),
             "sra": sra,
-            "name": sra.get("full_name", ""),
+            "name": full_name,
+            "surname": surname,
             "dod": sra.get("date_of_death", ""),
             "dob": sra.get("date_of_birth", ""),
             "rank": sra.get("rank", ""),
@@ -1996,7 +2056,7 @@ class UpdateFatalities(tk.Toplevel):
         self._side_resp_label.configure(text=f"RESPONSE: MASTER {selected_option}")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
-        self._side_prompt.insert("1.0", config["user_prompt"])
+        self._side_prompt.insert("1.0", config["user_prompt"].replace("\\n", "\n"))
         self._side_resp.delete("1.0", tk.END)
         self._show_side_panel()
 
@@ -2361,12 +2421,13 @@ class UpdateFatalities(tk.Toplevel):
             return text  # Return original if not valid JSON
 
     def _side_resp_replace(self, text: str):
+        safe_text = text if text is not None else ""
         self._side_resp.delete("1.0", tk.END)
-        self._side_resp.insert("1.0", text)
+        self._side_resp.insert("1.0", safe_text)
         # Only show COPY RESPONSE button for master responses, never for hotlinks.
         # Identified by the side-panel label starting with "RESPONSE: MASTER".
         is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
-        if len(text) > self._copy_threshold and is_master:
+        if len(safe_text) > self._copy_threshold and is_master:
             try:
                 self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
             except tk.TclError:
