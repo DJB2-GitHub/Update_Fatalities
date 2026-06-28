@@ -405,6 +405,11 @@ class MainMenu(tk.Toplevel):
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(16, 12))
 
+        backup_btn = self._flat_button(body, "  Backup Fatalities.json to folder for OneDrive sync", lambda _e: self._backup_files(), None)
+        backup_btn.pack(fill=tk.X, pady=3)
+
+        ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(12, 12))
+
         quit_btn = self._flat_button(body, "  Quit", lambda _e: self._quit(), None, is_danger=False)
         quit_btn.pack(fill=tk.X, pady=3)
 
@@ -584,6 +589,84 @@ class MainMenu(tk.Toplevel):
         except Exception:
             pass
         super().destroy()
+
+    def _backup_files(self):
+        """Copy AU/NZ Fatalities.json to OneDrive sync folder with timestamp.
+        Keeps only the 3 most recent backups per file; deletes older ones."""
+        import shutil
+        import glob as _glob
+        from datetime import datetime
+        from tkinter import messagebox
+
+        env = _read_env()
+        backup_dir = env.get("BACKUP_FATALITIES_TO_ONEDRIVE_SYNC", "")
+        if not backup_dir:
+            messagebox.showerror("Backup Error", "BACKUP_FATALITIES_TO_ONEDRIVE_SYNC not found in .env")
+            return
+
+        src_dir = env.get("FATALITY_FILE_DIRECTORY", "")
+        files_str = env.get("FILES_AVAILABLE_FOR_UPDATE", "")
+        if not src_dir or not files_str:
+            messagebox.showerror("Backup Error", "FATALITY_FILE_DIRECTORY or FILES_AVAILABLE_FOR_UPDATE missing in .env")
+            return
+
+        src_files = [f.strip() for f in files_str.split(",") if f.strip()]
+        if not src_files:
+            messagebox.showerror("Backup Error", "No source files configured in FILES_AVAILABLE_FOR_UPDATE")
+            return
+
+        # Ensure backup directory exists
+        try:
+            os.makedirs(backup_dir, exist_ok=True)
+        except OSError as e:
+            messagebox.showerror("Backup Error", f"Cannot create backup directory:\n{backup_dir}\n\n{e}")
+            return
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        copied = []
+        errors = []
+
+        for filename in src_files:
+            src_path = os.path.join(src_dir, filename)
+            if not os.path.exists(src_path):
+                errors.append(f"Source not found: {src_path}")
+                continue
+
+            base, ext = os.path.splitext(filename)
+            dest_name = f"{base}_{timestamp}{ext}"
+            dest_path = os.path.join(backup_dir, dest_name)
+
+            try:
+                shutil.copy2(src_path, dest_path)
+                copied.append(dest_name)
+            except OSError as e:
+                errors.append(f"Copy failed for {filename}: {e}")
+                continue
+
+            # Prune old backups — keep only the 3 most recent for this base name
+            pattern = os.path.join(backup_dir, f"{base}_*{ext}")
+            existing = sorted(_glob.glob(pattern), reverse=True)
+            for old in existing[3:]:
+                try:
+                    os.remove(old)
+                except OSError:
+                    pass
+
+        # Build result message
+        msg_parts = []
+        if copied:
+            msg_parts.append(f"Backed up {len(copied)} file(s) to:\n{backup_dir}\n")
+            for name in copied:
+                msg_parts.append(f"  \u2714 {name}")
+        if errors:
+            msg_parts.append("\nErrors:")
+            for err in errors:
+                msg_parts.append(f"  \u2718 {err}")
+
+        if not copied and errors:
+            messagebox.showerror("Backup Failed", "\n".join(msg_parts))
+        else:
+            messagebox.showinfo("Backup Complete", "\n".join(msg_parts))
 
     def _quit(self):
         if self._buttons_locked:
