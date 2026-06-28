@@ -42,6 +42,42 @@ Configured under `GEMINI_TEXT_TO_TEXT_MODELS_TO_USE`. These models power the two
 ### DeepSeek Models
 Defined in `DEEPSEEK_TEXT_TO_TEXT_MODELS_TO_USE` and `AI_INTERNAL_ANALYSIS_MODEL`. These are configured in `.env` for future use but are not currently wired into the Master Response pipeline.
 
+### OpenRouter Auto-Router (`openrouter/auto`)
+
+When the AI Internal or Master provider is set to **OpenRouter**, the model is hardcoded to `openrouter/auto` with the **auto-router** plugin. The plugin's `allowed_models` list — sourced from `.env` — restricts which providers and models OpenRouter may select from.
+
+**Environment Variables:**
+- `OPENROUTER_MASTER_INCLUDE_MODELS` — `allowed_models` for **master** (two-step research + structuring) queries.
+- `OPENROUTER_INTERNAL_INCLUDE_MODELS` — `allowed_models` for **internal** (hotlink field derivation) queries.
+
+Both are Python-set-literal strings. The `allowed_models` field supports wildcards (`openai/*`) and specific model IDs (`openai/gpt-5.1`):
+```
+OPENROUTER_MASTER_INCLUDE_MODELS = '{"openai/*", "google/*","anthropic/*","meta-llama/*", "deepseek/*","glm/*"}'
+```
+
+**Payload shape** (as documented by OpenRouter):
+```json
+{
+  "model": "openrouter/auto",
+  "messages": [...],
+  "plugins": [{
+    "id": "auto-router",
+    "allowed_models": ["openai/*", "google/*", "anthropic/*", "meta-llama/*", "deepseek/*", "glm/*"],
+    "cost_quality_tradeoff": 0
+  }]
+}
+```
+
+`cost_quality_tradeoff` is set to **0** (pure quality) because historical accuracy is paramount. The OpenRouter default is 7 (balanced); valid range is 0–10.
+
+#### ⚠️ Perplexity Exclusion
+
+**Perplexity models are deliberately excluded** from both `allowed_models` lists. Perplexity hallucinates badly on historical military data:
+- Denies that specific soldiers existed in verified records (AWM, VWMA).
+- Claims *"Australia did not have National Service in 1969"* — factually false (Australia had conscription from 1964–1972 under the National Service Act).
+
+Do **not** add `perplexity/*` to these lists.
+
 ### AI Rates & Exchange Config
 The `.env` actively tracks the token cost structure via the `AI_RATES` JSON mapping (tracking varying input/output costs per 1M tokens) and utilizes the `AUD_USD` exchange rate setting for accurate, localized cost calculations.
 

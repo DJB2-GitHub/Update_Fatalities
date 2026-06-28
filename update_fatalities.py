@@ -774,9 +774,19 @@ class UpdateFatalities(tk.Toplevel):
                 return "ERROR: DEEPSEEK_API_KEY not found in .env"
         elif provider.lower() == "openrouter":
             api_key = env.get("OPENROUTER_API_KEY", "")
-            models_str = env.get("AI_OPENROUTER_INTERNAL_ANALYSIS_MODELS", "openrouter/auto")
             if not api_key:
                 return "ERROR: OPENROUTER_API_KEY not found in .env"
+            # Parse allowed_models for the auto-router plugin
+            _include_raw = env.get("OPENROUTER_INTERNAL_INCLUDE_MODELS", "")
+            if not _include_raw:
+                return "ERROR: OPENROUTER_INTERNAL_INCLUDE_MODELS not found in .env"
+            try:
+                import ast as _ast
+                _allowed_models = list(_ast.literal_eval(_include_raw))
+            except Exception as _e:
+                return f"ERROR: OPENROUTER_INTERNAL_INCLUDE_MODELS parse failed: {_e}"
+            models = ["openrouter/auto"]
+            models_str = ""  # bypass the split below; models already set
         else:
             # Google (default)
             api_key = env.get("GEMINI_API_KEY", "")
@@ -784,7 +794,10 @@ class UpdateFatalities(tk.Toplevel):
             if not api_key:
                 return "ERROR: GEMINI_API_KEY not found in .env"
 
-        models = [m.strip() for m in models_str.split(",") if m.strip()]
+        if not models_str:
+            pass  # models already set for openrouter
+        else:
+            models = [m.strip() for m in models_str.split(",") if m.strip()]
         last_error = ""
 
         for model in models:
@@ -825,11 +838,18 @@ class UpdateFatalities(tk.Toplevel):
                     elif provider.lower() == "openrouter":
                         url = "https://openrouter.ai/api/v1/chat/completions"
                         body = json.dumps({
-                            "model": model,
+                            "model": "openrouter/auto",
                             "temperature": 0,
                             "messages": [
                                 {"role": "system", "content": system_instruction},
                                 {"role": "user", "content": user_prompt},
+                            ],
+                            "plugins": [
+                                {
+                                    "id": "auto-router",
+                                    "allowed_models": _allowed_models,
+                                    "cost_quality_tradeoff": 0
+                                }
                             ],
                         }).encode("utf-8")
                         req = urllib.request.Request(
@@ -2024,10 +2044,22 @@ class UpdateFatalities(tk.Toplevel):
                 return
         elif master_provider == "openrouter":
             api_key = env.get("OPENROUTER_API_KEY", "")
-            models_str = env.get("OPENROUTER_TEXT_TO_TEXT_MODELS_TO_USE", "openrouter/auto")
             if not api_key:
                 _error_dialog(self, "AI Error", "OPENROUTER_API_KEY not found in .env")
                 return
+            # Parse allowed_models for the auto-router plugin
+            _include_raw = env.get("OPENROUTER_MASTER_INCLUDE_MODELS", "")
+            if not _include_raw:
+                _error_dialog(self, "AI Error", "OPENROUTER_MASTER_INCLUDE_MODELS not found in .env")
+                return
+            try:
+                import ast as _ast
+                _allowed_models = list(_ast.literal_eval(_include_raw))
+            except Exception as _e:
+                _error_dialog(self, "AI Error", f"OPENROUTER_MASTER_INCLUDE_MODELS parse failed: {_e}")
+                return
+            models = ["openrouter/auto"]
+            models_str = ""  # bypass the split below; models already set
         else:
             # Google (default)
             api_key = env.get("GEMINI_API_KEY", "")
@@ -2036,7 +2068,10 @@ class UpdateFatalities(tk.Toplevel):
                 _error_dialog(self, "AI Error", "GEMINI_API_KEY not found in .env")
                 return
 
-        models = [m.strip() for m in models_str.split(",") if m.strip()]
+        if not models_str:
+            pass  # models already set for openrouter
+        else:
+            models = [m.strip() for m in models_str.split(",") if m.strip()]
         master_timeout = int(env.get("AI_MASTER_RESPONSE_MODEL_CUTOFF_SECONDS", "150"))
 
         try:
@@ -2151,12 +2186,19 @@ class UpdateFatalities(tk.Toplevel):
                                 user_text = payload.get("contents", [{}])[0].get("parts", [{}])[0].get("text", "")
                                 gen_config = payload.get("generationConfig", {})
                                 openai_payload = {
-                                    "model": model,
+                                    "model": "openrouter/auto",
                                     "temperature": gen_config.get("temperature", 0.3),
                                     "max_tokens": gen_config.get("maxOutputTokens", 2048),
                                     "messages": [
                                         {"role": "system", "content": sys_text},
                                         {"role": "user", "content": user_text},
+                                    ],
+                                    "plugins": [
+                                        {
+                                            "id": "auto-router",
+                                            "allowed_models": _allowed_models,
+                                            "cost_quality_tradeoff": 0
+                                        }
                                     ],
                                 }
                                 url = "https://openrouter.ai/api/v1/chat/completions"
@@ -2205,17 +2247,14 @@ class UpdateFatalities(tk.Toplevel):
                                     text = data["candidates"][0]["content"]["parts"][0]["text"]
                                     um = data.get("usageMetadata", {})
                                     return model, text, um
-                        except urllib.error.HTTPError as exc:
-                            if exc.code in [429, 503] and retry_count < max_retries:
+                        except Exception as exc:
+                            if isinstance(exc, urllib.error.HTTPError) and exc.code in [429, 503] and retry_count < max_retries:
                                 retry_count += 1
                                 time.sleep(2.5)
                             else:
                                 nonlocal last_error
                                 last_error = f"{model}: {_fmt_err(exc)}"
                                 break
-                        except Exception as exc:
-                            last_error = f"{model}: {_fmt_err(exc)}"
-                            break
                 return None, None, None
 
             if not config["is_two_step"]:

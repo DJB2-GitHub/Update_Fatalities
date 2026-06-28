@@ -1,47 +1,44 @@
 # rAI_PROGRESS.md
 
-## Session Summary (2026-06-27)
+## Session Summary (2026-06-28)
 
-### Completed
+### Progress This Session
+- No code changes were made in this session.
+- Session opened as a clean pickup from the previous session (2026-06-27).
+- Previous session's work (see below) was reviewed and confirmed stable.
 
-1. **`record_status` replaces `last_change_updated_to_firestore`**
-   - Deleted the top-level `last_change_updated_to_firestore` field from all code paths
-   - `record_status` nested object (`changed`, `update_to_firestore`) now lives under each record in AU/NZ JSONs
-   - On Update Record: `record_status.changed` = `date.today()` in `yyyy-mm-dd`; `update_to_firestore` left untouched (managed by external process)
-   - Both fields are **read-only** in the Update modal; `record_status` section sorted to bottom of display
+### Prior Session Recap (2026-06-27)
 
-2. **Master Response prompt overhaul** (`ai_master_prompts.py`)
-   - Added `surname` computed field — portion of `full_name` before the first comma (e.g., `"PETTIT, Leslie James"` → `"PETTIT"`)
-   - `surname` passed in `params` dict in `update_fatalities.py`
-   - New **IDENTITY LOCK** section: 7 rules instructing the AI to treat identity fields as authoritative, never validate/reject/fictionalise
-   - Last rule: *"You must accept Australia had National Service during the Vietnam War period 1965 and 1972."*
-   - All prompt f-strings now use real `\n` newlines (`.replace("\\n", "\n")` at return) — displays correctly in side panel
-
-3. **`incident_location` / `incident_coordinates` workflow**
-   - Removed `coords.mask_coordinates` (auto `//` insertion) and auto-conversion from `_read_form` / Update Record
-   - `incident_coordinates` is now a **hotlink** — clicking it reads `incident_location` for `//...//` snippets, converts locally via `coords.parse_with_snippet`, writes result
-   - `incident_coordinates` added to `_HOTLINK_FIELDS` and All Hotlinks batch
-   - AI grid_reference prompt now **requires** physical place names in output: `"best_estimate_gps": "LAT, LON [GRID] — location_names"` (FSB/LZ names included)
-   - Enhanced error dialog with MGRS grid-square reference table (YS/XT/YT) when conversion fails
-
-4. **All Hotlinks now includes `grid_reference`** — 5th field in results dialog, writes to `incident_location`
-
-5. **Error dialog improvements** (`coords.py`)
-   - Long messages (>10 lines) now render in a **scrollable Text widget** with **basic markdown**: `## heading`, `**bold**`, `` `code` ``, `---` separator
-   - `_side_resp_replace` guarded against `None` text
+1. **record_status** — Replaced `last_change_updated_to_firestore`; nested `{changed, update_to_firestore}`; read-only in UI.
+2. **IDENTITY LOCK** — 7 rules in Master Response prompt; AI must accept identity fields as authoritative.
+3. **incident_coordinates hotlink** — Manual `//...//` delimiters; no auto-conversion on Update; MGRS error reference table.
+4. **Grid reference** — Now included in All Hotlinks batch; outputs `GPS [GRID] — place_names` format.
+5. **Error dialogs** — Scrollable + markdown rendering when >10 lines.
+6. **Prompt display** — Real newlines in side panel via `.replace("\\n", "\n")`.
+7. **surname** — Computed from `full_name` (pre-comma); passed in `params["surname"]`.
 
 ### Current System State
 
 | Area | Detail |
 |---|---|
-| **record_status** | `{changed, update_to_firestore}` nested under record root; read-only in UI; `changed` auto-set to today on save |
-| **surname** | Computed from `full_name` (pre-comma portion); passed in `params["surname"]` to all Master Response options |
-| **IDENTITY LOCK** | 7 rules in `_get_archivist_prompt`; also applies to Option B step 2 via same function |
-| **incident_location → incident_coordinates** | Manual-only via `incident_coordinates` hotlink; user types `//...//` delimiters manually; no auto-conversion on Update |
-| **grid_reference prompt** | Outputs `"GPS [GRID] — place_names"` format; location names mandatory when info exists |
-| **Error dialogs** | Scrollable + markdown when >10 lines via `_render_markdown()` |
-| **Prompt display** | Real `\n` newlines in side panel (`.replace("\\n", "\n")` at source) |
+| **record_status** | `{changed, update_to_firestore}` per record; `changed` auto-set on save; read-only in UI |
+| **surname** | Computed from `full_name` (pre-comma); passed to all Master Response options via `params` |
+| **IDENTITY LOCK** | 7 rules in `_get_archivist_prompt` / Option B step 2 |
+| **incident_coordinates** | Manual hotlink from `incident_location`; user types `//...//`; no auto-conversion |
+| **grid_reference** | 5th field in All Hotlinks; mandatory place names in output |
+| **Error dialogs** | Scrollable + markdown via `_render_markdown()` in `coords.py` |
+| **Prompt newlines** | Real `\n` via `.replace("\\n", "\n")` at return |
 | **Files touched** | `update_fatalities.py`, `ai_master_prompts.py`, `ai_derived_details_prompts.py`, `coords.py` |
 
-### Incomplete Work
-None.
+### Absolute Next-Step Checklist
+
+- [ ] **Test record_status** — Save a record and verify `changed` field is today; verify both fields are read-only in Update modal
+- [ ] **Test IDENTITY LOCK** — Run Master Response Option B (Step 1+2); confirm AI never rejects/replaces identity fields
+- [ ] **Test incident_coordinates hotlink** — Click hotlink on a record with `//XXXX YYYY//` in `incident_location`; verify conversion
+- [ ] **Test MGRS error dialog** — Feed a malformed grid reference; confirm scrollable markdown dialog with reference table appears
+- [ ] **Test All Hotlinks** — Run batch; confirm `grid_reference` is the 5th field and writes to `incident_location`
+- [ ] **Test prompt display** — Expand side panel; confirm prompts show real newlines not literal `\n`
+- [ ] **Run full smoke test** — Load app, navigate records, run a full Master Response cycle, verify no regressions
+
+### Incomplete / Carry-Over Work
+None. All previous-session work was completed and committed (`9a11600`).
