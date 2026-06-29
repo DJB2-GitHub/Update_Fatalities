@@ -11,8 +11,9 @@ ambiguity or conflicting facts in ai_response data.
 
 # ── Shared footer rules appended to every system instruction ──
 _SHARED_RULES = (
-    "OVERRIDE RULE: If the key 'authoritative_ai_override' is present in the data, "
-    "its values take absolute precedence over any conflicting facts. If it is missing, ignore this rule.\n"
+    "OVERRIDE RULE: If the source text contains an explicit, authoritatively marked service-status "
+    "note (e.g. a line prefixed with 'Authoritative:', 'Override:', 'Service Status:', or similar), "
+    "its value takes absolute precedence over any conflicting facts. If no such marker is present, ignore this rule.\n"
     "NOISE FILTER: IGNORE any text marked as 'Unassigned', timestamps, or system logging metadata "
     "outside the core data. Output EXACTLY the requested format with no conversational filler, "
     "explanations, or markdown wrappers.\n"
@@ -22,7 +23,7 @@ _SHARED_RULES = (
 
 _USER_PROMPT_TEMPLATE = (
     "The SOURCE TEXT to analyse is provided below between the <source> tags.\n"
-    "This text is compiled from the record's ai_response and authoritative_ai_override fields.\n\n"
+    "This text is compiled from the record's AI-generated master response and any authoritative override notes.\n\n"
     "<source>\n"
     "{combined_text}\n"
     "</source>\n\n"
@@ -30,31 +31,51 @@ _USER_PROMPT_TEMPLATE = (
 )
 
 
-def get_service_status_prompt(combined_text: str) -> tuple:
-    """Return (system_instruction, user_prompt) to derive service_status."""
+def get_service_status_prompt(combined_text: str, valid_statuses: list[str] | None = None) -> tuple:
+    """Return (system_instruction, user_prompt) to derive service_status.
+
+    If valid_statuses is provided, it overrides the default hardcoded list and
+    the prompt will only accept those values.  The fallback (rule 4) uses the
+    first value in valid_statuses.
+    """
+    if valid_statuses is None:
+        valid_statuses = ["Regular", "National Service", "Conscript", "Other"]
+
+    _valid_list = "\n".join(f"- {v}" for v in valid_statuses)
+    _valid_quoted = ", ".join(f'"{v}"' for v in valid_statuses)
+    _fallback = valid_statuses[0]
+
     system = (
-        "Your task is to extract a single value called \"service_status\" from the provided text.\n\n"
-        "Valid outputs:\n"
-        "- Regular\n"
-        "- National Service\n"
-        "- Conscript\n"
-        "- Other\n\n"
-        "Extraction rules (in order of priority):\n\n"
-        "1. If a field named \"authoritative_ai_override\" appears anywhere in the text:\n"
-        "     - Treat its value as free-form notes.\n"
-        "     - Search ONLY inside this field for the words \"Regular\", \"National Service\", \"Conscript\", or \"Other\".\n"
-        "     - If one of these appears, return it exactly.\n"
-        "     - If none appear, ignore this field completely.\n\n"
-        "2. Else if the key \"1_service_status\" appears anywhere in the text and contains one of the valid values, return it exactly.\n\n"
-        "3. Else search ALL provided text for evidence indicating service status:\n"
-        "     - DO NOT infer service status from corps, regiment, unit, rank, trade, or branch.\n"
-        "     - If the text describes voluntary enlistment, Regular Army, Regular soldier, or similar, return \"Regular\".\n"
-        "     - If the text specifically mentions Australian National Service, National Serviceman, \"Nasho\", or the National Service Act, return \"National Service\".\n"
-        "     - If the text describes other forms of conscription, call-up, ballot, or compulsory enlistment (not specifically National Service), return \"Conscript\".\n\n"
-        "4. If no determination can be made, return \"Other\".\n\n"
-        "Output format:\n"
-        "Return ONLY the final value as a plain string with no JSON, no punctuation, and no explanation.\n"
-        "Before producing the final output, internally summarize the provided text to ensure full context "
+        "Your task is to extract a single value called \"service_status\" from the provided text.\n\n" +
+        "Valid outputs:\n" +
+        f"{_valid_list}\n\n" +
+        "Extraction rules (in order of priority):\n\n" +
+        "1. If the text contains an explicitly labelled service-status marker (e.g. a line starting "
+        "with 'Authoritative:', 'Override:', 'Service Status:', '1_service_status', or similar):\n" +
+        "     - Treat the content following that marker as the primary evidence.\n" +
+        f"     - Search ONLY inside that marked section for the words {_valid_quoted}.\n" +
+        "     - If one of these appears, return it exactly.\n" +
+        "     - If none appear, ignore the marker and continue to the next rule.\n\n" +
+        "2. Else if the text anywhere contains an explicit service-status label followed by one of the valid values, return that value exactly.\n\n" +
+        "3. Else search ALL provided text for evidence indicating service status:\n" +
+        "     - DO NOT infer service status from corps, regiment, unit, rank, trade, or branch.\n" +
+        (
+            "     - If the text describes voluntary enlistment, Regular Army, Regular soldier, or similar, return \"Regular\".\n"
+            if "Regular" in valid_statuses else ""
+        ) +
+        (
+            "     - If the text specifically mentions Australian National Service, National Serviceman, \"Nasho\", or the National Service Act, return \"National Service\".\n"
+            if "National Service" in valid_statuses else ""
+        ) +
+        (
+            "     - If the text describes other forms of conscription, call-up, ballot, or compulsory enlistment (not specifically National Service), return \"Conscript\".\n"
+            if "Conscript" in valid_statuses else ""
+        ) +
+        "\n" +
+        f"4. If no determination can be made, return \"{_fallback}\".\n\n" +
+        "Output format:\n" +
+        "Return ONLY the final value as a plain string with no JSON, no punctuation, and no explanation.\n" +
+        "Before producing the final output, internally summarize the provided text to ensure full context " +
         "loading. Do not include this summary in the output."
     )
     return (system, _USER_PROMPT_TEMPLATE.format(combined_text=combined_text))
@@ -141,7 +162,7 @@ def get_unit_served_with_prompt(combined_text: str) -> tuple:
         "that appear in the source text.\n"
         "No commentary, no markdown, no explanation.\n\n"
         "OVERRIDE RULE:\n"
-        "If the key authoritative_ai_override exists, its values override all other data.\n\n"
+        "If the text contains an authoritatively marked override section, its values override all other data.\n\n"
         "NOISE FILTER:\n"
         "Ignore any text marked Unassigned, timestamps, system metadata, "
         "or anything outside the <source> block.\n\n"
@@ -160,15 +181,14 @@ def get_grid_reference_prompt(combined_text: str) -> tuple:
         "the predominant physical location/place names found in the text — this is "
         "a MANDATORY part of the output whenever location details exist.\n\n"
         "PROCESS:\n"
-        "  1. FIRST, check the authoritative_ai_override field.  If it contains "
+        "  1. FIRST, check any authoritatively marked override section.  If it contains "
         "coordinates or a grid reference, use those as your starting point — but "
         "STILL search for and include location/place names.\n"
-        "  2. Analyse all location-related fields, including:\n"
-        "     - detailed_location_description\n"
-        "     - grid_reference\n"
-        "     - map_sheet_number_utm_zone\n"
-        "     - military_operation\n"
-        "     - narrative summary\n"
+        "  2. Analyse all location-related information in the text, including:\n"
+        "     - any location descriptions or geographic details\n"
+        "     - any grid references, map sheet numbers, or UTM zones\n"
+        "     - any military operation names\n"
+        "     - any narrative or summary text\n"
         "     - any place names (village, hamlet, district, province)\n"
         "     - any fire support bases, rivers, roads, or landmarks\n"
         "     - any ARVN/US/Australian operational areas\n"
@@ -212,12 +232,22 @@ def get_grid_reference_prompt(combined_text: str) -> tuple:
     return (system, _USER_PROMPT_TEMPLATE.format(combined_text=combined_text))
 
 
-def get_all_hotlinks_prompt(combined_text: str) -> tuple:
-    """Return (system_instruction, user_prompt) to derive all five hotlink fields at once."""
+def get_all_hotlinks_prompt(combined_text: str, valid_statuses: list[str] | None = None) -> tuple:
+    """Return (system_instruction, user_prompt) to derive all five hotlink fields at once.
+
+    If valid_statuses is provided, it overrides the default hardcoded list for
+    the service_status field.  The fallback uses the first value in valid_statuses.
+    """
+    if valid_statuses is None:
+        valid_statuses = ["Regular", "National Service", "Conscript", "Other"]
+
+    _svc_list = ", ".join(valid_statuses)
+    _svc_fallback = valid_statuses[0]
+
     system = (
         "From the provided text, extract five fields and return them as a single JSON object.\n\n"
         "Fields to extract:\n"
-        "1. \"service_status\" — one of: Regular, National Service, Conscript, Other. "
+        f"1. \"service_status\" — one of: {_svc_list}. "
         "Deduce from voluntary/compulsory enlistment evidence. "
         "DO NOT infer from corps, regiment, unit, rank, trade, or branch.\n"
         "2. \"place_of_death\" — concise summary (max 40 words). Start with country, then province/state, "
@@ -233,7 +263,7 @@ def get_all_hotlinks_prompt(combined_text: str) -> tuple:
         "US Army: Co/Plt/Sq/Regt/Bn/Sqdn/Trp/Btry/Bde; USN: USS; USAF: Sqdn/Wg/Gp/Flt/Sec).\n"
         "  Exclude country/service name from output. Preserve existing abbreviations (9RAR, 1RNZIR, 11 ACR).\n"
         "5. \"grid_reference\" — best-estimate GPS for place of death PLUS physical location names.\n"
-        "  FIRST check authoritative_ai_override; if coordinates found there, use them as starting point.\n"
+        "  FIRST check any authoritatively marked override section; if coordinates found there, use them as starting point.\n"
         "  Analyse all location fields, extract any MGRS/UTM/partial grid refs, convert to decimal GPS.\n"
         "  YOU MUST also extract place names: villages, hamlets, districts, provinces, FSB/LZ names,\n"
         "  rivers, roads, rubber plantations, landmarks. Concatenate smallest-to-largest.\n"

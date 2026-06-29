@@ -319,14 +319,6 @@ class UpdateFatalities(tk.Toplevel):
             saved_pos = session.get("pos", 0)
             saved_search = session.get("search", "")
             
-            saved_ai_option = session.get("ai_option")
-            if saved_ai_option:
-                self._payload_dropdown_var.set(saved_ai_option)
-                
-            saved_live_search = session.get("live_search")
-            if saved_live_search is not None:
-                self._live_search_var.set(saved_live_search)
-
             saved_on_this_day_month = session.get("on_this_day_month")
             if saved_on_this_day_month:
                 self._on_this_day_month_var.set(saved_on_this_day_month)
@@ -505,7 +497,10 @@ class UpdateFatalities(tk.Toplevel):
         if not prompt_fn:
             return
 
-        result_tuple = prompt_fn(combined)
+        if field_name == "service_status":
+            result_tuple = prompt_fn(combined, valid_statuses=self._service_status_values)
+        else:
+            result_tuple = prompt_fn(combined)
         system_instruction, user_prompt = result_tuple
 
         # Show prompt in side panel and start progress
@@ -535,7 +530,8 @@ class UpdateFatalities(tk.Toplevel):
             _error_dialog(self, "No Data", "No combined text available for AI derivation.")
             return
 
-        system_instruction, user_prompt = ai_derived_details_prompts.get_all_hotlinks_prompt(combined)
+        system_instruction, user_prompt = ai_derived_details_prompts.get_all_hotlinks_prompt(
+            combined, valid_statuses=self._service_status_values)
 
         self._side_resp_label.configure(text="AI: All Hotlinks")
         self._side_prompt.configure(state=tk.NORMAL)
@@ -1079,7 +1075,7 @@ class UpdateFatalities(tk.Toplevel):
             entry.delete("1.0", tk.END)
             entry.insert("1.0", cleaned)
         elif isinstance(entry, ttk.Combobox):
-            status_values = ["Regular", "National Service", "Conscript", "Other", "Unassigned"]
+            status_values = self._service_status_values
             if cleaned in status_values:
                 entry.set(cleaned)
             else:
@@ -1088,7 +1084,7 @@ class UpdateFatalities(tk.Toplevel):
                         entry.set(sv)
                         break
                 else:
-                    entry.set("Other")
+                    entry.set("Other" if "Other" in status_values else status_values[0])
         else:
             entry.delete(0, tk.END)
             entry.insert(0, cleaned)
@@ -1120,6 +1116,12 @@ class UpdateFatalities(tk.Toplevel):
                  bg=BG_GREY, fg=TEXT_DARK).pack(side=tk.LEFT)
         # Parse KEY_REFERENCE_LINK from .env for country-specific quick link
         country_code = filename[:2] if len(filename) >= 2 else ""
+        # Country-specific service_status selections from .env (e.g. AU_SERVICE_STATUSES, NZ_SERVICE_STATUSES)
+        _svc_env = os.environ.get(f"{country_code}_SERVICE_STATUSES", "").strip()
+        if _svc_env:
+            self._service_status_values = [v.strip() for v in _svc_env.split(",") if v.strip()]
+        else:
+            self._service_status_values = ["Regular", "National Service", "Conscript", "Other", "Unassigned"]
         if country_code:
             env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
             if os.path.exists(env_path):
@@ -1239,13 +1241,6 @@ class UpdateFatalities(tk.Toplevel):
         self._flat_btn(top_row, "AI: Create a Master Response", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
         self._all_hotlinks_btn = self._flat_btn(top_row, "All Hotlinks", self._all_hotlinks, bg="#e67e22", fg=WHITE, side=tk.LEFT, right_pad=10)
 
-        self._live_search_var = tk.BooleanVar(value=True)
-        self._live_search_chk = tk.Checkbutton(
-            top_row, text="Live Search", variable=self._live_search_var,
-            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9)
-        )
-        self._live_search_chk.pack(side=tk.LEFT, padx=(10, 0))
-
         self._side_panel_visible_var = tk.BooleanVar(value=True)
         self._side_panel_chk = tk.Checkbutton(
             top_row, text="Side Panel", variable=self._side_panel_visible_var,
@@ -1259,21 +1254,6 @@ class UpdateFatalities(tk.Toplevel):
             bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
         )
         self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
-
-        # Dropdown row below the top row
-        self._payload_dropdown_var = tk.StringVar(value="Option A: 1-Step (JSON Schema)")
-        self._payload_dropdown = ttk.Combobox(
-            bf,
-            textvariable=self._payload_dropdown_var,
-            values=[
-                "Option A: 1-Step (JSON Schema)",
-                "Option B: 2-Step Legacy (Search -> Structure)",
-                "Option C: 1-Step Narrative (Raw Prose)"
-            ],
-            state="readonly",
-            width=40
-        )
-        self._payload_dropdown.pack(fill=tk.X, pady=(4, 0))
 
         self.bind("<Escape>", lambda _e: self._cancel())
 
@@ -1398,8 +1378,6 @@ class UpdateFatalities(tk.Toplevel):
         self._search_count.configure(text=f"{total} match{'es' if total != 1 else ''}" if (self._search_text or self._on_this_day_chk_var.get()) else "")
         self._show_record()
         session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
-            "ai_option": self._payload_dropdown_var.get(),
-            "live_search": self._live_search_var.get(),
             "on_this_day": self._on_this_day_chk_var.get(),
             "on_this_day_month": self._on_this_day_month_var.get(),
             "on_this_day_day": self._on_this_day_day_var.get(),
@@ -1519,7 +1497,7 @@ class UpdateFatalities(tk.Toplevel):
         word_count = len(self._hotlink_combined_text.split())
         self._hotlink_active = word_count > 50
         if self._hotlink_active:
-            self._all_hotlinks_btn.pack(side=tk.LEFT, padx=(0, 10), before=self._live_search_chk)
+            self._all_hotlinks_btn.pack(side=tk.LEFT, padx=(0, 10))
         else:
             self._all_hotlinks_btn.pack_forget()
 
@@ -1688,14 +1666,14 @@ class UpdateFatalities(tk.Toplevel):
                             entry.bind("<KeyRelease>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         elif field_name == "service_status":
-                            status_values = ["Regular", "National Service", "Conscript", "Other", "Unassigned"]
+                            status_values = self._service_status_values
                             entry = ttk.Combobox(rf, values=status_values, state="readonly",
                                                  font=entry_font, width=40)
                             current_val = dv.strip()
                             if current_val in status_values:
                                 entry.set(current_val)
                             else:
-                                entry.set("Other")
+                                entry.set("Other" if "Other" in status_values else status_values[0])
                             entry.bind("<<ComboboxSelected>>", lambda _e: self._on_field_edited())
                             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                         else:
@@ -1909,8 +1887,6 @@ class UpdateFatalities(tk.Toplevel):
             self._filtered_pos -= 1
             self._show_record()
             session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
-                "ai_option": self._payload_dropdown_var.get(),
-                "live_search": self._live_search_var.get(),
                 "on_this_day": self._on_this_day_chk_var.get(),
                 "on_this_day_month": self._on_this_day_month_var.get(),
                 "on_this_day_day": self._on_this_day_day_var.get(),
@@ -1924,8 +1900,6 @@ class UpdateFatalities(tk.Toplevel):
             self._filtered_pos += 1
             self._show_record()
             session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra={
-                "ai_option": self._payload_dropdown_var.get(),
-                "live_search": self._live_search_var.get(),
                 "on_this_day": self._on_this_day_chk_var.get(),
                 "on_this_day_month": self._on_this_day_month_var.get(),
                 "on_this_day_day": self._on_this_day_day_var.get(),
@@ -1956,13 +1930,11 @@ class UpdateFatalities(tk.Toplevel):
     def _ai_lookup(self):
         """
         Master AI Response Pipeline: Triggers the generative AI to populate 'derived_details'.
-        Routes through the dynamic dropdown selector to choose the appropriate prompt architecture.
+        Uses a single memory-only extraction prompt (LLM internal knowledge only).
         """
         if not self._filtered:
             return
 
-        is_live_search = self._live_search_var.get()
-        selected_option = self._payload_dropdown_var.get()
         
         actual_idx = self._filtered[self._filtered_pos]
         record = self.working_data[actual_idx]
@@ -1989,9 +1961,7 @@ class UpdateFatalities(tk.Toplevel):
             f"{env.get('AI_MASTER_MODEL_PROVIDER', 'Google')}\n"
             f"-----"
             f"This is a lengthy process (~2 minutes). Execute?\n\n"
-            f"// Live Search is currently: {'ON' if is_live_search else 'OFF'}\n"
-            f"[The AI has a fixed cutoff date. Live Search fills the gap by finding the latest web results up to the present moment.]\n\n"
-            f"// AI processing Pipeline Selected : {selected_option}"
+            f"// AI uses internal memory only (no live search)."
             f"{warning}"
         )
         result = _confirm_yesnocancel(self, "Confirm AI — Master Response", confirm_msg)
@@ -2021,12 +1991,7 @@ class UpdateFatalities(tk.Toplevel):
             "pod": (record.get("derived_details", {}).get("fatality_locations", {}).get("death_location", "") if isinstance(record.get("derived_details"), dict) else "")
         }
 
-        if "Option A" in selected_option:
-            config = ai_master_prompts.get_master_response_option_a_payload(params, is_live_search)
-        elif "Option B" in selected_option:
-            config = ai_master_prompts.get_master_response_option_b_payloads(params, is_live_search)
-        else:
-            config = ai_master_prompts.get_master_response_option_c_payload(params, is_live_search)
+        config = ai_master_prompts.get_master_response_payload(params, False, country_code=ref_id[:2])
 
         master_provider = env.get("AI_MASTER_MODEL_PROVIDER", "Google").lower()
         allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek,OpenRouter").split(",") if p.strip()]
@@ -2087,8 +2052,8 @@ class UpdateFatalities(tk.Toplevel):
             _error_dialog(self, "AI Error", f"{master_provider.upper()}_API_KEY not found in .env")
             return
 
-        self._side_prompt_label.configure(text=f"PROMPT: {selected_option}")
-        self._side_resp_label.configure(text=f"RESPONSE: MASTER {selected_option}")
+        self._side_prompt_label.configure(text="PROMPT: Master Response")
+        self._side_resp_label.configure(text="RESPONSE: MASTER")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", config["user_prompt"].replace("\\n", "\n"))
@@ -2098,10 +2063,8 @@ class UpdateFatalities(tk.Toplevel):
         def _task():
             last_error = ""
             start_time = time.time()
-            step1_secs = 0.0
-            step2_start = 0.0
 
-            def _make_header(model_name, usage_meta, step1_model=None, step1_usage=None):
+            def _make_header(model_name, usage_meta):
                 from datetime import datetime
                 now = datetime.now()
                 ts = now.strftime("%d:%b:%Y %H:%M")
@@ -2119,17 +2082,12 @@ class UpdateFatalities(tk.Toplevel):
                     return (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
                            (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
 
-                c1 = _calc_cost(step1_model, step1_usage) if step1_model else 0.0
-                c2 = _calc_cost(model_name, usage_meta)
-                total = c1 + c2
+                total = _calc_cost(model_name, usage_meta)
                 total_secs = time.time() - start_time
                 
                 provider_label = {"openrouter": "OpenRouter", "deepseek": "Deepseek", "google": "Google"}.get(master_provider, master_provider.capitalize())
                 display_model = model_name if master_provider == "openrouter" else f"{provider_label} {model_name}"
-                lines = [f"Created {ts} used {display_model} $A {total:.6f} ({total_secs:.0f}s) - {selected_option}"]
-                if config["is_two_step"]:
-                    lines.append(f"Step 1 ({step1_model}): $A {c1:.6f} ({step1_secs:.0f}s)")
-                    lines.append(f"Step 2 ({model_name}): $A {c2:.6f} ({time.time()-step2_start:.0f}s)")
+                lines = [f"Created {ts} used {display_model} $A {total:.6f} ({total_secs:.0f}s)"]
                 # Metadata tagged with sentinel delimiters so _apply_hotlinks can
                 # strip it before feeding data into AI field-derivation queries.
                 # Display format: **[ Created {ts} used ... ]**\n{payload}
@@ -2257,38 +2215,14 @@ class UpdateFatalities(tk.Toplevel):
                                 break
                 return None, None, None
 
-            if not config["is_two_step"]:
-                # Single step flow
-                m, txt, um = _run_request(config["payloads"][0], "Querying {m}...", master_timeout)
-                if not m:
-                    self.after(0, lambda: self._side_resp_replace(f"All models failed.\n\n{last_error}"))
-                    return
-                if "Option A" in selected_option:
-                    txt = self._extract_json(txt)
-                final_text = _make_header(m, um) + txt
-                self.after(0, lambda c=final_text: self._side_resp_replace(c))
-            else:
-                # Two step flow
-                step1_start = time.time()
-                m1, txt1, um1 = _run_request(config["payloads"][0], "Step 1/2: Researching with {m}...", 40)
-                if not m1:
-                    self.after(0, lambda: self._side_resp_replace(f"Step 1 Failed.\n\n{last_error}"))
-                    return
-                step1_secs = time.time() - step1_start
-                step2_start = time.time()
-                
-                # Inject research text into step 2 contents
-                step2_payload = config["payloads"][1]
-                injected_prompt = f"RESEARCH MATERIAL (use ONLY this for your answers; do NOT search the web):\n\n{txt1}\n\n---\n\n{config['user_prompt']}"
-                step2_payload["contents"] = [{"parts": [{"text": injected_prompt}]}]
-                
-                m2, txt2, um2 = _run_request(step2_payload, "Step 2/2: Structuring with {m}...", master_timeout)
-                if not m2:
-                    self.after(0, lambda: self._side_resp_replace(f"Step 2 Failed.\n\n{last_error}"))
-                    return
-                txt2 = self._extract_json(txt2)
-                final_text = _make_header(m2, um2, m1, um1) + txt2
-                self.after(0, lambda c=final_text: self._side_resp_replace(c))
+            # Single step flow — always extract JSON
+            m, txt, um = _run_request(config["payloads"][0], "Querying {m}...", master_timeout)
+            if not m:
+                self.after(0, lambda: self._side_resp_replace(f"All models failed.\n\n{last_error}"))
+                return
+            txt = self._extract_json(txt)
+            final_text = _make_header(m, um) + txt
+            self.after(0, lambda c=final_text: self._side_resp_replace(c))
 
         threading.Thread(target=_task, daemon=True).start()
 
@@ -2468,7 +2402,7 @@ class UpdateFatalities(tk.Toplevel):
         is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
         if len(safe_text) > self._copy_threshold and is_master:
             try:
-                self._copy_btn.pack(side=tk.LEFT, padx=(10, 0), before=self._live_search_chk)
+                self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))
             except tk.TclError:
                 pass  # already packed
         else:
