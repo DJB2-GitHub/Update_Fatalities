@@ -1956,17 +1956,18 @@ class UpdateFatalities(tk.Toplevel):
             if line and not line.startswith("#") and "=" in line
         } if os.path.exists(env_path) else {}
 
-        confirm_msg = (
-            f"Get a new dataset using "
-            f"{env.get('AI_MASTER_MODEL_PROVIDER', 'Google')}\n"
-            f"-----"
-            f"This is a lengthy process (~2 minutes). Execute?\n\n"
-            f"// AI uses internal memory only (no live search)."
-            f"{warning}"
-        )
-        result = _confirm_yesnocancel(self, "Confirm AI — Master Response", confirm_msg)
-        if result is None or result is False:
-            return
+        # Confirmation dialog bypassed — no API call is made; user runs prompt manually
+        # confirm_msg = (
+        #     f"Get a new dataset using "
+        #     f"{env.get('AI_MASTER_MODEL_PROVIDER', 'Google')}\n"
+        #     f"-----"
+        #     f"This is a lengthy process (~2 minutes). Execute?\n\n"
+        #     f"// AI will search the web for authoritative sources (AWM, VWMA, DVA)."
+        #     f"{warning}"
+        # )
+        # result = _confirm_yesnocancel(self, "Confirm AI — Master Response", confirm_msg)
+        # if result is None or result is False:
+        #     return
 
         sra = record.get("serviceRecordAuthority", {}) if isinstance(record.get("serviceRecordAuthority"), dict) else {}
         ref_id = record.get("referenceID", "")
@@ -1991,7 +1992,7 @@ class UpdateFatalities(tk.Toplevel):
             "pod": (record.get("derived_details", {}).get("fatality_locations", {}).get("death_location", "") if isinstance(record.get("derived_details"), dict) else "")
         }
 
-        config = ai_master_prompts.get_master_response_payload(params, False, country_code=ref_id[:2])
+        config = ai_master_prompts.get_master_response_payload(params, True, country_code=ref_id[:2])
 
         master_provider = env.get("AI_MASTER_MODEL_PROVIDER", "Google").lower()
         allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek,OpenRouter").split(",") if p.strip()]
@@ -2056,10 +2057,14 @@ class UpdateFatalities(tk.Toplevel):
         self._side_resp_label.configure(text="RESPONSE: MASTER")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
-        self._side_prompt.insert("1.0", config["user_prompt"].replace("\\n", "\n"))
+        self._side_prompt.insert("1.0",
+            "SYSTEM:\n" + config["system_text"] + "\n\nMESSAGE:\n" + config["user_prompt"])
         self._side_resp.delete("1.0", tk.END)
+        self._side_resp.insert("1.0", "// Prompt ready above — copy into gemini.google.com, then paste the result here.")
         self._show_side_panel()
+        return  # API execution bypassed — user runs prompt manually in browser
 
+        # --- OBSOLETE: API execution code below, kept for future refactor ---
         def _task():
             last_error = ""
             start_time = time.time()
@@ -2102,7 +2107,7 @@ class UpdateFatalities(tk.Toplevel):
             def _run_request(payload, log_msg, timeout):
                 for model in models:
                     retry_count = 0
-                    max_retries = 3
+                    max_retries = 1
                     while retry_count <= max_retries:
                         msg = log_msg.replace("{m}", model)
                         if retry_count > 0: msg += f" (Retry {retry_count}/{max_retries})"
@@ -2197,8 +2202,25 @@ class UpdateFatalities(tk.Toplevel):
                                     return actual_model, text, um
                             else:
                                 # Google Gemini
+                                # Inject Google Search grounding tool when live search is enabled.
+                                # responseMimeType + responseSchema are incompatible with tools,
+                                # so we drop them and rely on _extract_json to parse the output.
+                                _gemini_payload = dict(payload)
+                                _gen_config = dict(_gemini_payload.get("generationConfig", {}))
+                                if config.get("google_search_grounding"):
+                                    _gemini_payload["tools"] = [{"google_search": {}}]
+                                    # Remove structured output constraints — incompatible with tools
+                                    _gen_config.pop("responseMimeType", None)
+                                    _gen_config.pop("responseSchema", None)
+                                    _gemini_payload["generationConfig"] = _gen_config
+                                    # Append JSON output instruction to the user message
+                                    _contents = _gemini_payload.get("contents", [])
+                                    if _contents:
+                                        _parts = _contents[0].get("parts", [])
+                                        if _parts:
+                                            _parts.append({"text": "\n\nOUTPUT FORMAT: Return your findings as a valid JSON object with the schema: {\"soldier\": {\"service_number\": \"...\", \"full_name\": \"...\", \"date_of_death\": \"...\", \"rank\": \"...\", \"unit\": \"...\"}, \"death_information\": [{\"detail\": \"...\", \"confidence\": \"...\"}], \"summary\": \"...\"}. Output ONLY the JSON, no markdown fences, no commentary."})
                                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                                body = json.dumps(payload).encode("utf-8")
+                                body = json.dumps(_gemini_payload).encode("utf-8")
                                 req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
                                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                                     data = json.loads(resp.read().decode("utf-8"))
