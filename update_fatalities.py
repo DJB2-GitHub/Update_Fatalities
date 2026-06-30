@@ -387,7 +387,7 @@ class UpdateFatalities(tk.Toplevel):
                         self._side_prompt.insert("1.0", saved_prompt)
                         self._side_prompt_label.configure(text=ref_state.get("promptLabel", "PROMPT: All Derived Data"))
                     if saved_response:
-                        self._set_response_label(ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
+                        self._side_resp_label.configure(text=ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
                         self._side_resp_replace(saved_response)
                     # Restore side-panel visibility independently of content
                     if side_panel_visible or saved_response:
@@ -500,7 +500,7 @@ class UpdateFatalities(tk.Toplevel):
         label.bind("<Button-1>", lambda e, fn=field_name: self._on_hotlink_click(fn))
 
     def _on_hotlink_click(self, field_name: str):
-        """Handle a hotlink click: extract field locally from ai_response text."""
+        """Handle a hotlink click: run AI derivation in background and show result."""
         # ── incident_coordinates: local conversion from incident_location, no AI ──
         if field_name == "incident_coordinates":
             self._convert_incident_coordinates()
@@ -509,41 +509,75 @@ class UpdateFatalities(tk.Toplevel):
         combined = self._hotlink_combined_text
         if not combined.strip():
             _error_dialog(self, "No Data",
-                          "No ai_response text available.")
+                          "No combined text available for AI derivation.")
             return
 
-        # Extract locally from the text — no external AI
-        parsed = self._extract_hotlinks_locally(combined)
-        text = parsed.get(field_name, "")
-        if not text:
-            text = f"(not found in ai_response for '{field_name}')"
+        prompt_fn = ai_derived_details_prompts.FIELD_PROMPTS.get(field_name)
+        if not prompt_fn:
+            return
 
-        self._set_response_label(f"AI: {field_name}")
+        if field_name == "service_status":
+            result_tuple = prompt_fn(combined, valid_statuses=self._service_status_values)
+        else:
+            result_tuple = prompt_fn(combined)
+        system_instruction, user_prompt = result_tuple
+
+        # Show prompt in side panel and start progress
+        self._side_resp_label.configure(text=f"AI: {field_name}")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
-        self._side_prompt.insert("1.0", combined)
-        self._side_resp_replace(text)
+        self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace("Deriving…")
         self._show_side_panel()
-        self._show_derivation_result(field_name, text, "local", None, 0)
+
+        def _task():
+            result = self._call_ai_for_field(system_instruction, user_prompt)
+            if isinstance(result, tuple):
+                text, model_name, usage_meta, elapsed = result
+            else:
+                text, model_name, usage_meta, elapsed = result, None, None, 0
+            self.after(0, lambda: self._show_derivation_result(
+                field_name, text, model_name, usage_meta, elapsed))
+
+        threading.Thread(target=_task, daemon=True).start()
 
     def _all_hotlinks(self):
-        """Extract all hotlink fields locally from ai_response text — no external AI call."""
+        """Run all four hotlink derivations in a single AI call."""
         combined = self._hotlink_combined_text
         if not combined.strip():
-            _error_dialog(self, "No Data", "No ai_response text available.")
+            _error_dialog(self, "No Data", "No combined text available for AI derivation.")
             return
 
-        self._set_response_label("AI: All Hotlinks")
+        system_instruction, user_prompt = ai_derived_details_prompts.get_all_hotlinks_prompt(
+            combined, valid_statuses=self._service_status_values)
+
+        self._side_resp_label.configure(text="AI: All Hotlinks")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
-        self._side_prompt.insert("1.0", combined)
+        self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
         self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace("Deriving all hotlinks…")
         self._show_side_panel()
 
-        # Extract fields locally from the text
-        parsed = self._extract_hotlinks_locally(combined)
-        self._side_resp_replace("Local extraction from ai_response…")
-        self._show_all_hotlinks_result(parsed, combined)
+        def _task():
+            result = self._call_ai_for_field(system_instruction, user_prompt)
+            if isinstance(result, tuple):
+                text, model_name, usage_meta, elapsed = result
+                try:
+                    cleaned = (text or "").strip()
+                    if cleaned.startswith("```"):
+                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0]
+                    parsed = json.loads(cleaned)
+                except (json.JSONDecodeError, ValueError):
+                    parsed = None
+                self.after(0, lambda: self._show_all_hotlinks_result(
+                    parsed, text, model_name, usage_meta, elapsed))
+            else:
+                self.after(0, lambda: self._side_resp_replace(
+                    f"All Hotlinks Failed.\n\n{result}"))
+
+        threading.Thread(target=_task, daemon=True).start()
 
     def _convert_incident_coordinates(self):
         """Read incident_location, extract //...// snippet, convert, write to incident_coordinates."""
@@ -596,98 +630,15 @@ class UpdateFatalities(tk.Toplevel):
             coord_entry.insert(0, formatted)
         self._on_field_edited()
 
-    def _extract_hotlinks_locally(self, text: str) -> dict:
-        """Extract hotlink fields directly from ai_response text.
-        Uses the actual labels found in the text — no snake_case field names."""
-        import re as _re
-        result = {}
-
-        # ── Service Status ──
-        m = _re.search(
-            r'Service\s+Status[:\*\s]+([^\n.]+)',
-            text, _re.IGNORECASE
-        )
-        if m:
-            result['service_status'] = m.group(1).strip()
-
-        # ── Place of Death ──
-        for label in ['Place of Death', 'Location of Death',
-                       'Location of Incident', 'Death Location']:
-            m = _re.search(
-                rf'(?:{label})[:\*\s\-]+([^\n.]+)',
-                text, _re.IGNORECASE
-            )
-            if m:
-                result['place_of_death'] = m.group(1).strip()
-                break
-        if 'place_of_death' not in result:
-            m = _re.search(
-                r'(?:killed\s+in\s+action|died|death)\s+(?:in|at|on)\s+([^.\n]{5,80})',
-                text, _re.IGNORECASE
-            )
-            if m:
-                result['place_of_death'] = m.group(1).strip()
-
-        # ── Circumstances of Death ──
-        for label in ['Cause of Death', 'Circumstances of Death',
-                       'Circumstances']:
-            m = _re.search(
-                rf'(?:{label})[:\*\s\-]+([^\n.]+)',
-                text, _re.IGNORECASE
-            )
-            if m:
-                result['circumstances_of_death'] = m.group(1).strip()
-                break
-
-        # ── Unit ──
-        m = _re.search(
-            r'Unit[:\*\s\-]+([^\n]+)',
-            text, _re.IGNORECASE
-        )
-        if m:
-            unit = m.group(1).strip().rstrip('.')
-            unit = _re.sub(
-                r'^(?:Australian\s+Army|Royal\s+Australian|US\s+Army|New\s+Zealand\s+Army)[,\s]*',
-                '', unit, flags=_re.IGNORECASE
-            )
-            result['unit_served_with'] = unit
-
-        # ── Grid Reference ──
-        if 'place_of_death' in result:
-            result['grid_reference'] = result['place_of_death']
-
-        return result
-
-    def _fallback_parse_hotlinks(self, raw_text: str) -> dict | None:
-        """Try to extract hotlink fields from raw AI text using simple pattern matching.
-        Treats the text as plain text — does NOT require valid JSON."""
-        import re as _re
-        if not raw_text:
-            return None
-        result = {}
-        fields = ["service_status", "place_of_death", "circumstances_of_death",
-                   "unit_served_with", "grid_reference"]
-        for field in fields:
-            # Try JSON-like patterns: "field": "value" or "field": "value"
-            pat = _re.search(
-                r'["\']?' + _re.escape(field) + r'["\']?\s*[:=]\s*["\']([^"\']*?)["\']',
-                raw_text, _re.IGNORECASE
-            )
-            if pat:
-                result[field] = pat.group(1).strip()
-        return result if result else None
-
     def _show_all_hotlinks_result(self, parsed: dict | None, raw_text: str,
                                    model_name=None, usage_meta=None, elapsed=0.0):
         """Show a dialog with checkboxes and editable text fields for each hotlink."""
         if parsed is None:
-            # JSON parse failed — try simple text-based field extraction as fallback
-            parsed = self._fallback_parse_hotlinks(raw_text)
-            if parsed is None:
-                parsed = {}  # empty dict, dialog still opens so user can paste manually
-            self._set_response_label("AI: All Hotlinks")
-        else:
-            self._set_response_label("AI: All Hotlinks")
+            self._side_resp_label.configure(text="AI: All Hotlinks — FAILED")
+            self._side_resp_replace(raw_text)
+            _error_dialog(self, "Parse Failed",
+                          "Could not parse JSON from AI response.\nRaw response shown in side panel.")
+            return
 
         header = "AI: All Hotlinks"
         time_str = ""
@@ -734,7 +685,7 @@ class UpdateFatalities(tk.Toplevel):
             cost_str = cost_str if cost_str else "$A ?.????"
             header = f"AI: All Hotlinks  [{model_name}]  {time_str}  {cost_str}"
 
-        self._set_response_label(header)
+        self._side_resp_label.configure(text=header)
         self._side_resp_replace(raw_text)
         self._copy_btn.pack_forget()  # only for master response, not hotlinks
 
@@ -960,12 +911,11 @@ class UpdateFatalities(tk.Toplevel):
                             "https://generativelanguage.googleapis.com/v1beta/models/"
                             f"{model}:generateContent?key={api_key}"
                         )
-                        _gemini_body = {
+                        body = json.dumps({
                             "systemInstruction": {"parts": [{"text": system_instruction}]},
                             "contents": [{"parts": [{"text": user_prompt}]}],
                             "generationConfig": {"temperature": 0, "maxOutputTokens": 1024},
-                        }
-                        body = json.dumps(_gemini_body).encode("utf-8")
+                        }).encode("utf-8")
                         req = urllib.request.Request(
                             url, data=body,
                             headers={"Content-Type": "application/json"},
@@ -973,11 +923,7 @@ class UpdateFatalities(tk.Toplevel):
                         with urllib.request.urlopen(req, timeout=timeout_secs) as resp:
                             data = json.loads(resp.read().decode("utf-8"))
                             elapsed = _time.time() - t0
-                            # Collect all text parts (skip thought parts from thinking models)
-                            parts = data["candidates"][0]["content"]["parts"]
-                            text = "\n".join(p.get("text", "") for p in parts if "text" in p)
-                            if not text and parts:
-                                text = str(parts[0])  # fallback: show raw first part
+                            text = data["candidates"][0]["content"]["parts"][0]["text"]
                             usage_meta = data.get("usageMetadata", {})
                             return (text, model, usage_meta, elapsed)
                 except urllib.error.HTTPError as exc:
@@ -1101,14 +1047,14 @@ class UpdateFatalities(tk.Toplevel):
             cost_str = cost_str if cost_str else "$A ?.????"
             header = f"AI: {field_name}  [{model_name}]  {time_str}  {cost_str}"
 
-        self._set_response_label(header)
+        self._side_resp_label.configure(text=header)
         self._side_resp_replace(result_text)
         self._copy_btn.pack_forget()  # only for master response, not hotlinks
 
         # If the AI call failed, display the error clearly and stop —
         # never show an accept/cancel dialog for an error.
         if not model_name:
-            self._set_response_label(f"AI: {field_name} \u2014 FAILED")
+            self._side_resp_label.configure(text=f"AI: {field_name} \u2014 FAILED")
             _error_dialog(self, f"AI Derivation Failed",
                           f"Could not derive '{field_name}'.\n\n{result_text}")
             return
@@ -1370,7 +1316,7 @@ class UpdateFatalities(tk.Toplevel):
                                           bg="#f0f2f5", fg=TEXT_MUTED, anchor="w")
         self._side_resp_label.pack(side=tk.LEFT)
 
-        # Master web provider dropdown (shown when RESPONSE: MASTER is active)
+        # Master web provider dropdown
         _prov_names = list(self._master_web_providers.keys())
         self._master_web_provider_var = tk.StringVar(value=_prov_names[0] if _prov_names else "Google")
         self._master_web_provider_dd = ttk.Combobox(_resp_header, textvariable=self._master_web_provider_var,
@@ -1378,7 +1324,7 @@ class UpdateFatalities(tk.Toplevel):
                                                      width=12, font=(FONT, 8))
         self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
 
-        # URL hotlink label next to the provider dropdown
+        # URL hotlink label
         self._master_web_url_label = tk.Label(_resp_header, text="", font=(FONT, 8, "underline"),
                                               bg="#f0f2f5", fg="#4a90d9", cursor="hand2")
         self._master_web_url_label.pack(side=tk.LEFT, padx=(4, 0))
@@ -1389,11 +1335,11 @@ class UpdateFatalities(tk.Toplevel):
             url = self._master_web_providers.get(provider, "")
             self._master_web_url_label.configure(text=url if url else "")
         self._master_web_provider_var.trace_add("write", _on_master_web_provider_change)
-        # Initialise the URL label
         _on_master_web_provider_change()
         # Hide controls initially — only shown when label is "RESPONSE: MASTER"
         self._master_web_provider_dd.pack_forget()
         self._master_web_url_label.pack_forget()
+
         resp_frame = tk.Frame(self._side_panel, bg=WHITE)
         resp_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 10))
         self._side_resp = tk.Text(resp_frame, font=(FONT, 9), wrap=tk.WORD,
@@ -1554,7 +1500,7 @@ class UpdateFatalities(tk.Toplevel):
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt_label.configure(text="PROMPT")
-        self._set_response_label("RESPONSE")
+        self._side_resp_label.configure(text="RESPONSE")
         self._side_resp_replace("")
         # Respect Side Panel checkbox
         if self._side_panel_visible_var.get():
@@ -1987,7 +1933,7 @@ class UpdateFatalities(tk.Toplevel):
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", saved_prompt)
         self._side_prompt_label.configure(text=saved_prompt_label)
-        self._set_response_label(saved_resp_label)
+        self._side_resp_label.configure(text=saved_resp_label)
         self._side_resp_replace(saved_resp)
 
     def _discard_record(self):
@@ -2055,6 +2001,16 @@ class UpdateFatalities(tk.Toplevel):
         url = self._master_web_providers.get(provider, "")
         if url:
             webbrowser.open(url)
+
+    def _set_response_label(self, text: str):
+        """Set the response label and toggle master-web-provider controls."""
+        self._side_resp_label.configure(text=text)
+        if text.startswith("RESPONSE: MASTER"):
+            self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
+            self._master_web_url_label.pack(side=tk.LEFT, padx=(4, 0))
+        else:
+            self._master_web_provider_dd.pack_forget()
+            self._master_web_url_label.pack_forget()
 
     # ------------------------------------------------------------------
     # AI Lookup
@@ -2361,11 +2317,7 @@ class UpdateFatalities(tk.Toplevel):
                                 req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
                                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                                     data = json.loads(resp.read().decode("utf-8"))
-                                    # Collect all text parts (skip thought parts from thinking models)
-                                    parts = data["candidates"][0]["content"]["parts"]
-                                    text = "\n".join(p.get("text", "") for p in parts if "text" in p)
-                                    if not text and parts:
-                                        text = str(parts[0])  # fallback
+                                    text = data["candidates"][0]["content"]["parts"][0]["text"]
                                     um = data.get("usageMetadata", {})
                                     return model, text, um
                         except Exception as exc:
@@ -2542,95 +2494,19 @@ class UpdateFatalities(tk.Toplevel):
 
         search_var.trace_add("write", _on_search)
 
-    def _robust_json_parse(self, text: str) -> dict | None:
-        """Parse AI response text into JSON, handling markdown fences, trailing commentary,
-        and common AI reasoning prefixes.
-        Returns the parsed dict on success, or None if parsing fails."""
-        if not text:
-            return None
-        cleaned = text.strip()
-        # Remove markdown code-fence wrappers: ```json ... ``` or ``` ... ```
-        if cleaned.startswith("```"):
-            # Strip opening fence line
-            cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
-            # Strip closing fence
-            if cleaned.rstrip().endswith("```"):
-                cleaned = cleaned.rsplit("```", 1)[0]
-            cleaned = cleaned.strip()
-        # Also try regex-based fence removal for nested/inline fences
-        import re as _re
-        cleaned = _re.sub(r'```(?:json)?\s*', '', cleaned)
-        cleaned = cleaned.strip()
-
-        # Strip common AI reasoning prefixes that some models emit before JSON
-        _prefixes = [
-            r'^->\s*', r'^Here\s+is\s+(?:the|a)\s+(?:JSON\s+)?(?:response|output|result)[:\s]*',
-            r'^Sure[!,\s]+(?:here[\'\s]+(?:is|you\s+go)[:\s]*)?',
-            r'^Certainly[!,\s]+', r'^Of\s+course[!,\s]+',
-        ]
-        for pat in _prefixes:
-            cleaned = _re.sub(pat, '', cleaned, flags=_re.IGNORECASE).strip()
-
-        # Attempt 1: direct parse
-        try:
-            return json.loads(cleaned)
-        except (json.JSONDecodeError, ValueError):
-            pass
-
-        # Attempt 2: find first '{' and balance braces to extract JSON object
-        start = cleaned.find("{")
-        if start >= 0:
-            depth = 0
-            in_string = False
-            escape = False
-            for i in range(start, len(cleaned)):
-                ch = cleaned[i]
-                if in_string:
-                    if escape:
-                        escape = False
-                    elif ch == "\\":
-                        escape = True
-                    elif ch == '"':
-                        in_string = False
-                else:
-                    if ch == '"':
-                        in_string = True
-                    elif ch == "{":
-                        depth += 1
-                    elif ch == "}":
-                        depth -= 1
-                        if depth == 0:
-                            candidate = cleaned[start:i+1]
-                            try:
-                                return json.loads(candidate)
-                            except (json.JSONDecodeError, ValueError):
-                                break  # balanced braces but invalid JSON
-            # If we found balanced braces but JSON was invalid, try the whole extracted block
-            if depth == 0:
-                candidate = cleaned[start:i+1]
-                try:
-                    return json.loads(candidate)
-                except (json.JSONDecodeError, ValueError):
-                    pass
-
-        return None
-
     def _extract_json(self, text: str) -> str:
         """Strip markdown code fences and pretty-print JSON if possible."""
-        parsed = self._robust_json_parse(text)
-        if parsed is not None:
+        import re as _re
+        # Remove ```json ... ``` or ``` ... ``` fences
+        cleaned = _re.sub(r'```(?:json)?\s*\n?', '', text)
+        cleaned = _re.sub(r'```\s*$', '', cleaned)
+        cleaned = cleaned.strip()
+        # Try to parse and pretty-print
+        try:
+            parsed = json.loads(cleaned)
             return json.dumps(parsed, indent=2, ensure_ascii=False)
-        return text  # Return original if not valid JSON
-
-    def _set_response_label(self, text: str):
-        """Set the response label and toggle master-web-provider controls."""
-        self._side_resp_label.configure(text=text)
-        if text.startswith("RESPONSE: MASTER"):
-            self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
-            self._master_web_url_label.pack(side=tk.LEFT, padx=(4, 0))
-        else:
-            self._master_web_provider_dd.pack_forget()
-            self._master_web_url_label.pack_forget()
+        except (json.JSONDecodeError, ValueError):
+            return text  # Return original if not valid JSON
 
     def _side_resp_replace(self, text: str):
         safe_text = text if text is not None else ""
