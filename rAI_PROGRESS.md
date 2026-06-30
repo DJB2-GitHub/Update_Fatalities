@@ -1,79 +1,49 @@
-# rAI_PROGRESS.md
+# rAI Progress Report
 
-## Session Summary (2026-06-29)
+## Current System State
 
-### Problem Identified
+### Architecture
+- **Master Response pipeline**: Bypassed — prompt generated & displayed in side panel for manual `gemini.google.com` execution. No API call made.
+- **Hotlink derivations**: AI-powered field extraction for `service_status`, `place_of_death`, `circumstances_of_death`, `unit_served_with`, and `grid_reference`/`incident_location`.
+- **Provider routing**: Hotlinks use the top-row dropdown (Google/DeepSeek/OpenRouter, populated from `.env` `AI_MODEL_PROVIDERS`). Master Response uses `AI_MASTER_MODEL_PROVIDER` from `.env`.
+- **Session persistence**: `session.json` tracks last position, search text, on-this-day filters, side panel visibility, side panel content per-record, and internal provider selection.
 
-1. **Critical hallucination bug** — The "memory-only" Master Response prompt in `ai_master_prompts.py` caused LLMs to fabricate entirely fictional death narratives. Test case: WO2 Kevin George Conway (13097, died 6 July 1964 at Nam Dong). The LLM's own chain-of-thought (captured in `openrouter.log`) showed it knew it was confabulating: *"I don't recall such a death; but we must produce data… Let's assume he was killed by a landmine."* Multiple runs produced different fictions: M-113 mine incident, helicopter gearbox failure, heart attack — all wrong. A simple web search returns the correct answer (Battle of Nam Dong) within seconds.
-
-### Root Cause
-
-- `ai_master_prompts.py` prompt explicitly banned web search: *"Do not rely on external web pages"*
-- `_ai_lookup` hardcoded `is_live_search=False`
-- JSON schema forced output — LLM *must* produce something, so it invented plausible-sounding narratives
-- Readily available web data (AWM, VWMA) would have returned the correct answer in seconds
-
-### Fixes Applied
-
-1. **`ai_master_prompts.py` — Rewritten**
-   - Now supports two modes via `is_live_search` parameter
-   - LIVE SEARCH ON: instructs model to search AWM, VWMA, DVA, NAA, Trove; strict NOT_DOCUMENTED guardrail
-   - LIVE SEARCH OFF: memory-only with NOT_DOCUMENTED fallback (no more fabrication)
-   - Returns `google_search_grounding: True` flag for Gemini tool injection
-
-2. **`update_fatalities.py` — Multiple changes**
-   - `_ai_lookup`: `is_live_search=True` passed to prompt generator (was `False`)
-   - Google Gemini path: injects `tools: [{"google_search": {}}]` when grounding flag set
-   - Google Gemini path: strips `responseMimeType`/`responseSchema` when search active (API rejects them together)
-   - Retries reduced: 3 → 1 per model
-   - **Confirmation dialog bypassed** — no dialog pops up; prompt appears instantly
-
-3. **`.env` — Provider and model changes**
-   - `AI_MASTER_MODEL_PROVIDER` switched to `"Google"` (was `"openRouter"`)
-   - Model list reduced to single: `"gemini-2.5-flash"` (was 3-model chain)
-   - Timeout reduced: 150s → 45s
-   - `maxOutputTokens` reduced: 8192 → 2048 (in `ai_master_prompts.py`)
-
-### Attempted & Rejected
-
-- **OpenRouter `web_search` plugin** — Rejected by API: *"Invalid discriminator value"*
-- **OpenRouter `web` plugin** — Unreliable; routed models simulated search without actually searching (e.g. `openai/gpt-oss-120b` wrote fake `browser.search` calls)
-- **Google Gemini API with Search Grounding** — API tool (`google_search`) conflicts with `responseMimeType: application/json`. Fix applied but the Google Generative Language API is fundamentally different from gemini.google.com — rate limits, tool unreliability, and no streaming make it a poor substitute for the browser experience
-
-### Final Resolution: API Execution Bypassed
-
-4. **`update_fatalities.py` — Early return bypass** (`_ai_lookup`)
-   - After prompt is displayed in side panel, function returns before any API call
-   - Response panel shows: `// Prompt ready above — copy into gemini.google.com, then paste the result here.`
-   - Obsolete API code (OpenRouter, DeepSeek, Gemini paths) retained behind `return` statement, marked `# --- OBSOLETE ---`
-   - Confirmation dialog commented out — button goes straight to prompt
-   - User workflow: click button → copy prompt → paste into gemini.google.com → copy result → paste into RESPONSE panel
-
-### Current System State
-
-| Area | Detail |
+### Key env vars
+| Variable | Purpose |
 |---|---|
-| **Master Response execution** | **BYPASSED** — prompt generated & displayed, no API call made. User runs manually in gemini.google.com |
-| **Confirmation dialog** | **BYPASSED** — commented out; prompt appears instantly on button click |
-| **Prompt generation** | `ai_master_prompts.py` active; `is_live_search=True` mode generates research-oriented prompt citing AWM/VWMA/DVA/NAA sources |
-| **Obsolete API code** | Preserved behind `return` in `_ai_lookup`; all provider paths intact for future refactor |
-| **Google Gemini provider** | Selected in `.env` but unused due to bypass; search grounding & schema-stripping logic ready if re-enabled |
-| **OpenRouter provider** | Selected in `.env` for internal/hotlink lookups only (`AI_INTERNAL_MODEL_PROVIDER`); excluded from master |
-| **NOT_DOCUMENTED guardrail** | Both live-search and memory-only prompts now enforce NOT_DOCUMENTED for unverifiable facts |
-| **Service status extraction** | Country-specific env var (`AU_SERVICE_STATUSES`, `NZ_SERVICE_STATUSES`) drives the service-status hint in prompts |
-| **Files touched** | `ai_master_prompts.py`, `update_fatalities.py`, `.env`, `rAI_PROGRESS.md` |
+| `AI_MODEL_PROVIDERS` | Populates the provider dropdown (hotlinks) |
+| `AI_MASTER_MODEL_PROVIDER` | Master Response provider |
+| `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` / `OPENROUTER_API_KEY` | Provider API keys |
+| `SHOW_AI_MASTER_RESPONSE_COPY` | Char threshold for COPY RESPONSE button (default 200) |
+| `AU_SERVICE_STATUSES` | Comma-separated valid service statuses for Australia |
 
-### Checklist — All items tested & passed ✓
+### Removed
+- `AI_INTERNAL_MODEL_PROVIDER` — replaced by dropdown selection persisted in session state
 
-- [x] Hallucination root cause identified and documented (openrouter.log evidence)
-- [x] Prompt redesigned with live-search and NOT_DOCUMENTED guardrails
-- [x] Google Gemini search grounding tool injection implemented
-- [x] `responseMimeType`/`tools` conflict resolved
-- [x] API execution bypassed per user directive
-- [x] Confirmation dialog bypassed
-- [x] Both files compile clean
-- [x] Obsolete code preserved for future refactor
+---
 
-### No Incomplete Work
+## Completed This Session
 
-All changes are complete and smoke-tested. The API bypass is the intended steady state until the user performs a planned refactor.
+1. **Clipboard auto-copy** — "AI: Create a Master Response" copies full prompt to clipboard on click
+2. **Copy button reactive** — "AI: COPY RESPONSE: to ai_response" now appears when user types/pastes into RESPONSE panel (bound to `<<Modified>>`)
+3. **place_of_death concise** — Hotlink prompt now returns map-ready name (`Seymour, Victoria, Australia`) instead of terrain narrative
+4. **Prompt restructure** (`ai_master_prompts.py`):
+   - Removed unknown-at-click-time fields (Fatality Type, Place of Death, Armed Forces)
+   - Added explicit "War: Vietnam War (1962–1972)" to Authoritative Identification
+   - Restructured: Authoritative Identification → All Known Details → Research Requirements
+   - Non-combat death warning added to both SYSTEM and USER prompts
+   - Multi-match guidance: if Surname + DoD matches multiple soldiers, list each by Full Name + Service Number
+5. **Provider dropdown** — `ttk.Combobox` in top row, before Side Panel checkbox, defaults to "Google"
+6. **Provider in session** — dropdown selection persisted across all 5 session-save paths, restored on load
+7. **`AI_INTERNAL_MODEL_PROVIDER`** — fully removed from codebase
+
+---
+
+## Next Steps
+
+- [ ] Test full workflow: open editor → select OpenRouter in dropdown → click hotlink → verify it routes to OpenRouter
+- [ ] Test session persistence: change provider dropdown → close editor → reopen → verify provider is restored
+- [ ] Test place_of_death hotlink with new prompt — verify concise output
+- [ ] Test "AI: Create a Master Response" — verify clipboard copy works, paste into gemini.google.com
+- [ ] Remove `AI_INTERNAL_MODEL_PROVIDER` from `.env` file (no longer read by code)
+- [ ] Update `.env.example` to remove `AI_INTERNAL_ANALYSIS_MODEL` if unused

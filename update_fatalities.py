@@ -284,8 +284,11 @@ class UpdateFatalities(tk.Toplevel):
                             _k, _, _v = _line.partition("=")
                             _env[_k.strip()] = _v.strip().strip('"').strip("'")
             self._copy_threshold = int(_env.get("SHOW_AI_MASTER_RESPONSE_COPY", "200"))
+            _providers_raw = _env.get("AI_MODEL_PROVIDERS", "Google,Deepseek,OpenRouter")
+            self._internal_providers = [p.strip() for p in _providers_raw.split(",") if p.strip()]
         except (ValueError, OSError):
             self._copy_threshold = 200
+            self._internal_providers = ["Google", "Deepseek", "OpenRouter"]
 
         data = _load_json(file_path)
         if data is None:
@@ -337,6 +340,10 @@ class UpdateFatalities(tk.Toplevel):
                     self._show_side_panel()
                 else:
                     self._hide_side_panel()
+
+            saved_provider = session.get("internal_provider")
+            if saved_provider and saved_provider in self._internal_providers:
+                self._internal_provider_var.set(saved_provider)
 
         # Apply OnThisDay mutual-exclusivity state after session restore
         if self._on_this_day_chk_var.get():
@@ -402,6 +409,7 @@ class UpdateFatalities(tk.Toplevel):
         if extra is None:
             extra = {}
         extra["side_panel_visible"] = self._side_panel_visible_var.get()
+        extra["internal_provider"] = self._internal_provider_var.get()
         session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)
         # Bring the parent (main menu) to the front before closing
         try:
@@ -742,7 +750,7 @@ class UpdateFatalities(tk.Toplevel):
 
     def _call_ai_for_field(self, system_instruction: str, user_prompt: str):
         """Call the AI API with the field derivation prompt.
-        Routes to Gemini or DeepSeek based on AI_INTERNAL_MODEL-PROVIDER.
+        Routes to the provider selected in the top-row dropdown (Google, DeepSeek, or OpenRouter).
         Returns (text, model_name, usage_meta, elapsed_seconds) on success,
         or an error string on failure."""
         import time as _time
@@ -756,11 +764,11 @@ class UpdateFatalities(tk.Toplevel):
                         k, _, v = line.partition("=")
                         env[k.strip()] = v.strip().strip('"').strip("'")
 
-        provider = env.get("AI_INTERNAL_MODEL_PROVIDER", "Google")
-        allowed = [p.strip().lower() for p in env.get("AI_MODEL_PROVIDERS", "Google,Deepseek").split(",") if p.strip()]
+        provider = self._internal_provider_var.get()
+        allowed = [p.strip().lower() for p in self._internal_providers]
         if provider.lower() not in allowed:
-            return (f"In .env AI_INTERNAL_MODEL_PROVIDER constant \"{provider}\" is not a valid AI Provider\n"
-                    f"Contact system admin to fix")
+            return (f"AI provider \"{provider}\" is not a valid AI Provider\n"
+                    f"Select a valid provider from the dropdown.")
         timeout_secs = 15
 
         if provider.lower() == "deepseek":
@@ -1242,6 +1250,12 @@ class UpdateFatalities(tk.Toplevel):
         self._all_hotlinks_btn = self._flat_btn(top_row, "All Hotlinks", self._all_hotlinks, bg="#e67e22", fg=WHITE, side=tk.LEFT, right_pad=10)
 
         self._side_panel_visible_var = tk.BooleanVar(value=True)
+        # AI provider dropdown for hotlink derivations
+        self._internal_provider_var = tk.StringVar(value=self._internal_providers[0] if self._internal_providers else "Google")
+        _prov_dd = ttk.Combobox(top_row, textvariable=self._internal_provider_var,
+                                values=self._internal_providers, state="readonly",
+                                width=12, font=(FONT, 9))
+        _prov_dd.pack(side=tk.LEFT, padx=(10, 0))
         self._side_panel_chk = tk.Checkbutton(
             top_row, text="Side Panel", variable=self._side_panel_visible_var,
             bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9),
@@ -1296,6 +1310,19 @@ class UpdateFatalities(tk.Toplevel):
         self._side_resp.configure(yscrollcommand=resp_scroll.set)
         resp_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self._side_resp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Show COPY button when user pastes/types a response long enough
+        def _on_resp_modified(_event=None):
+            self._side_resp.edit_modified(False)
+            text = self._side_resp.get("1.0", "end-1c")
+            is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+            if len(text) > self._copy_threshold and is_master:
+                try:
+                    self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))
+                except tk.TclError:
+                    pass
+            else:
+                self._copy_btn.pack_forget()
+        self._side_resp.bind("<<Modified>>", _on_resp_modified)
 
     # ------------------------------------------------------------------
     # Flat button helper
@@ -1382,6 +1409,7 @@ class UpdateFatalities(tk.Toplevel):
             "on_this_day_month": self._on_this_day_month_var.get(),
             "on_this_day_day": self._on_this_day_day_var.get(),
             "side_panel_visible": self._side_panel_visible_var.get(),
+            "internal_provider": self._internal_provider_var.get(),
         })
 
     # ------------------------------------------------------------------
@@ -1891,6 +1919,7 @@ class UpdateFatalities(tk.Toplevel):
                 "on_this_day_month": self._on_this_day_month_var.get(),
                 "on_this_day_day": self._on_this_day_day_var.get(),
                 "side_panel_visible": self._side_panel_visible_var.get(),
+                "internal_provider": self._internal_provider_var.get(),
             })
 
     def _next(self):
@@ -1904,6 +1933,7 @@ class UpdateFatalities(tk.Toplevel):
                 "on_this_day_month": self._on_this_day_month_var.get(),
                 "on_this_day_day": self._on_this_day_day_var.get(),
                 "side_panel_visible": self._side_panel_visible_var.get(),
+                "internal_provider": self._internal_provider_var.get(),
             })
 
     # ------------------------------------------------------------------
@@ -2055,12 +2085,15 @@ class UpdateFatalities(tk.Toplevel):
 
         self._side_prompt_label.configure(text="PROMPT: Master Response")
         self._side_resp_label.configure(text="RESPONSE: MASTER")
+        full_prompt = "SYSTEM:\n" + config["system_text"] + "\n\nMESSAGE:\n" + config["user_prompt"]
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
-        self._side_prompt.insert("1.0",
-            "SYSTEM:\n" + config["system_text"] + "\n\nMESSAGE:\n" + config["user_prompt"])
+        self._side_prompt.insert("1.0", full_prompt)
+        # Copy the full prompt to clipboard so the user can paste directly
+        self.clipboard_clear()
+        self.clipboard_append(full_prompt)
         self._side_resp.delete("1.0", tk.END)
-        self._side_resp.insert("1.0", "// Prompt ready above — copy into gemini.google.com, then paste the result here.")
+        self._side_resp.insert("1.0", "// Prompt copied to clipboard — paste into gemini.google.com, then paste the result here.")
         self._show_side_panel()
         return  # API execution bypassed — user runs prompt manually in browser
 
@@ -2478,4 +2511,5 @@ class UpdateFatalities(tk.Toplevel):
         """Persist current side-panel content to session for the active record."""
         extra = self._gather_ref_state()
         if extra:
+            extra["internal_provider"] = self._internal_provider_var.get()
             session_manager._save_session(self.file_path, self._filtered_pos, self._search_text, extra=extra)

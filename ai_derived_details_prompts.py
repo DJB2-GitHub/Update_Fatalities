@@ -84,12 +84,20 @@ def get_service_status_prompt(combined_text: str, valid_statuses: list[str] | No
 def get_place_of_death_prompt(combined_text: str) -> tuple:
     """Return (system_instruction, user_prompt) to derive place_of_death."""
     system = (
-        "From the provided text, produce a concise \"place_of_death\" summary of no more than 40 words.\n\n"
-        "Begin with country, then province/state, followed by broader geographic cues "
-        "that help an informed reader visualise the area.\n"
-        "Do not include grid references or the soldier's name.\n\n"
-        "Provide a brief terrain-based description that aids memory and orientation.\n"
-        "Write in a neutral, factual tone appropriate for an honour roll entry.\n\n"
+        "From the provided text, extract the place of death as a concise location name "
+        "that a geographer can locate on a map.\n\n"
+        "Output ONLY the place name(s), ordered from smallest to largest:\n"
+        "village/town/suburb, state/province, country.\n\n"
+        "Examples:\n"
+        "  Seymour, Victoria, Australia\n"
+        "  Nui Dat, Phuoc Tuy Province, South Vietnam\n"
+        "  Vung Tau, South Vietnam\n\n"
+        "Do NOT include:\n"
+        "- descriptive narrative, terrain notes, or historical context\n"
+        "- grid references or coordinates\n"
+        "- the soldier's name\n"
+        "- conversational filler or markdown\n\n"
+        "Return ONLY the place name string.\n\n"
         + _SHARED_RULES
     )
     return (system, _USER_PROMPT_TEMPLATE.format(combined_text=combined_text))
@@ -250,8 +258,9 @@ def get_all_hotlinks_prompt(combined_text: str, valid_statuses: list[str] | None
         f"1. \"service_status\" — one of: {_svc_list}. "
         "Deduce from voluntary/compulsory enlistment evidence. "
         "DO NOT infer from corps, regiment, unit, rank, trade, or branch.\n"
-        "2. \"place_of_death\" — concise summary (max 40 words). Start with country, then province/state, "
-        "then geographic cues. No grid references or soldier's name.\n"
+        "2. \"place_of_death\" — concise location name a geographer can locate on a map. "
+        "Output village/town/suburb, state/province, country. No narrative, terrain notes, "
+        "grid references, or soldier's name. Example: Seymour, Victoria, Australia.\n"
         "3. \"circumstances_of_death\" — concise summary (max 100 words). "
         "If an Operation name is present, begin with \"During Operation [Name], …\". "
         "Describe manner of death, enemy contact type, operational environment, fatal wound nature. "
