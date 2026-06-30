@@ -166,10 +166,15 @@ class StyledDialog(tk.Toplevel):
             canvas.create_oval(4, 4, 32, 32, fill=colour, outline="")
             canvas.create_text(18, 18, text="i", fill=WHITE, font=(FONT_FAMILY, 14, "bold"))
 
-        msg_lbl = tk.Label(
-            top, text=message, bg=WHITE, fg=TEXT_DARK,
-            font=(FONT_FAMILY, 10), justify=tk.LEFT, wraplength=380,
+        msg_lbl = tk.Text(
+            top, bg=WHITE, fg=TEXT_DARK, font=(FONT_FAMILY, 10),
+            wrap=tk.WORD, relief=tk.FLAT, borderwidth=0,
+            highlightthickness=0, padx=0, pady=0,
+            cursor="arrow", state=tk.NORMAL, width=50,
         )
+        msg_lbl.insert("1.0", message)
+        lines = message.count("\n") + 1
+        msg_lbl.configure(state=tk.DISABLED, height=min(lines, 12))
         msg_lbl.pack(side=tk.LEFT)
 
         # Separator
@@ -394,7 +399,7 @@ class MainMenu(tk.Toplevel):
         self._all_buttons = []
 
         heading_lbl = tk.Label(
-            body, text="Live OnThis Day app", bg=WHITE, fg=TEXT_DARK,
+            body, text="OnThisDay in Vietnam webapp", bg=WHITE, fg=TEXT_DARK,
             font=(FONT_FAMILY, 12, "bold"),
         )
         heading_lbl.pack(anchor="w", pady=(8, 4))
