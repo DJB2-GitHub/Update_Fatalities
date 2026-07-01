@@ -253,6 +253,7 @@ def get_all_hotlinks_prompt(combined_text: str, valid_statuses: list[str] | None
     _svc_fallback = valid_statuses[0]
 
     system = (
+        "Return ONLY a valid JSON object. No reasoning, no commentary, no markdown before the JSON.\n"
         "From the provided text, extract five fields and return them as a single JSON object.\n\n"
         "Fields to extract:\n"
         f"1. \"service_status\" — one of: {_svc_list}. "

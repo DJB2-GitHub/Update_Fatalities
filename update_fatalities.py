@@ -564,13 +564,7 @@ class UpdateFatalities(tk.Toplevel):
             result = self._call_ai_for_field(system_instruction, user_prompt)
             if isinstance(result, tuple):
                 text, model_name, usage_meta, elapsed = result
-                try:
-                    cleaned = (text or "").strip()
-                    if cleaned.startswith("```"):
-                        cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0]
-                    parsed = json.loads(cleaned)
-                except (json.JSONDecodeError, ValueError):
-                    parsed = None
+                parsed = self._robust_json_parse(text)
                 self.after(0, lambda: self._show_all_hotlinks_result(
                     parsed, text, model_name, usage_meta, elapsed))
             else:
@@ -780,7 +774,7 @@ class UpdateFatalities(tk.Toplevel):
         if provider.lower() not in allowed:
             return (f"AI provider \"{provider}\" is not a valid AI Provider\n"
                     f"Select a valid provider from the dropdown.")
-        timeout_secs = 15
+        timeout_secs = 60
 
         if provider.lower() == "deepseek":
             api_key = env.get("DEEPSEEK_API_KEY", "")
@@ -828,6 +822,7 @@ class UpdateFatalities(tk.Toplevel):
                         body = json.dumps({
                             "model": model,
                             "temperature": 0,
+                            "max_tokens": 8192,
                             "messages": [
                                 {"role": "system", "content": system_instruction},
                                 {"role": "user", "content": user_prompt},
@@ -914,7 +909,7 @@ class UpdateFatalities(tk.Toplevel):
                         body = json.dumps({
                             "systemInstruction": {"parts": [{"text": system_instruction}]},
                             "contents": [{"parts": [{"text": user_prompt}]}],
-                            "generationConfig": {"temperature": 0, "maxOutputTokens": 1024},
+                            "generationConfig": {"temperature": 0, "maxOutputTokens": 8192},
                         }).encode("utf-8")
                         req = urllib.request.Request(
                             url, data=body,
@@ -2493,6 +2488,31 @@ class UpdateFatalities(tk.Toplevel):
                 text_w.see(first_match)
 
         search_var.trace_add("write", _on_search)
+
+    def _robust_json_parse(self, text: str) -> dict | None:
+        """Recover a JSON object from noisy AI output — structural only, no field awareness."""
+        import re as _re
+        s = (text or "").strip()
+        s = _re.sub(r'```(?:json)?\s*\n?', '', s)
+        s = _re.sub(r'```\s*$', '', s)
+        s = s.strip()
+        reasoning = [
+            r'^\s*->.*(?:\n|$)',
+            r'^\s*(?:Sure!|Here|Let me|I(?:\'|’)ll|First,|Now,|Next,|Finally,).*(?:\n|$)',
+            r'^\s*(?:GPS|\[GRID\]|Location names?):.*(?:\n|$)',
+            r'^\s*\*\s*(?:GPS|\[GRID\]|Location names?).*(?:\n|$)',
+        ]
+        for pat in reasoning:
+            s = _re.sub(pat, '', s, flags=_re.IGNORECASE | _re.MULTILINE)
+        s = s.strip()
+        start = s.find('{')
+        end = s.rfind('}')
+        if start == -1 or end == -1 or end <= start:
+            return None
+        try:
+            return json.loads(s[start:end + 1])
+        except (json.JSONDecodeError, ValueError):
+            return None
 
     def _extract_json(self, text: str) -> str:
         """Strip markdown code fences and pretty-print JSON if possible."""
