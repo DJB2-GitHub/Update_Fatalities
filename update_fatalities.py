@@ -239,6 +239,25 @@ _VIETNAM_48P_SQUARES = {
 _DATUM_SHIFT_E = 205   # metres to add to Easting  (SVN60 → WGS84)
 _DATUM_SHIFT_N = 75    # metres to add to Northing (SVN60 → WGS84)
 
+_MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"]
+
+
+def _format_date_display(date_str: str) -> str:
+    """Convert yyyy-mm-dd → yyyy-Mmm-dd for display.  Returns original on failure."""
+    if not date_str or not isinstance(date_str, str):
+        return date_str or ""
+    parts = date_str.strip().split("-")
+    if len(parts) != 3:
+        return date_str
+    try:
+        y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+        if 1 <= m <= 12:
+            return f"{y}-{_MONTH_NAMES[m]}-{d:02d}"
+    except (ValueError, IndexError):
+        pass
+    return date_str
+
 
 from coords import (
     _load_json, _save_json, _error_dialog, _confirm_yesnocancel,
@@ -446,7 +465,8 @@ class UpdateFatalities(tk.Toplevel):
         try:
             if self.winfo_exists() and self.state() == 'iconic':
                 parent = self.master
-                if parent and parent.winfo_exists():
+                # Never touch the hidden root tk.Tk window
+                if parent and parent.winfo_exists() and not isinstance(parent, tk.Tk):
                     parent.iconify()
         except Exception:
             pass
@@ -460,13 +480,17 @@ class UpdateFatalities(tk.Toplevel):
             pass
         try:
             parent = self.master
-            if parent and parent.winfo_exists() and parent.state() == 'iconic':
+            # Never touch the hidden root tk.Tk window
+            if parent and parent.winfo_exists() and parent.state() == 'iconic' and not isinstance(parent, tk.Tk):
                 parent.deiconify()
         except Exception:
             pass
 
     def _on_parent_map(self, event=None):
         """When the parent is restored (e.g. from taskbar), restore this modal too."""
+        # Never respond to the hidden root tk.Tk window being mapped
+        if event is not None and isinstance(event.widget, tk.Tk):
+            return
         try:
             if self.winfo_exists() and self.state() == 'iconic':
                 self.deiconify()
@@ -477,7 +501,8 @@ class UpdateFatalities(tk.Toplevel):
         """Minimize this modal and the parent together (button-click handler)."""
         try:
             parent = self.master
-            if parent and parent.winfo_exists():
+            # Never touch the hidden root tk.Tk window
+            if parent and parent.winfo_exists() and not isinstance(parent, tk.Tk):
                 parent.iconify()
             self.iconify()
         except Exception:
@@ -624,74 +649,67 @@ class UpdateFatalities(tk.Toplevel):
             coord_entry.insert(0, formatted)
         self._on_field_edited()
 
+    def _compute_cost_header(self, model_name, usage_meta, elapsed, prefix="AI: All Hotlinks"):
+        """Build a header string with model name, elapsed time, and cost."""
+        header = prefix
+        if not model_name or not elapsed:
+            return header
+        time_str = f"{elapsed:.0f}s" if elapsed else "??s"
+        cost_str = ""
+        if usage_meta:
+            try:
+                env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                env = {}
+                if os.path.exists(env_path):
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith("#") and "=" in line:
+                                k, _, v = line.partition("=")
+                                env[k.strip()] = v.strip().strip('"').strip("'")
+                aud_usd = float(env.get("AUD_USD", "0.7"))
+                if "totalCost" in usage_meta:
+                    cost = usage_meta["totalCost"] * aud_usd
+                    cost_str = f"$A {cost:.6f}"
+                else:
+                    ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                    if model_name in ai_rates:
+                        rate = ai_rates[model_name]
+                        pt = usage_meta.get("promptTokenCount", 0)
+                        ct = usage_meta.get("candidatesTokenCount", 0)
+                        cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                               (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                        cost_str = f"$A {cost:.6f}"
+            except Exception:
+                pass
+        if not cost_str:
+            cost_str = "$A ?.????"
+        return f"{header}  [{model_name}]  {time_str}  {cost_str}"
+
     def _show_all_hotlinks_result(self, parsed: dict | None, raw_text: str,
                                    model_name=None, usage_meta=None, elapsed=0.0):
         """Show a dialog with checkboxes and editable text fields for each hotlink."""
-        if parsed is None:
-            self._side_resp_label.configure(text="AI: All Hotlinks — FAILED")
-            self._side_resp_replace(raw_text)
-            _error_dialog(self, "Parse Failed",
-                          "Could not parse JSON from AI response.\nRaw response shown in side panel.")
-            return
-
-        header = "AI: All Hotlinks"
-        time_str = ""
-        cost_str = ""
-        if model_name and elapsed:
-            if usage_meta:
-                try:
-                    # OpenRouter returns cost directly in response — use it
-                    if "totalCost" in usage_meta:
-                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-                        env = {}
-                        if os.path.exists(env_path):
-                            with open(env_path, "r", encoding="utf-8") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#") and "=" in line:
-                                        k, _, v = line.partition("=")
-                                        env[k.strip()] = v.strip().strip('"').strip("'")
-                        aud_usd = float(env.get("AUD_USD", "0.7"))
-                        cost = usage_meta["totalCost"] * aud_usd
-                        cost_str = f"$A {cost:.6f}"
-                    else:
-                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-                        env = {}
-                        if os.path.exists(env_path):
-                            with open(env_path, "r", encoding="utf-8") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#") and "=" in line:
-                                        k, _, v = line.partition("=")
-                                        env[k.strip()] = v.strip().strip('"').strip("'")
-                        ai_rates = json.loads(env.get("AI_RATES", "{}"))
-                        aud_usd = float(env.get("AUD_USD", "0.7"))
-                        if model_name in ai_rates:
-                            rate = ai_rates[model_name]
-                            pt = usage_meta.get("promptTokenCount", 0)
-                            ct = usage_meta.get("candidatesTokenCount", 0)
-                            cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
-                                   (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
-                            cost_str = f"$A {cost:.6f}"
-                except Exception:
-                    pass
-            time_str = f"{elapsed:.0f}s" if elapsed else "??s"
-            cost_str = cost_str if cost_str else "$A ?.????"
-            header = f"AI: All Hotlinks  [{model_name}]  {time_str}  {cost_str}"
-
+        # Always show cost/timing header, even on parse failure
+        header = self._compute_cost_header(model_name, usage_meta, elapsed,
+                                           prefix="AI: All Hotlinks — FAILED" if parsed is None else "AI: All Hotlinks")
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(raw_text)
         self._copy_btn.pack_forget()  # only for master response, not hotlinks
 
+        if parsed is None:
+            _error_dialog(self, "Parse Failed",
+                          "Could not parse JSON from AI response.\nRaw response shown in side panel.")
+            return
+
         dlg = tk.Toplevel(self)
-        dlg.title(f"All Hotlinks Results  [{model_name}]  {time_str}  {cost_str}")
+        dlg.title(header)
         dlg.resizable(True, True)
         dlg.configure(bg=WHITE)
         dlg.transient(self)
         _center_on_parent(dlg, self)
         dlg.grab_set()
 
-        hdr = tk.Label(dlg, text=f"Edit results and select fields to update:  [{model_name}]  {time_str}  {cost_str}",
+        hdr = tk.Label(dlg, text=f"Edit results and select fields to update:  {header}",
                        font=(FONT, 10, "bold"), bg=WHITE, fg=TEXT_DARK, anchor="w")
         hdr.pack(fill=tk.X, padx=16, pady=(12, 8))
 
@@ -1506,11 +1524,18 @@ class UpdateFatalities(tk.Toplevel):
             self._record_label.configure(text=f"Record {self._filtered_pos + 1} of {total}  (filtered from {full_total})")
         else:
             self._record_label.configure(text=f"Record {self._filtered_pos + 1} of {total}")
-        self._prev_btn.configure(state=tk.NORMAL if self._filtered_pos > 0 else tk.DISABLED)
-        self._next_btn.configure(state=tk.NORMAL if self._filtered_pos < total - 1 else tk.DISABLED)
         self._record_dirty = False
         self._record_snapshot = None
         self._set_locked(False)
+        # Nav button states — after _set_locked so it doesn't override these
+        if self._filtered_pos > 0:
+            self._prev_btn.configure(state=tk.NORMAL, cursor="hand2", fg=TEXT_DARK)
+        else:
+            self._prev_btn.configure(state=tk.DISABLED, cursor="arrow", fg=TEXT_MUTED)
+        if self._filtered_pos < total - 1:
+            self._next_btn.configure(state=tk.NORMAL, cursor="hand2", fg=TEXT_DARK)
+        else:
+            self._next_btn.configure(state=tk.DISABLED, cursor="arrow", fg=TEXT_MUTED)
         if total == 0:
             tk.Label(self._fields_frame, text="(No matching records)", font=(FONT, 11),
                      bg=WHITE, fg=TEXT_MUTED).pack(pady=30)
@@ -1594,6 +1619,8 @@ class UpdateFatalities(tk.Toplevel):
                         dv = "\n".join(str(item) for item in raw_value)
                     else:
                         dv = str(raw_value) if raw_value is not None else ""
+                    if field_name in ("date_of_death", "date_of_birth"):
+                        dv = _format_date_display(dv)
                     is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
@@ -1763,8 +1790,10 @@ class UpdateFatalities(tk.Toplevel):
 
     def _set_locked(self, locked: bool):
         state = tk.DISABLED if locked else tk.NORMAL
-        self._prev_btn.configure(state=state)
-        self._next_btn.configure(state=state)
+        cursor = "arrow" if locked else "hand2"
+        fg = TEXT_MUTED if locked else TEXT_DARK
+        self._prev_btn.configure(state=state, cursor=cursor, fg=fg)
+        self._next_btn.configure(state=state, cursor=cursor, fg=fg)
         if locked:
             self._search_entry.configure(state=tk.DISABLED)
             self._on_this_day_month_entry.configure(state=tk.DISABLED)
@@ -2509,10 +2538,33 @@ class UpdateFatalities(tk.Toplevel):
         end = s.rfind('}')
         if start == -1 or end == -1 or end <= start:
             return None
+        json_str = s[start:end + 1]
+
+        # Strategy 1: strict parse
         try:
-            return json.loads(s[start:end + 1])
+            return json.loads(json_str)
         except (json.JSONDecodeError, ValueError):
-            return None
+            pass
+
+        # Strategy 2: regex extraction of valid "key": "value" pairs.
+        # Handles common AI mistakes like extra text after a string value
+        # (e.g. "grid_reference": "" [] location names).
+        try:
+            pairs = _re.findall(
+                r'"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)"',
+                json_str, _re.DOTALL,
+            )
+            if pairs:
+                result = {}
+                for key, value in pairs:
+                    value = value.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
+                    value = value.replace('\\\\', '\\')
+                    result[key] = value
+                return result
+        except Exception:
+            pass
+
+        return None
 
     def _extract_json(self, text: str) -> str:
         """Strip markdown code fences and pretty-print JSON if possible."""
@@ -2544,25 +2596,46 @@ class UpdateFatalities(tk.Toplevel):
             self._copy_btn.pack_forget()
 
     def _copy_response_to_ai_response(self):
-        """Copy the current AI response text into the ai_response field in the Update modal."""
+        """Copy the current AI response text into the ai_response field.
+
+        If the record is clean, copies and auto-saves immediately.
+        If the record has unsaved changes, prompts Yes/No/Cancel:
+          Yes  — copy and save all changes
+          No   — copy without saving (record stays dirty)
+          Cancel — do nothing
+        """
         response_text = self._side_resp.get("1.0", "end-1c").strip()
         if not response_text:
             return
-        # Find the ai_response entry widget
         key = ("derived_details", "ai_response")
         entry = self._entry_widgets.get(key)
         if entry is None:
             return
-        # Replace the displayed value (does NOT write to underlying JSON until Update)
-        if isinstance(entry, tk.Text):
-            entry.delete("1.0", tk.END)
-            entry.insert("1.0", response_text)
+
+        def _copy_to_widget():
+            if isinstance(entry, tk.Text):
+                entry.delete("1.0", tk.END)
+                entry.insert("1.0", response_text)
+            else:
+                entry.delete(0, tk.END)
+                entry.insert(0, response_text)
+
+        if self._record_dirty:
+            result = _confirm_yesnocancel(
+                self, "Unsaved Changes",
+                "This record has existing unsaved changes.\nDo you want these changes saved?"
+            )
+            if result is None:  # Cancel
+                return
+            _copy_to_widget()
+            if result:  # Yes — save all changes
+                self._update_record()
+            else:  # No — leave dirty
+                self._record_dirty = True
+                self._set_locked(True)
         else:
-            entry.delete(0, tk.END)
-            entry.insert(0, response_text)
-        # Mark record dirty so user is prompted on close
-        self._record_dirty = True
-        self._set_locked(True)
+            _copy_to_widget()
+            self._update_record()
 
     def _gather_ref_state(self) -> dict | None:
         """Collect side-panel prompt/response text and labels for the current record."""

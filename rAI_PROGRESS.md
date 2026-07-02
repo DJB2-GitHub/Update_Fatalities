@@ -3,76 +3,62 @@
 ## Current System State
 
 ### Architecture
-- **Master Response pipeline**: Bypassed — prompt generated & displayed in side panel for manual browser execution. No API call made. The insertion text uses the selected Master Web Provider's URL.
-- **Master Web Provider dropdown**: Combobox (Google/Microsoft/DeepSeek) + clickable URL hotlink in side panel response header. Defined in `.env` as `AI_MASTER_WEB_PROMPT_URL` (JSON dict of provider → URL). Only visible when label is "RESPONSE: MASTER". Persisted in session state.
-- **Hotlink derivations**: AI API calls via `_call_ai_for_field()`. Individual hotlinks use per-field prompts; "All Hotlinks" uses `get_all_hotlinks_prompt()` with JSON output. Prompts and `_SHARED_RULES` defined in `ai_derived_details_prompts.py`.
-- **Provider routing**: Hotlinks use top-row dropdown (Google/DeepSeek/OpenRouter, from `.env` `AI_MODEL_PROVIDERS`). Master Response uses `AI_MASTER_MODEL_PROVIDER` from `.env`.
-- **Session persistence**: `session.json` tracks last position, search text, on-this-day filters, side panel visibility, side panel content per-record, internal provider, and master web provider.
-- **Label management**: `_set_response_label()` wrapper unifies all label-change sites; auto-toggles master web provider controls visibility.
-- **Gemini API**: No `thinkingConfig` — removed after causing HTTP 400. Parts iteration handles any thought output. `maxOutputTokens` set to 8192 (was 1024, insufficient for combined "All Hotlinks" JSON output).
-- **DeepSeek API**: `max_tokens` set to 8192 (was unset, causing truncated responses).
-- **API timeout**: 60s (was 15s) — accommodates longer combined-prompt generations.
-- **JSON parsing**: `_robust_json_parse()` — structural-only recovery: strips ``` fences, reasoning-prefix lines (`->`, `Sure!`, `GPS:`, `[GRID]:`, bullet points), brace-balanced extraction, `json.loads`. Returns `dict | None`. No field-name or schema awareness.
+- **Master Response pipeline**: Bypassed — prompt generated & displayed in side panel for manual Gemini browser execution. No API call made.
+- **Date format**: JSON storage is ISO 8601 (`yyyy-mm-dd`). Display and prompt insertion use `_format_date_display()` → `yyyy-Mmm-dd` (e.g., `1967-March-29`). Applied to `date_of_death`, `date_of_birth` in UI, and `dod` in Master Prompt.
+- **Country-aware prompts**: `ai_master_prompts.py` gates primary sources, authoritative identification labels, citation abbreviations, and home-country text on `country_code` (`AU` vs `NZ`).
+- **`is_live_search`**: Hardcoded `True`. Affects prompt text only (live-search instructions + source lists). Google Search grounding tool injection exists in the API path but is never reached in the current clipboard workflow.
+- **COPY RESPONSE**: `_copy_response_to_ai_response()` checks `_record_dirty`. Clean → copies + auto-saves via `_update_record()`. Dirty → Yes/No/Cancel dialog.
+- **Master Web Provider dropdown**: Combobox (Google/Microsoft/DeepSeek) + clickable URL hotlink. Persisted in session state.
+- **JSON parsing**: `_robust_json_parse()` — two-strategy parser: strict `json.loads` then regex key-value extraction for malformed AI output (extra text after string values, missing braces, etc.).
+- **GPS prompt rule**: `grid_reference` targets the **fatal incident location** (wounding/action site), NOT the hospital/aid station where death occurred. Applied in both individual hotlink and "All Hotlinks" prompts.
+- **Hotlink API**: timeout 60s (was 15s); Gemini `maxOutputTokens` 8192 (was 1024); DeepSeek `max_tokens` 8192 (was unset).
 
 ### Key env vars
 | Variable | Purpose |
 |---|---|
-| `AI_MODEL_PROVIDERS` | Populates the provider dropdown (hotlinks) |
-| `AI_MASTER_WEB_PROMPT_URL` | JSON dict of provider names → URLs for Master Response web lookup |
+| `AI_MODEL_PROVIDERS` | Provider dropdown (hotlinks) |
+| `AI_MASTER_WEB_PROMPT_URL` | JSON dict of provider → URL for Master Response web lookup |
 | `AI_MASTER_MODEL_PROVIDER` | Master Response provider |
 | `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` / `OPENROUTER_API_KEY` | Provider API keys |
-| `SHOW_AI_MASTER_RESPONSE_COPY` | Char threshold for COPY RESPONSE button (default 200) |
+| `SHOW_AI_MASTER_RESPONSE_COPY` | Char threshold for COPY RESPONSE button |
 | `AU_SERVICE_STATUSES` / `NZ_SERVICE_STATUSES` | Valid service statuses per country |
 
-### Hotlink prompt summary (from `ai_derived_details_prompts.py`)
-| Field | Prompt function | Output |
-|---|---|---|
-| `service_status` | `get_service_status_prompt` | Plain string |
-| `place_of_death` / `death_location` | `get_place_of_death_prompt` | Plain string |
-| `circumstances_of_death` | `get_circumstances_of_death_prompt` | Plain string |
-| `unit_served_with` | `get_unit_served_with_prompt` | Plain string |
-| `grid_reference` / `incident_location` | `get_grid_reference_prompt` | Plain string |
-| All Hotlinks (combined) | `get_all_hotlinks_prompt` | JSON object |
+### NZ-specific sources (Live Search prompt)
+- Auckland War Memorial Museum — Online Cenotaph (aucklandmuseum.com)
+- New Zealand History (nzhistory.govt.nz)
+- Archives New Zealand (archives.govt.nz)
+- Vietnam War New Zealand (vietnamwar.govt.nz)
+- Papers Past, NZ Herald
+- Published unit histories and RNZIR/NZ Artillery records
 
-All prompts append `_SHARED_RULES` (override rule, noise filter, internal summarise) and wrap `ai_response` + `authoritative_ai_override` in `<source>...</source>` tags.
-
----
-
-## Completed — Prior Session
-
-1. **Main menu heading** → "OnThisDay in Vietnam webapp" (`main.py`)
-2. **`AI_MASTER_WEB_PROMPT_URL`** added to `.env` — Google/Microsoft/DeepSeek with URLs
-3. **Master Web Provider dropdown** — Combobox + clickable URL link in side panel response header, persisted in session state
-4. **`_set_response_label()` wrapper** — unifies all label-change sites; auto-shows/hides provider controls
-5. **Provider controls visibility** — dropdown + URL hidden by default, shown ONLY for "RESPONSE: MASTER"
-6. **`_open_master_web_url()`** — opens selected provider's URL via `webbrowser.open()`
-7. **Dynamic URL** — insertion text reads "paste into {selected_provider_url}" instead of hardcoded "gemini.google.com"
-8. **Error dialog text selectable** — `StyledDialog` uses read-only `tk.Text` instead of `tk.Label` (`main.py`)
-9. **Gemini HTTP 400 fixed** — removed `thinkingConfig` from both Gemini call sites in `update_fatalities.py`
-10. **Session persistence** — `master_web_provider` saved to `session.json` in all 5 save paths
-11. **Hotlink prompts reviewed** — confirmed all 5 individual prompts + combined "All Hotlinks" prompt structure
+### AU-specific sources (unchanged)
+- AWM, VWMA, DVA, NAA, Trove, The Age, Sydney Morning Herald, unit histories, AATTV
 
 ---
 
 ## Completed — This Session
 
-1. **`_robust_json_parse()` created** (`update_fatalities.py` line ~2497) — structural JSON recovery: strips ``` fences, reasoning-prefix lines (`->`, `Sure!`, `Here`, `Let me`, `First,`, `GPS:`, `[GRID]:`, `* GPS:`, etc.), brace-balanced extraction, `json.loads`. Returns `dict | None`. Zero field-name awareness.
-2. **`_all_hotlinks()` parsing fixed** — replaced 7-line naive `json.loads` block with `parsed = self._robust_json_parse(text)` (line 567)
-3. **`get_all_hotlinks_prompt()` hardened** — prepended `"Return ONLY a valid JSON object. No reasoning, no commentary, no markdown before the JSON."` to system instruction (`ai_derived_details_prompts.py` line 256)
-4. **API timeout increased** — `timeout_secs`: 15 → 60 for all providers (`_call_ai_for_field`, line 777)
-5. **DeepSeek `max_tokens` added** — `"max_tokens": 8192` in DeepSeek request body (line 825)
-6. **Gemini `maxOutputTokens` increased** — `"maxOutputTokens": 1024 → 8192` (line 912) — root cause of truncation
-
-### Root Cause Summary
-"All Hotlinks" failed because: (a) Gemini `maxOutputTokens` was 1024 — far too low for a 5-field JSON response including a 100-word circumstances summary — causing mid-response truncation; (b) no robust JSON parser existed to recover from noisy/partial AI output.
+1. **Date display formatting** — `_format_date_display()` added to `update_fatalities.py` and `ai_master_prompts.py`. Converts `yyyy-mm-dd` → `yyyy-Mmm-dd` for display and Master Prompt. JSON storage stays ISO 8601.
+2. **NZ country-aware Master Prompt** — Sources, auth label, cite refs, and home-country text all gated on `country_code`. Both `is_live_search` branches covered.
+3. **COPY RESPONSE auto-save** — Clean record: copies response + executes `_update_record()` immediately. Dirty record: Yes/No/Cancel dialog.
+4. **TEST_PROMPT.txt** — Full prompt template saved to workspace root for testing.
+5. **All Hotlinks JSON parse fix** — `_robust_json_parse()` created with two-strategy recovery (strict `json.loads` → regex key-value extraction). Replaced naive 7-line block in `_all_hotlinks()`. Handles common AI mistakes like extra text after string values.
+6. **API hardening** — timeout 15→60s; DeepSeek `max_tokens` added (8192); Gemini `maxOutputTokens` 1024→8192 (root cause of All Hotlinks truncation).
+7. **GPS prompt corrected** — Individual and "All Hotlinks" `grid_reference` prompts now target *incident location* (wounding/action site), not place of death. Prevents AI from returning hospital coordinates when the soldier died at an aid station.
+8. **Prev/Next button UX** — `_set_locked()` now sets `cursor="arrow"` + muted `fg` when locked, `cursor="hand2"` + dark `fg` when unlocked. Buttons restore correct state after navigation.
 
 ---
 
 ## Next Steps
 
-- [ ] Test "All Hotlinks" with a record that has substantive `ai_response` text
+- [ ] Test date display: verify `date_of_death` and `date_of_birth` show as `yyyy-Mmm-dd` in update modal
+- [ ] Test NZ Master Prompt: open NZ_fatalities.json record → "AI: Create a Master Response" → confirm NZ sources, Online Cenotaph label, "in New Zealand"
+- [ ] Test AU Master Prompt: confirm regression — AU still shows AWM sources and "in Australia"
+- [ ] Test COPY RESPONSE clean: record not dirty → copy + auto-save
+- [ ] Test COPY RESPONSE dirty: make an edit, click COPY RESPONSE → Yes/No/Cancel
+- [ ] Test COPY RESPONSE dirty → Cancel: nothing happens
+- [ ] Test COPY RESPONSE dirty → No: text copies, record stays dirty
+- [ ] Test COPY RESPONSE dirty → Yes: text copies, record saves
+- [ ] Test "All Hotlinks" with a record that has substantive `ai_response` text — verify all 5 fields populate correctly
 - [ ] Test individual hotlink clicks (service_status, place_of_death, unit, grid_reference, circumstances)
-- [ ] Test Master Web Provider dropdown: select DeepSeek → URL updates → click link opens browser
-- [ ] Test "AI: Create a Master Response" — verify clipboard copy and dynamic provider URL in insertion text
-- [ ] Verify session persistence: change master web provider → close/reopen → provider restored
-- [ ] Consider adding `.env.example` entry for `AI_MASTER_WEB_PROMPT_URL`
+- [ ] **Commit uncommitted working tree changes** (7 files dirty: `ai_derived_details_prompts.py`, `ai_master_prompts.py`, `main.py`, `rAI_PROGRESS.md`, `session.json`, `update_fatalities.py`, plus `openrouter.log` which should be gitignored)

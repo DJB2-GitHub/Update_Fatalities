@@ -16,6 +16,25 @@ itself to search.
 
 import os
 
+_MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"]
+
+
+def _format_date_display(date_str: str) -> str:
+    """Convert yyyy-mm-dd -> yyyy-Mmm-dd for display.  Returns original on failure."""
+    if not date_str or not isinstance(date_str, str):
+        return date_str or ""
+    parts = date_str.strip().split("-")
+    if len(parts) != 3:
+        return date_str
+    try:
+        y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+        if 1 <= m <= 12:
+            return f"{y}-{_MONTH_NAMES[m]}-{d:02d}"
+    except (ValueError, IndexError):
+        pass
+    return date_str
+
 
 def _get_master_json_schema():
     """JSON schema for the death_information output format."""
@@ -65,7 +84,7 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
     """
     svc = params.get('svc', '')
     surname = params.get('surname', '')
-    dod = params.get('dod', '')
+    dod = _format_date_display(params.get('dod', ''))
     name = params.get('name', '')
     rank = params.get('rank', '')
     unit = params.get('unit', '')
@@ -73,6 +92,34 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
     # Country-specific labels
     _army_map = {"AU": "Australian Army", "NZ": "New Zealand Army"}
     _army = _army_map.get(country_code, "Australian Army")
+
+    # Country-specific authoritative sources, labels, and localisation
+    _srcs_au = (
+        "- Australian War Memorial (awm.gov.au) — Roll of Honour\n"
+        "- Virtual War Memorial Australia (vwma.org.au)\n"
+        "- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n"
+        "- National Archives of Australia (naa.gov.au)\n"
+        "- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n"
+        "- Published unit histories and AATTV records"
+    )
+    _srcs_nz = (
+        "- Auckland War Memorial Museum — Online Cenotaph (aucklandmuseum.com)\n"
+        "- New Zealand History (nzhistory.govt.nz)\n"
+        "- Archives New Zealand (archives.govt.nz)\n"
+        "- Vietnam War New Zealand (vietnamwar.govt.nz)\n"
+        "- Contemporary newspaper archives (Papers Past, NZ Herald)\n"
+        "- Published unit histories and RNZIR/NZ Artillery records"
+    )
+    if country_code == "NZ":
+        _sources = _srcs_nz
+        _auth_label = "Auckland War Memorial Museum — Online Cenotaph"
+        _cite_sources = "Online Cenotaph, nzhistory.govt.nz, Archives NZ, etc."
+        _home_country = "in New Zealand"
+    else:
+        _sources = _srcs_au
+        _auth_label = "Australian War Memorial"
+        _cite_sources = "AWM, VWMA, DVA, etc."
+        _home_country = "in Australia"
 
     # Country-specific service_status hint (only when env var has >1 value)
     _svc_hint = ""
@@ -106,12 +153,7 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             "Your task is to RESEARCH the web for authoritative, verifiable information "
             "about a specific soldier's death. "
             "You MUST search these primary sources:\n"
-            "- Australian War Memorial (awm.gov.au) — Roll of Honour\n"
-            "- Virtual War Memorial Australia (vwma.org.au)\n"
-            "- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n"
-            "- National Archives of Australia (naa.gov.au)\n"
-            "- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n"
-            "- Published unit histories and AATTV records\n\n"
+            f"{_sources}\n\n"
             "CRITICAL: You MUST retrieve the actual, documented facts. "
             "Do NOT fabricate or guess. "
             "If a fact is not found after thorough searching, mark it 'NOT_DOCUMENTED'. "
@@ -120,8 +162,8 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             "never as the primary source.\n\n"
             "IMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. "
             "Many died from illness (cancer, heart attack, disease), accidents "
-            "(motor vehicle, training), or by natural causes — sometimes in Australia, "
-            "sometimes after returning from deployment. "
+            "(motor vehicle, training), or by natural causes — sometimes "
+            f"{_home_country}, sometimes after returning from deployment. "
             "These ARE classified as Vietnam War fatalities if their death was "
             "attributable to service. "
             "Do NOT default to assuming a combat or in-theatre death — "
@@ -133,7 +175,7 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             "then extract ALL details for that soldier. "
             "You MUST search the web using the sources listed in your "
             "system instructions.\\n\\n"
-            f"Authoritative Identification (Australian War Memorial):\\n"
+            f"Authoritative Identification ({_auth_label}):\\n"
             f"- Army Country: {params.get('country', 'Australia')}\\n"
             f"- War: Vietnam War (1962–1972)\\n"
             f"- Surname: {surname}\\n"
@@ -150,11 +192,11 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             f"eyewitness accounts, medical treatment, burial, repatriation, awards, "
             f"investigations, and historical analysis. "
             f"The soldier may have died from illness, accident, or natural causes "
-            f"(in Australia or elsewhere), not necessarily in combat. "
+            f"({_home_country} or elsewhere), not necessarily in combat. "
             f"Do NOT assume a combat or in-theatre death — search broadly and "
             f"follow the evidence wherever it leads.\\n\\n"
             f"{_svc_hint}"
-            f"For every fact you report, cite the specific source (AWM, VWMA, DVA, etc.). "
+            f"For every fact you report, cite the specific source ({_cite_sources}). "
             f"If a detail cannot be verified from authoritative sources, mark it NOT_DOCUMENTED. "
             f"Do not invent or assume facts."
         ).replace("\\n", "\n")
@@ -171,7 +213,8 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             "A missing fact is better than a false fact.\n\n"
             "IMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. "
             "Many died from illness (cancer, heart attack, disease), accidents "
-            "(motor vehicle, training), or by natural causes — sometimes in Australia. "
+            "(motor vehicle, training), or by natural causes — sometimes "
+            f"{_home_country}. "
             "Do NOT default to assuming a combat or in-theatre death — "
             "search your memory broadly and follow the evidence wherever it leads."
         )
@@ -179,7 +222,7 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
         user_prompt = (
             "Identify the soldier using these authoritative fields, "
             "then extract ALL details for that soldier from your memory.\\n\\n"
-            f"Authoritative Identification (Australian War Memorial):\\n"
+            f"Authoritative Identification ({_auth_label}):\\n"
             f"- Army Country: {params.get('country', 'Australia')}\\n"
             f"- War: Vietnam War (1962–1972)\\n"
             f"- Surname: {surname}\\n"
@@ -196,7 +239,7 @@ def get_master_response_payload(params: dict, is_live_search: bool, country_code
             f"eyewitness accounts, medical treatment, burial, repatriation, awards, "
             f"investigations, and historical analysis. "
             f"The soldier may have died from illness, accident, or natural causes "
-            f"(in Australia or elsewhere), not necessarily in combat. "
+            f"({_home_country} or elsewhere), not necessarily in combat. "
             f"Do NOT assume a combat or in-theatre death — search your memory "
             f"broadly and follow the evidence wherever it leads.\\n\\n"
             f"{_svc_hint}"

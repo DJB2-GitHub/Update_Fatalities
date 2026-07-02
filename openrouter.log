@@ -8223,3 +8223,339 @@
   }
 }
 
+--- 2026-06-30 13:08:07 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782799677-dyv1WBUD6BESSeYV2nyZ",
+  "object": "chat.completion",
+  "created": 1782799677,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "Seymour, Victoria, Australia. Regional town north of Melbourne in the central Victorian highlands, situated along the Goulburn River. A military garrison area near Puckapunyal army base, set amid open pastoral country and gentle undulating terrain.",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1099,
+    "completion_tokens": 57,
+    "total_tokens": 1156,
+    "cost": 0.00692,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00692,
+      "upstream_inference_prompt_cost": 0.005495,
+      "upstream_inference_completions_cost": 0.001425
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 13:31:36 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782801087-nS2srBW7B4NUugid74U2",
+  "object": "chat.completion",
+  "created": 1782801088,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "Seymour, Victoria, Australia",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1147,
+    "completion_tokens": 11,
+    "total_tokens": 1158,
+    "cost": 0.00601,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00601,
+      "upstream_inference_prompt_cost": 0.005735,
+      "upstream_inference_completions_cost": 0.000275
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 13:32:00 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782801104-3tJpzfclhjif8ju0cEFW",
+  "object": "chat.completion",
+  "created": 1782801104,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "\"best_estimate_gps\": \"-37.027, 145.139 — Seymour, Victoria, Australia\"",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1663,
+    "completion_tokens": 31,
+    "total_tokens": 1694,
+    "cost": 0.00909,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00909,
+      "upstream_inference_prompt_cost": 0.008315,
+      "upstream_inference_completions_cost": 0.000775
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 13:32:40 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782801150-cmAjjlMKkDijwcM4sWO4",
+  "object": "chat.completion",
+  "created": 1782801151,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "Sergeant Lowes died on 6 July 1971 in Australia after returning from Vietnam service. His death is officially recorded as due to illness; however, an eyewitness oral history account held by the Australian War Memorial states he died by suicide. He was 31 years old. A veteran of the Battle of Long Tan, where he performed under intense enemy fire, his death occurred outside the Vietnam theatre. No further medical or investigative details are documented in primary sources.",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1124,
+    "completion_tokens": 105,
+    "total_tokens": 1229,
+    "cost": 0.008245,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.008245,
+      "upstream_inference_prompt_cost": 0.00562,
+      "upstream_inference_completions_cost": 0.002625
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 13:33:26 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782801198-GNaRUca7FLfwa13R80CC",
+  "object": "chat.completion",
+  "created": 1782801198,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "3 Tp, 1 APC Sqn",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1780,
+    "completion_tokens": 17,
+    "total_tokens": 1797,
+    "cost": 0.009325,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.009325,
+      "upstream_inference_prompt_cost": 0.0089,
+      "upstream_inference_completions_cost": 0.000425
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 13:33:46 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782801218-ynzrVG7foVGiqe4U1L7s",
+  "object": "chat.completion",
+  "created": 1782801219,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "Regular",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1211,
+    "completion_tokens": 4,
+    "total_tokens": 1215,
+    "cost": 0.006155,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.006155,
+      "upstream_inference_prompt_cost": 0.006055,
+      "upstream_inference_completions_cost": 0.0001
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+
+--- 2026-06-30 14:03:33 [internal] model=OpenRouter-anthropic/claude-4.6-opus-20260205 ---
+{
+  "id": "gen-1782803005-9L0hyWw5bxffFPiF4Wup",
+  "object": "chat.completion",
+  "created": 1782803005,
+  "model": "anthropic/claude-4.6-opus-20260205",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "Seymour, Victoria, Australia",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1147,
+    "completion_tokens": 11,
+    "total_tokens": 1158,
+    "cost": 0.00601,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00601,
+      "upstream_inference_prompt_cost": 0.005735,
+      "upstream_inference_completions_cost": 0.000275
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}
+

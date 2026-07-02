@@ -185,7 +185,7 @@ def get_grid_reference_prompt(combined_text: str) -> tuple:
     """Return (system_instruction, user_prompt) to derive grid_reference."""
     system = (
         "TASK: From the provided soldier fatality record, identify the best-estimate "
-        "GPS coordinates for the place of death. YOU MUST also extract and include "
+        "GPS coordinates for where the fatal INCIDENT occurred — the place where the soldier was wounded or the action took place. This is NOT necessarily where they died (which may be a hospital or aid station elsewhere). YOU MUST also extract and include "
         "the predominant physical location/place names found in the text — this is "
         "a MANDATORY part of the output whenever location details exist.\n\n"
         "PROCESS:\n"
@@ -272,7 +272,7 @@ def get_all_hotlinks_prompt(combined_text: str, valid_statuses: list[str] | None
         "NZ Army: Coy/Pl/Sect/Regt/Bn/Sqn/Tp/Bty/Bde; RNZN: HMNZS; RNZAF: Sqn/Wg/Flt/Sect. "
         "US Army: Co/Plt/Sq/Regt/Bn/Sqdn/Trp/Btry/Bde; USN: USS; USAF: Sqdn/Wg/Gp/Flt/Sec).\n"
         "  Exclude country/service name from output. Preserve existing abbreviations (9RAR, 1RNZIR, 11 ACR).\n"
-        "5. \"grid_reference\" — best-estimate GPS for place of death PLUS physical location names.\n"
+        "5. \"grid_reference\" — best-estimate GPS for where the fatal INCIDENT occurred (the place of wounding/action — NOT the hospital/aid station where death occurred) PLUS physical location names.\n"
         "  FIRST check any authoritatively marked override section; if coordinates found there, use them as starting point.\n"
         "  Analyse all location fields, extract any MGRS/UTM/partial grid refs, convert to decimal GPS.\n"
         "  YOU MUST also extract place names: villages, hamlets, districts, provinces, FSB/LZ names,\n"

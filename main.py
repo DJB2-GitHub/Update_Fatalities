@@ -560,7 +560,8 @@ class MainMenu(tk.Toplevel):
         try:
             if self.winfo_exists() and self.state() == 'iconic':
                 parent = self.master
-                if parent and parent.winfo_exists():
+                # Never touch the hidden root tk.Tk window
+                if parent and parent.winfo_exists() and not isinstance(parent, tk.Tk):
                     parent.iconify()
         except Exception:
             pass
@@ -574,13 +575,17 @@ class MainMenu(tk.Toplevel):
             pass
         try:
             parent = self.master
-            if parent and parent.winfo_exists() and parent.state() == 'iconic':
+            # Never touch the hidden root tk.Tk window
+            if parent and parent.winfo_exists() and parent.state() == 'iconic' and not isinstance(parent, tk.Tk):
                 parent.deiconify()
         except Exception:
             pass
 
     def _on_parent_map(self, event=None):
         """When the parent is restored (e.g. from taskbar), restore this modal too."""
+        # Never respond to the hidden root tk.Tk window being mapped
+        if event is not None and isinstance(event.widget, tk.Tk):
+            return
         try:
             if self.winfo_exists() and self.state() == 'iconic':
                 self.deiconify()
@@ -713,6 +718,7 @@ class App(tk.Tk):
 
         super().__init__()
         self.withdraw()
+        self.attributes('-alpha', 0.0)  # ensure root stays fully invisible on Windows
         self.configure(bg=BG_GREY)
 
         self._datasets = load_config()
