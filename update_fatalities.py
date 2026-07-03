@@ -599,11 +599,11 @@ class UpdateFatalities(tk.Toplevel):
         threading.Thread(target=_task, daemon=True).start()
 
     # ------------------------------------------------------------------
-    # Enhanced Circumstances — FATALITY_LOCATIONS heading hotlink
+    # Enhanced Circumstances — DERIVED_DETAILS heading hotlink
     # ------------------------------------------------------------------
 
     def _on_enhanced_circumstances_click(self):
-        """Handle click on FATALITY_LOCATIONS heading: research Enhanced Circumstances."""
+        """Handle click on DERIVED_DETAILS heading: research Enhanced Circumstances."""
         if not self._filtered:
             return
         actual_idx = self._filtered[self._filtered_pos]
@@ -629,7 +629,7 @@ class UpdateFatalities(tk.Toplevel):
         )
 
         # Show prompt in side panel and start progress
-        self._side_resp_label.configure(text="AI: Enhanced circumstances")
+        self._side_resp_label.configure(text="Enhanced operation details")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
@@ -841,7 +841,7 @@ Your final report must:
         result_text = (result_text or "").strip()
 
         # Build cost/time header — reuse the same logic as _show_derivation_result
-        header = "AI: Enhanced circumstances"
+        header = "Enhanced operation details"
         time_str = ""
         cost_str = ""
         if model_name and elapsed:
@@ -883,14 +883,14 @@ Your final report must:
                     pass
             time_str = f"{elapsed:.0f}s" if elapsed else "??s"
             cost_str = cost_str if cost_str else "$A ?.????"
-            header = f"AI: Enhanced circumstances  [{model_name}]  {time_str}  {cost_str}"
+            header = f"Enhanced operation details  [{model_name}]  {time_str}  {cost_str}"
 
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(result_text)
         self._copy_btn.pack_forget()
 
         if not model_name:
-            self._side_resp_label.configure(text="AI: Enhanced circumstances — FAILED")
+            self._side_resp_label.configure(text="Enhanced operation details — FAILED")
             _error_dialog(self, "AI Derivation Failed",
                           f"Could not derive Enhanced Circumstances.\n\n{result_text}")
             return
@@ -1588,15 +1588,21 @@ Your final report must:
         self._side_panel_chk.pack(side=tk.LEFT, padx=(10, 0))
 
         self._copy_btn = self._flat_btn(
-            top_row, "AI: COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
+            top_row, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
             bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
         )
         self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
 
+        self._enhanced_update_btn = self._flat_btn(
+            top_row, "COPY RESPONSE: to enhanced_operation_details", self._copy_response_to_enhanced_operation_details,
+            bg="#1565c0", fg=WHITE, side=tk.LEFT, right_pad=10
+        )
+        self._enhanced_update_btn.pack_forget()  # hidden until Enhanced operation details result shown
+
         self.bind("<Escape>", lambda _e: self._cancel())
 
         # --- Side panel (right, hidden) ---
-        self._side_panel = tk.Frame(outer, bg="#f0f2f5", width=500)
+        self._side_panel = tk.Frame(outer, bg="#f0f2f5", width=750)
         self._side_panel.pack_propagate(False)
 
         sh = tk.Frame(self._side_panel, bg="#4a90d9", height=40)
@@ -1662,11 +1668,12 @@ Your final report must:
         self._side_resp.configure(yscrollcommand=resp_scroll.set)
         resp_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self._side_resp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        # Show COPY button when user pastes/types a response long enough
+        # Show COPY/Update buttons when appropriate
         def _on_resp_modified(_event=None):
             self._side_resp.edit_modified(False)
             text = self._side_resp.get("1.0", "end-1c")
             is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+            is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
             if len(text) > self._copy_threshold and is_master:
                 try:
                     self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))
@@ -1674,6 +1681,13 @@ Your final report must:
                     pass
             else:
                 self._copy_btn.pack_forget()
+            if is_enhanced and len(text) > self._copy_threshold:
+                try:
+                    self._enhanced_update_btn.pack(side=tk.LEFT, padx=(10, 0))
+                except tk.TclError:
+                    pass
+            else:
+                self._enhanced_update_btn.pack_forget()
         self._side_resp.bind("<<Modified>>", _on_resp_modified)
 
     # ------------------------------------------------------------------
@@ -1901,10 +1915,14 @@ Your final report must:
                     hf.pack(fill=tk.X, padx=16 if not prefix_path else 0, pady=(12, 4))
                     heading_label = tk.Label(hf, text=field_name.upper(), font=(FONT, 10, "bold"), bg=WHITE, fg=ACCENT)
                     heading_label.pack(side=tk.LEFT, padx=(16 if not prefix_path else 0, 0))
-                    if field_name == "fatality_locations":
-                        heading_label.configure(fg="#4a90d9", cursor="hand2", font=(FONT, 10, "bold underline"))
-                        _ToolTip(heading_label, "Click to research Enhanced Circumstances")
-                        heading_label.bind("<Button-1>", lambda e: self._on_enhanced_circumstances_click())
+                    if field_name == "derived_details":
+                        # Heading stays normal red text; add a blue hotlink label next to it
+                        hotlink_label = tk.Label(hf, text="Enhanced operation details",
+                                                 font=(FONT, 9, "underline"), bg=WHITE, fg="#4a90d9",
+                                                 cursor="hand2")
+                        hotlink_label.pack(side=tk.LEFT, padx=(12, 0))
+                        _ToolTip(hotlink_label, "Click to research Enhanced Circumstances")
+                        hotlink_label.bind("<Button-1>", lambda e: self._on_enhanced_circumstances_click())
                     sub_frame = tk.Frame(parent_frame, bg=WHITE)
                     sub_frame.pack(fill=tk.X, padx=(32, 0), pady=0)
                     _render_fields(sub_frame, raw_value, current_path)
@@ -1934,13 +1952,15 @@ Your final report must:
                         entry.configure(state="readonly", readonlybackground="#f0f0f0", fg=TEXT_MUTED)
                         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                     else:
-                        if field_name in ("circumstances_of_death", "summary", "ai_response", "authoritative_ai_override"):
+                        if field_name in ("circumstances_of_death", "summary", "ai_response", "authoritative_ai_override", "enhanced_operation_details"):
                             if field_name == "summary":
                                 text_height = 3
                             elif field_name == "ai_response":
                                 text_height = 8
                             elif field_name == "authoritative_ai_override":
                                 text_height = 5
+                            elif field_name == "enhanced_operation_details":
+                                text_height = 8
                             else:
                                 text_height = 4
 
@@ -2892,6 +2912,7 @@ Your final report must:
         # Only show COPY RESPONSE button for master responses, never for hotlinks.
         # Identified by the side-panel label starting with "RESPONSE: MASTER".
         is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+        is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
         if len(safe_text) > self._copy_threshold and is_master:
             try:
                 self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))
@@ -2899,6 +2920,13 @@ Your final report must:
                 pass  # already packed
         else:
             self._copy_btn.pack_forget()
+        if is_enhanced and len(safe_text) > self._copy_threshold:
+            try:
+                self._enhanced_update_btn.pack(side=tk.LEFT, padx=(10, 0))
+            except tk.TclError:
+                pass
+        else:
+            self._enhanced_update_btn.pack_forget()
 
     def _copy_response_to_ai_response(self):
         """Copy the current AI response text into the ai_response field.
@@ -2913,6 +2941,44 @@ Your final report must:
         if not response_text:
             return
         key = ("derived_details", "ai_response")
+        entry = self._entry_widgets.get(key)
+        if entry is None:
+            return
+
+        def _copy_to_widget():
+            if isinstance(entry, tk.Text):
+                entry.delete("1.0", tk.END)
+                entry.insert("1.0", response_text)
+            else:
+                entry.delete(0, tk.END)
+                entry.insert(0, response_text)
+
+        if self._record_dirty:
+            result = _confirm_yesnocancel(
+                self, "Unsaved Changes",
+                "This record has existing unsaved changes.\nDo you want these changes saved?"
+            )
+            if result is None:  # Cancel
+                return
+            _copy_to_widget()
+            if result:  # Yes — save all changes
+                self._update_record()
+            else:  # No — leave dirty
+                self._record_dirty = True
+                self._set_locked(True)
+        else:
+            _copy_to_widget()
+            self._update_record()
+
+    def _copy_response_to_enhanced_operation_details(self):
+        """Copy the current AI response text into the enhanced_operation_details field.
+
+        Same dirty/clean handling as _copy_response_to_ai_response.
+        """
+        response_text = self._side_resp.get("1.0", "end-1c").strip()
+        if not response_text:
+            return
+        key = ("derived_details", "enhanced_operation_details")
         entry = self._entry_widgets.get(key)
         if entry is None:
             return
