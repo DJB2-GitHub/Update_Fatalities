@@ -11,7 +11,19 @@
 - **Master Web Provider dropdown**: Combobox (Google/Microsoft/DeepSeek) + clickable URL hotlink. Persisted in session state.
 - **JSON parsing**: `_robust_json_parse()` — two-strategy parser: strict `json.loads` then regex key-value extraction for malformed AI output (extra text after string values, missing braces, etc.).
 - **GPS prompt rule**: `grid_reference` targets the **fatal incident location** (wounding/action site), NOT the hospital/aid station where death occurred. Applied in both individual hotlink and "All Hotlinks" prompts.
-- **Hotlink API**: timeout 60s (was 15s); Gemini `maxOutputTokens` 8192 (was 1024); DeepSeek `max_tokens` 8192 (was unset).
+- **Hotlink API**: timeout 60s (was 15s); Gemini `maxOutputTokens` 8192 (was 1024); DeepSeek `max_tokens` 8192 (was unset). `_call_ai_for_field()` now accepts optional `max_tokens` param (default 8192) — Enhanced Circumstances passes 16384.
+
+### Editable fields (non-derived_details)
+- `service_status` — Combobox with country-specific valid statuses
+- `unit` — text Entry
+- `fatality_type` — text Entry *(made editable this session)*
+
+### Enhanced Circumstances hotlink
+- The `FATALITY_LOCATIONS` heading in the update modal is a **blue underlined clickable hotlink** with tooltip *"Click to research Enhanced Circumstances"*.
+- Click is **unconditional** — does not depend on `_hotlink_active` (>50 words in ai_response). Always clickable when the section exists.
+- Prompt is built **dynamically per-record** from `serviceRecordAuthority` fields (rank, full_name, service_number, unit, date_of_death). Not hardcoded to any one soldier.
+- Result displays **only in the side panel RESPONSE** with header `AI: Enhanced circumstances [model] time cost`.
+- **No popup dialog, no field mapping** — Enhanced Circumstances results are read-only research and never write back to any JSON field.
 
 ### Key env vars
 | Variable | Purpose |
@@ -36,7 +48,7 @@
 
 ---
 
-## Completed — This Session
+## Completed — Prior Session (committed: `eec0e64`)
 
 1. **Date display formatting** — `_format_date_display()` added to `update_fatalities.py` and `ai_master_prompts.py`. Converts `yyyy-mm-dd` → `yyyy-Mmm-dd` for display and Master Prompt. JSON storage stays ISO 8601.
 2. **NZ country-aware Master Prompt** — Sources, auth label, cite refs, and home-country text all gated on `country_code`. Both `is_live_search` branches covered.
@@ -49,16 +61,39 @@
 
 ---
 
+## Completed — This Session (2026-07-01)
+
+1. **FATALITY_LOCATIONS heading → clickable hotlink** — Section heading in the update modal is now a blue underlined hotlink with tooltip. Click builds a dynamic Enhanced Research Prompt from the current record and runs it through the AI side panel. See Architectural rules above for full behaviour.
+
+2. **Three new methods added to `UpdateFatalities`**:
+   - `_on_enhanced_circumstances_click()` — orchestrates prompt build, side-panel display, background AI call, and result rendering.
+   - `_build_enhanced_circumstances_prompt()` — dynamically fills the Enhanced Research Prompt template with current record data (rank, full_name, service_number, unit, date_of_death).
+   - `_show_enhanced_circumstances_result()` — displays result in side panel with full cost/model/time header. No popup dialog.
+
+3. **fatality_type field now editable** — Added `field_name == "fatality_type"` to both `is_editable` guards (render path line ~1837, save path line ~2060). Previously greyed-out readonly; now writable and persisted on save.
+
+4. **Response truncation fixed** — `_call_ai_for_field()` signature extended: `max_tokens: int = 8192`. Backward-compatible; all existing callers unchanged. Enhanced Circumstances caller passes `max_tokens=16384` so long research reports aren't cut off mid-sentence.
+
+5. **Removed confirm/populate dialog for Enhanced Circumstances** — Deleted `_confirm_with_edit` popup and `_populate_field_value("enhanced_circumstances", ...)` mapping. Results are read-only research displayed in the side panel only.
+
+---
+
+## Incomplete Work — Carry-Over
+
+*None.* All changes from this session are complete, syntax-verified, and import-tested.
+
+---
+
 ## Next Steps
 
+- [ ] Test FATALITY_LOCATIONS hotlink: open any record → click the blue underlined heading → verify prompt appears in side panel, AI runs, result displays with model/time/cost header, no popup appears
+- [ ] Test Enhanced Circumstances with different records — verify prompt fields (name, service number, unit, date) update per-record
+- [ ] Test fatality_type edit: change the value, navigate away and back, confirm it persisted
+- [ ] Test Enhanced Circumstances with a long response — verify no mid-sentence truncation (16384 tokens)
 - [ ] Test date display: verify `date_of_death` and `date_of_birth` show as `yyyy-Mmm-dd` in update modal
-- [ ] Test NZ Master Prompt: open NZ_fatalities.json record → "AI: Create a Master Response" → confirm NZ sources, Online Cenotaph label, "in New Zealand"
-- [ ] Test AU Master Prompt: confirm regression — AU still shows AWM sources and "in Australia"
-- [ ] Test COPY RESPONSE clean: record not dirty → copy + auto-save
-- [ ] Test COPY RESPONSE dirty: make an edit, click COPY RESPONSE → Yes/No/Cancel
-- [ ] Test COPY RESPONSE dirty → Cancel: nothing happens
-- [ ] Test COPY RESPONSE dirty → No: text copies, record stays dirty
-- [ ] Test COPY RESPONSE dirty → Yes: text copies, record saves
-- [ ] Test "All Hotlinks" with a record that has substantive `ai_response` text — verify all 5 fields populate correctly
+- [ ] Test NZ Master Prompt: open NZ_fatalities.json record → "AI: Create a Master Response" → confirm NZ sources, Online Cenotaph label
+- [ ] Test AU Master Prompt: confirm regression — AU still shows AWM sources
+- [ ] Test COPY RESPONSE variations (clean/dirty/cancel)
+- [ ] Test "All Hotlinks" with substantive `ai_response` text
 - [ ] Test individual hotlink clicks (service_status, place_of_death, unit, grid_reference, circumstances)
-- [ ] **Commit uncommitted working tree changes** (7 files dirty: `ai_derived_details_prompts.py`, `ai_master_prompts.py`, `main.py`, `rAI_PROGRESS.md`, `session.json`, `update_fatalities.py`, plus `openrouter.log` which should be gitignored)
+- [ ] Add `openrouter.log` to `.gitignore` if not already present

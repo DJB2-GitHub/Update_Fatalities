@@ -598,6 +598,207 @@ class UpdateFatalities(tk.Toplevel):
 
         threading.Thread(target=_task, daemon=True).start()
 
+    # ------------------------------------------------------------------
+    # Enhanced Circumstances — FATALITY_LOCATIONS heading hotlink
+    # ------------------------------------------------------------------
+
+    def _on_enhanced_circumstances_click(self):
+        """Handle click on FATALITY_LOCATIONS heading: research Enhanced Circumstances."""
+        if not self._filtered:
+            return
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(
+            record.get("serviceRecordAuthority"), dict
+        ) else {}
+        full_name = sra.get("full_name", "")
+        service_number = sra.get("service_number", "")
+        unit = sra.get("unit", "")
+        date_of_death = sra.get("date_of_death", "")
+        rank = sra.get("rank", "")
+
+        # Build the Enhanced Circumstances prompt
+        system_instruction, user_prompt = self._build_enhanced_circumstances_prompt(
+            full_name=full_name,
+            service_number=service_number,
+            unit=unit,
+            date_of_death=date_of_death,
+            rank=rank,
+        )
+
+        # Show prompt in side panel and start progress
+        self._side_resp_label.configure(text="AI: Enhanced circumstances")
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace("Deriving…")
+        self._show_side_panel()
+
+        def _task():
+            result = self._call_ai_for_field(system_instruction, user_prompt, max_tokens=16384)
+            if isinstance(result, tuple):
+                text, model_name, usage_meta, elapsed = result
+            else:
+                text, model_name, usage_meta, elapsed = result, None, None, 0
+            self.after(0, lambda: self._show_enhanced_circumstances_result(
+                text, model_name, usage_meta, elapsed))
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def _build_enhanced_circumstances_prompt(self, full_name, service_number,
+                                              unit, date_of_death, rank):
+        """Build the Enhanced Circumstances research prompt for the current soldier."""
+        system = (
+            "You are a military historian specialising in Australian Army personnel "
+            "records, 1st Australian Task Force (1ATF) operational history, and "
+            "Vietnam War fatality analysis (1962–1972)."
+        )
+
+        # Build a readable name line
+        name_line = f"{rank} {full_name}" if rank else full_name
+
+        user_prompt = f"""## Enhanced Research Prompt (Optimised for Maximum Historical Accuracy)
+
+You are a **military historian specialising in Australian Army personnel records, 1st Australian Task Force (1ATF) operational history, and Vietnam War fatality analysis (1962–1972).**
+
+Your task is to **research the web for authoritative, verifiable, and cross‑corroborated information** about a specific Australian soldier's **location, circumstances, and operational context of death**.
+
+### Research Objective
+Identify and reconstruct the **exact military operation**, **unit activity**, and **geographical location** associated with the death of:
+
+- **{name_line}**
+- **Service Number: {service_number}**
+- **Unit: {unit}**
+- **Date of death: {date_of_death}**
+
+### Required Research Components
+Your investigation must include:
+
+### 1. Precise Location of Death
+- Identify the **province**, **district**, and—if available—**hamlet or grid reference**.
+- Name **nearby geographical features**, such as:
+  - Roads (e.g., QL‑1, Route 2, Route 20)
+  - Rivers, streams, ridgelines
+  - Villages, hamlets, or known Viet Cong base areas
+  - Any terrain features mentioned in war diaries or eyewitness accounts
+
+### 2. Fire Support Base (FSB) Context
+- Identify the **FSB or 1ATF base** from which the unit was operating at the time.
+- Include:
+  - Artillery support arrangements
+  - Likely supporting batteries (RAA or US artillery)
+  - Any forward operating bases relevant to the soldier's company
+
+### 3. Operation Name and Operational Context
+- Identify the **specific operation** (if named) conducted by the unit or 1ATF on or around **{date_of_death}**.
+- If the action was part of **routine pacification patrols**, state this clearly and explain the operational framework.
+- Include:
+  - Battalion‑level mission
+  - Company‑level tasking
+  - Platoon‑level movement and objective
+  - Any relevant 1ATF operational orders
+
+### 4. Unit War Diary Extracts
+- Locate and summarise **unit**, **company**, or **platoon** war diary entries for the period around **{date_of_death}**.
+- Extract:
+  - Contact reports
+  - Movement logs
+  - Intelligence summaries
+  - Casualty reports
+  - Any mention of bunker systems, ambushes, or enemy activity
+
+*(If direct diary text is not accessible, summarise secondary sources that quote or reference the diaries.)*
+
+### 5. Eyewitness Accounts
+- Identify and summarise **first‑hand accounts** of the incident, including:
+  - Statements from surviving members of the soldier's platoon and company
+  - Accounts published in books (e.g., *Contact Front* by Don Tate)
+  - Interviews, oral histories, or veteran submissions
+  - Any corroborating Australian War Memorial (AWM) material
+
+### 6. Cross‑Verification
+All findings must be **cross‑checked** against:
+- Australian War Memorial (AWM) Roll of Honour
+- AWM unit histories
+- Department of Veterans' Affairs (DVA) Nominal Roll
+- Trove newspaper archives
+- Virtual War Memorial Australia (VWMA)
+- Any credible academic or military history sources
+
+### 7. Output Requirements
+Your final report must:
+- Present **only verified facts**, clearly distinguishing:
+  - **Confirmed information**
+  - **Reasoned inference** (explicitly labelled)
+- Include **citations** for every factual claim.
+- Provide a **chronological reconstruction** of the events leading to the death.
+- Identify any **gaps in the historical record**."""
+
+        return (system, user_prompt)
+
+    def _show_enhanced_circumstances_result(self, result_text, model_name,
+                                             usage_meta, elapsed):
+        """Show the Enhanced Circumstances result in the side panel with cost details."""
+        result_text = (result_text or "").strip()
+
+        # Build cost/time header — reuse the same logic as _show_derivation_result
+        header = "AI: Enhanced circumstances"
+        time_str = ""
+        cost_str = ""
+        if model_name and elapsed:
+            if usage_meta:
+                try:
+                    if "totalCost" in usage_meta:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        cost = usage_meta["totalCost"] * aud_usd
+                        cost_str = f"$A {cost:.6f}"
+                    else:
+                        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+                        env = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        k, _, v = line.partition("=")
+                                        env[k.strip()] = v.strip().strip('"').strip("'")
+                        ai_rates = json.loads(env.get("AI_RATES", "{}"))
+                        aud_usd = float(env.get("AUD_USD", "0.7"))
+                        if model_name in ai_rates:
+                            rate = ai_rates[model_name]
+                            pt = usage_meta.get("promptTokenCount", 0)
+                            ct = usage_meta.get("candidatesTokenCount", 0)
+                            cost = (pt * rate.get("in1", 0) / 1_000_000) * aud_usd + \
+                                   (ct * rate.get("out1", 0) / 1_000_000) * aud_usd
+                            cost_str = f"$A {cost:.6f}"
+                except Exception:
+                    pass
+            time_str = f"{elapsed:.0f}s" if elapsed else "??s"
+            cost_str = cost_str if cost_str else "$A ?.????"
+            header = f"AI: Enhanced circumstances  [{model_name}]  {time_str}  {cost_str}"
+
+        self._side_resp_label.configure(text=header)
+        self._side_resp_replace(result_text)
+        self._copy_btn.pack_forget()
+
+        if not model_name:
+            self._side_resp_label.configure(text="AI: Enhanced circumstances — FAILED")
+            _error_dialog(self, "AI Derivation Failed",
+                          f"Could not derive Enhanced Circumstances.\n\n{result_text}")
+            return
+
+        # Result is displayed in the side panel only — no field mapping needed.
+
     def _convert_incident_coordinates(self):
         """Read incident_location, extract //...// snippet, convert, write to incident_coordinates."""
         loc_path = ("derived_details", "fatality_locations", "incident_location")
@@ -771,7 +972,8 @@ class UpdateFatalities(tk.Toplevel):
 
         dlg.wait_window()
 
-    def _call_ai_for_field(self, system_instruction: str, user_prompt: str):
+    def _call_ai_for_field(self, system_instruction: str, user_prompt: str,
+                           max_tokens: int = 8192):
         """Call the AI API with the field derivation prompt.
         Routes to the provider selected in the top-row dropdown (Google, DeepSeek, or OpenRouter).
         Returns (text, model_name, usage_meta, elapsed_seconds) on success,
@@ -840,7 +1042,7 @@ class UpdateFatalities(tk.Toplevel):
                         body = json.dumps({
                             "model": model,
                             "temperature": 0,
-                            "max_tokens": 8192,
+                            "max_tokens": max_tokens,
                             "messages": [
                                 {"role": "system", "content": system_instruction},
                                 {"role": "user", "content": user_prompt},
@@ -927,7 +1129,7 @@ class UpdateFatalities(tk.Toplevel):
                         body = json.dumps({
                             "systemInstruction": {"parts": [{"text": system_instruction}]},
                             "contents": [{"parts": [{"text": user_prompt}]}],
-                            "generationConfig": {"temperature": 0, "maxOutputTokens": 8192},
+                            "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
                         }).encode("utf-8")
                         req = urllib.request.Request(
                             url, data=body,
@@ -1599,7 +1801,12 @@ class UpdateFatalities(tk.Toplevel):
                 if isinstance(raw_value, dict):
                     hf = tk.Frame(parent_frame, bg=WHITE)
                     hf.pack(fill=tk.X, padx=16 if not prefix_path else 0, pady=(12, 4))
-                    tk.Label(hf, text=field_name.upper(), font=(FONT, 10, "bold"), bg=WHITE, fg=ACCENT).pack(side=tk.LEFT, padx=(16 if not prefix_path else 0, 0))
+                    heading_label = tk.Label(hf, text=field_name.upper(), font=(FONT, 10, "bold"), bg=WHITE, fg=ACCENT)
+                    heading_label.pack(side=tk.LEFT, padx=(16 if not prefix_path else 0, 0))
+                    if field_name == "fatality_locations":
+                        heading_label.configure(fg="#4a90d9", cursor="hand2", font=(FONT, 10, "bold underline"))
+                        _ToolTip(heading_label, "Click to research Enhanced Circumstances")
+                        heading_label.bind("<Button-1>", lambda e: self._on_enhanced_circumstances_click())
                     sub_frame = tk.Frame(parent_frame, bg=WHITE)
                     sub_frame.pack(fill=tk.X, padx=(32, 0), pady=0)
                     _render_fields(sub_frame, raw_value, current_path)
@@ -1621,7 +1828,7 @@ class UpdateFatalities(tk.Toplevel):
                         dv = str(raw_value) if raw_value is not None else ""
                     if field_name in ("date_of_death", "date_of_birth"):
                         dv = _format_date_display(dv)
-                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
+                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type")
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -1844,7 +2051,7 @@ class UpdateFatalities(tk.Toplevel):
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit")
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type")
             
             if not is_editable:
                 val = orig_val
