@@ -21,9 +21,20 @@
 ### Enhanced Circumstances hotlink
 - The `FATALITY_LOCATIONS` heading in the update modal is a **blue underlined clickable hotlink** with tooltip *"Click to research Enhanced Circumstances"*.
 - Click is **unconditional** — does not depend on `_hotlink_active` (>50 words in ai_response). Always clickable when the section exists.
-- Prompt is built **dynamically per-record** from `serviceRecordAuthority` fields (rank, full_name, service_number, unit, date_of_death). Not hardcoded to any one soldier.
+- Prompt is built **dynamically per-record** from `serviceRecordAuthority` fields (rank, full_name, service_number, unit, date_of_death, fatality_type). Not hardcoded to any one soldier.
 - Result displays **only in the side panel RESPONSE** with header `AI: Enhanced circumstances [model] time cost`.
 - **No popup dialog, no field mapping** — Enhanced Circumstances results are read-only research and never write back to any JSON field.
+
+### Fatality-Type Authority Rule (2026-07-03)
+- `fatality_type` is **AUTHORITATIVE** across all hotlink prompts. It gates whether combat or non-combat research instructions are used.
+- **Two-tier classification** in `_build_enhanced_circumstances_prompt()`:
+  - Combat keywords checked first (KIA, DOW, Booby trap, Land mine, Enemy grenade, etc.)
+  - Non-combat fallback (Accident, Illness, Motor Vehicle, Homicide, Drowning, etc.)
+  - `accident*` prefix guard: any fatality_type starting with "accident" is forced non-combat regardless of embedded combat keywords (e.g., "Accidental- shot by a sentry... He died of wounds..." is friendly fire, not enemy action)
+- **~395 combat** / **~122 non-combat** / **~10 unknown** (GSW, Gunshot wound, Injuries, Wounds — genuinely ambiguous) across 79 unique types in AU_fatalities.json
+- **Enhanced Circumstances prompt** now receives `fatality_type` explicitly. Non-combat deaths get accident/illness investigation instructions; combat deaths get full operational/military research instructions.
+- **Field-level hotlinks** (`get_circumstances_of_death_prompt`, `get_grid_reference_prompt`, `get_all_hotlinks_prompt`) now include fatality-aware conditional instructions. `_SHARED_RULES` includes a FATALITY_TYPE AUTHORITATIVE OVERRIDE that applies to all field extractions.
+- **Rule**: If fatality_type indicates NON-COMBAT, the prompt explicitly says: "DO NOT fabricate combat scenarios, enemy contact, booby traps, ambushes, operations, or battle narratives."
 
 ### Key env vars
 | Variable | Purpose |
@@ -78,6 +89,21 @@
 
 ---
 
+## Completed — This Session (2026-07-03)
+
+6. **Fatality-type hallucination guardrails** — All hotlink prompts hardened against combat fabrication for non-combat deaths:
+   - `_SHARED_RULES` in `ai_derived_details_prompts.py`: added FATALITY_TYPE AUTHORITATIVE OVERRIDE with explicit non-combat guard language covering 79 unique types
+   - `get_circumstances_of_death_prompt`: split into COMBAT/NON-COMBAT branches — non-combat no longer asks for "enemy contact", "operational environment", or "fatal wound"
+   - `get_grid_reference_prompt`: split into COMBAT/NON-COMBAT branches — non-combat uses death/accident location directly, forbids fabricating grid references
+   - `get_all_hotlinks_prompt`: fatality-aware language added to circumstances and grid_reference fields
+   - `_build_enhanced_circumstances_prompt`: now receives `fatality_type` parameter; two-tier keyword classification; prominent ⚠ FATALITY TYPE (AUTHORITATIVE) block; conditional research components
+   - `_on_enhanced_circumstances_click`: extracts `fatality_type` from `sra` and passes it downstream
+   - Classification verified against all 79 unique `fatality_type` values in AU_fatalities.json; zero false combat classifications for accident/illness types
+
+7. **rAI_PROGRESS.md updated** — Full session summary, architecture rules, and next-step checklist.
+
+---
+
 ## Incomplete Work — Carry-Over
 
 *None.* All changes from this session are complete, syntax-verified, and import-tested.
@@ -86,14 +112,14 @@
 
 ## Next Steps
 
-- [ ] Test FATALITY_LOCATIONS hotlink: open any record → click the blue underlined heading → verify prompt appears in side panel, AI runs, result displays with model/time/cost header, no popup appears
-- [ ] Test Enhanced Circumstances with different records — verify prompt fields (name, service number, unit, date) update per-record
-- [ ] Test fatality_type edit: change the value, navigate away and back, confirm it persisted
+- [ ] Test FATALITY_LOCATIONS hotlink with an **Accidental** record (e.g., MITCHELL, David AU_1201249): verify prompt contains ⚠ FATALITY TYPE (AUTHORITATIVE): Accidental ⚠, non-combat research components, NO combat language (FSB, war diary, enemy contact, booby trap)
+- [ ] Test FATALITY_LOCATIONS hotlink with a **KIA** record: verify prompt contains combat research components (FSB context, operation name, war diary extracts)
+- [ ] Test individual hotlink clicks (circumstances_of_death, grid_reference) on an Accidental record — verify results describe the accident factually without fabricated combat narratives
+- [ ] Test "All Hotlinks" on an Accidental record — verify all five fields respect fatality_type
 - [ ] Test Enhanced Circumstances with a long response — verify no mid-sentence truncation (16384 tokens)
+- [ ] Test fatality_type edit: change the value, navigate away and back, confirm it persisted
 - [ ] Test date display: verify `date_of_death` and `date_of_birth` show as `yyyy-Mmm-dd` in update modal
 - [ ] Test NZ Master Prompt: open NZ_fatalities.json record → "AI: Create a Master Response" → confirm NZ sources, Online Cenotaph label
 - [ ] Test AU Master Prompt: confirm regression — AU still shows AWM sources
 - [ ] Test COPY RESPONSE variations (clean/dirty/cancel)
-- [ ] Test "All Hotlinks" with substantive `ai_response` text
-- [ ] Test individual hotlink clicks (service_status, place_of_death, unit, grid_reference, circumstances)
 - [ ] Add `openrouter.log` to `.gitignore` if not already present

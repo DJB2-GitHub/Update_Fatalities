@@ -616,6 +616,7 @@ class UpdateFatalities(tk.Toplevel):
         unit = sra.get("unit", "")
         date_of_death = sra.get("date_of_death", "")
         rank = sra.get("rank", "")
+        fatality_type = sra.get("fatality_type", "")
 
         # Build the Enhanced Circumstances prompt
         system_instruction, user_prompt = self._build_enhanced_circumstances_prompt(
@@ -624,6 +625,7 @@ class UpdateFatalities(tk.Toplevel):
             unit=unit,
             date_of_death=date_of_death,
             rank=rank,
+            fatality_type=fatality_type,
         )
 
         # Show prompt in side panel and start progress
@@ -647,8 +649,13 @@ class UpdateFatalities(tk.Toplevel):
         threading.Thread(target=_task, daemon=True).start()
 
     def _build_enhanced_circumstances_prompt(self, full_name, service_number,
-                                              unit, date_of_death, rank):
-        """Build the Enhanced Circumstances research prompt for the current soldier."""
+                                              unit, date_of_death, rank,
+                                              fatality_type=""):
+        """Build the Enhanced Circumstances research prompt for the current soldier.
+
+        fatality_type is AUTHORITATIVE — it gates whether combat or non-combat
+        research instructions are included.
+        """
         system = (
             "You are a military historian specialising in Australian Army personnel "
             "records, 1st Australian Task Force (1ATF) operational history, and "
@@ -658,27 +665,97 @@ class UpdateFatalities(tk.Toplevel):
         # Build a readable name line
         name_line = f"{rank} {full_name}" if rank else full_name
 
-        user_prompt = f"""## Enhanced Research Prompt (Optimised for Maximum Historical Accuracy)
+        # Determine fatality category for conditional research instructions.
+        # Two-tier approach: combat keywords checked FIRST, then non-combat fallback.
+        ft_lower = fatality_type.lower()
+        _combat_keywords = [
+            "killed in action", "kia", "died of wounds", "dow", "enemy grenade",
+            "booby trap", "land mine", "mine fragmentation", "viet cong ambush",
+            "helicopter shot down", "helicopter hit by", "aircraft downed by",
+            "friendly fire", "shot by sniper", "gun shot wound", "gsw to head",
+            "jumping jack landmine", "claymore mine", "killed in an enemy mortar",
+            "died of wounds (received at", "died of wounds (received in",
+            "died of injuries (battle casualty)", "died of injuries (land mine)",
+            # NOTE: "accidental (battle casualty)", "died of illness (battle casualty)",
+            # "accidental (defusing enemy grenade)", and "Accidental- shot by sentry..."
+            # are excluded — they are primarily accident/illness, not enemy action.
+            # All fatality types starting with "accident" are forced to non-combat by the
+            # guard below regardless of any embedded combat keywords.
+        ]
+        is_combat = any(kw in ft_lower for kw in _combat_keywords)
+        # Safety: if the fatality_type starts with "accident" or "accidental",
+        # treat as non-combat regardless of embedded combat keywords (e.g.
+        # "Accidental- shot by a sentry... He died of wounds..." is friendly fire).
+        if ft_lower.startswith("accident"):
+            is_combat = False
 
-You are a **military historian specialising in Australian Army personnel records, 1st Australian Task Force (1ATF) operational history, and Vietnam War fatality analysis (1962–1972).**
+        _non_combat_keywords = [
+            "accident", "illness", "disease", "natural cause", "motor vehicle",
+            "drowning", "homicide", "murder", "self-inflicted", "heart failure",
+            "heart attack", "brain tumour", "carbon monoxide", "non battle casualty",
+            "died of illness", "pulmonary", "flying accident", "aircraft accident",
+            "aircraft crash", "helicopter crash", "died of injuries", "stabbed",
+            # "helicopter crash" without "enemy ground fire" qualifier = accident
+        ]
+        # Only check non-combat if NOT already classified as combat.
+        # The bare "Died" (without "of Wounds") is treated as non-combat since
+        # it appears in plain form for natural/unknown non-combat deaths.
+        if not is_combat:
+            is_non_combat = any(kw in ft_lower for kw in _non_combat_keywords) or ft_lower == "died"
+        else:
+            is_non_combat = False
 
-Your task is to **research the web for authoritative, verifiable, and cross‑corroborated information** about a specific Australian soldier's **location, circumstances, and operational context of death**.
+        # ── FATALITY_TYPE AUTHORITATIVE STATEMENT ──
+        fatality_block = f"""**⚠ FATALITY TYPE (AUTHORITATIVE): {fatality_type} ⚠**
 
-### Research Objective
-Identify and reconstruct the **exact military operation**, **unit activity**, and **geographical location** associated with the death of:
+This is the OFFICIAL fatality classification. IT IS AUTHORITATIVE AND MUST NOT BE OVERRIDDEN.
+"""
+        if is_non_combat:
+            fatality_block += (
+                f"This is a NON-COMBAT death. Do NOT fabricate combat scenarios, enemy contact, "
+                f"booby traps, ambushes, operations, or battle narratives. "
+                f"Research and report the actual circumstances consistent with '{fatality_type}'. "
+                f"The soldier was NOT killed in action — do NOT describe enemy contact, "
+                f"war diary contact reports, bunker systems, or combat operations.\n"
+            )
+        else:
+            fatality_block += (
+                "This appears to be a combat-related death. Research the operational context, "
+                "enemy engagement, and military circumstances as appropriate.\n"
+            )
 
-- **{name_line}**
-- **Service Number: {service_number}**
-- **Unit: {unit}**
-- **Date of death: {date_of_death}**
+        # ── Conditional research components ──
+        if is_non_combat:
+            research_components = f"""### 1. Circumstances of Death
+- Research the exact nature of this {fatality_type} fatality.
+- Identify WHERE the {fatality_type} occurred (e.g. base camp, training area, barracks, hospital, road, civilian location).
+- Identify any official inquiry, investigation, or coroner findings.
+- Look for accident reports, unit safety records, or administrative investigations.
 
-### Required Research Components
-Your investigation must include:
+### 2. Location Details
+- Identify the **province**, **district**, and general location where the death occurred.
+- Note any nearby bases, camps, hospitals, or towns.
+- Do NOT search for fire support bases, grid references, or combat incident locations.
+- If the location is only known at province/country level (e.g. 'South Vietnam'), that is sufficient.
 
-### 1. Precise Location of Death
+### 3. Eyewitness and Official Accounts
+- Identify any first-hand accounts of the incident.
+- Look for unit administrative records, accident reports, or medical records.
+- Check for newspaper reports or contemporary media coverage.
+
+### 4. Cross-Verification
+All findings must be **cross-checked** against:
+- Australian War Memorial (AWM) Roll of Honour
+- Department of Veterans' Affairs (DVA) Nominal Roll
+- Trove newspaper archives
+- Virtual War Memorial Australia (VWMA)
+- National Archives of Australia (NAA)
+"""
+        else:
+            research_components = """### 1. Precise Location of Death
 - Identify the **province**, **district**, and—if available—**hamlet or grid reference**.
 - Name **nearby geographical features**, such as:
-  - Roads (e.g., QL‑1, Route 2, Route 20)
+  - Roads (e.g., QL-1, Route 2, Route 20)
   - Rivers, streams, ridgelines
   - Villages, hamlets, or known Viet Cong base areas
   - Any terrain features mentioned in war diaries or eyewitness accounts
@@ -691,16 +768,16 @@ Your investigation must include:
   - Any forward operating bases relevant to the soldier's company
 
 ### 3. Operation Name and Operational Context
-- Identify the **specific operation** (if named) conducted by the unit or 1ATF on or around **{date_of_death}**.
+- Identify the **specific operation** (if named) conducted by the unit or 1ATF on or around the date of death.
 - If the action was part of **routine pacification patrols**, state this clearly and explain the operational framework.
 - Include:
-  - Battalion‑level mission
-  - Company‑level tasking
-  - Platoon‑level movement and objective
+  - Battalion-level mission
+  - Company-level tasking
+  - Platoon-level movement and objective
   - Any relevant 1ATF operational orders
 
 ### 4. Unit War Diary Extracts
-- Locate and summarise **unit**, **company**, or **platoon** war diary entries for the period around **{date_of_death}**.
+- Locate and summarise **unit**, **company**, or **platoon** war diary entries for the period around the date of death.
 - Extract:
   - Contact reports
   - Movement logs
@@ -711,22 +788,43 @@ Your investigation must include:
 *(If direct diary text is not accessible, summarise secondary sources that quote or reference the diaries.)*
 
 ### 5. Eyewitness Accounts
-- Identify and summarise **first‑hand accounts** of the incident, including:
+- Identify and summarise **first-hand accounts** of the incident, including:
   - Statements from surviving members of the soldier's platoon and company
   - Accounts published in books (e.g., *Contact Front* by Don Tate)
   - Interviews, oral histories, or veteran submissions
   - Any corroborating Australian War Memorial (AWM) material
 
-### 6. Cross‑Verification
-All findings must be **cross‑checked** against:
+### 6. Cross-Verification
+All findings must be **cross-checked** against:
 - Australian War Memorial (AWM) Roll of Honour
 - AWM unit histories
 - Department of Veterans' Affairs (DVA) Nominal Roll
 - Trove newspaper archives
 - Virtual War Memorial Australia (VWMA)
 - Any credible academic or military history sources
+"""
 
-### 7. Output Requirements
+        user_prompt = f"""## Enhanced Research Prompt (Optimised for Maximum Historical Accuracy)
+
+You are a **military historian specialising in Australian Army personnel records, 1st Australian Task Force (1ATF) operational history, and Vietnam War fatality analysis (1962–1972).**
+
+Your task is to **research the web for authoritative, verifiable, and cross-corroborated information** about a specific Australian soldier's **location, circumstances, and context of death**.
+
+### Soldier Details
+- **{name_line}**
+- **Service Number: {service_number}**
+- **Unit: {unit}**
+- **Date of death: {date_of_death}**
+
+{fatality_block}
+
+### Research Objective
+Research and report the factual circumstances, location, and context of this soldier's death. The fatality type stated above is authoritative and must guide all research.
+
+### Required Research Components
+{research_components}
+
+### Output Requirements
 Your final report must:
 - Present **only verified facts**, clearly distinguishing:
   - **Confirmed information**
