@@ -135,9 +135,15 @@
 
 ---
 
+## Completed — This Session
+
+21. **Fixed `NameError` in All Hotlinks dialog** — `_show_all_hotlinks_result` referenced undefined variable `header` at lines 1016 and 1023. Both changed to `prefix` (the correctly-scoped variable already defined in the method). Fixes crash when clicking "All Hotlinks".
+
+---
+
 ## Incomplete Work — Carry-Over
 
-*None.* All changes from this session are complete, syntax-verified, and import-tested. Not yet committed/pushed.
+*None.*
 
 ---
 

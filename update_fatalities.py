@@ -1013,14 +1013,14 @@ Your final report must:
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(header)
+        dlg.title(prefix)
         dlg.resizable(True, True)
         dlg.configure(bg=WHITE)
         dlg.transient(self)
         _center_on_parent(dlg, self)
         dlg.grab_set()
 
-        hdr = tk.Label(dlg, text=f"Edit results and select fields to update:  {header}",
+        hdr = tk.Label(dlg, text=f"Edit results and select fields to update:  {prefix}",
                        font=(FONT, 10, "bold"), bg=WHITE, fg=TEXT_DARK, anchor="w")
         hdr.pack(fill=tk.X, padx=16, pady=(12, 8))
 
