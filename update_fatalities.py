@@ -359,15 +359,6 @@ class UpdateFatalities(tk.Toplevel):
             if saved_on_this_day is not None:
                 self._on_this_day_chk_var.set(saved_on_this_day)
 
-            saved_side_panel = session.get("side_panel_visible")
-            if saved_side_panel is not None:
-                self._side_panel_visible_var.set(saved_side_panel)
-                # Apply side panel visibility
-                if saved_side_panel:
-                    self._show_side_panel()
-                else:
-                    self._hide_side_panel()
-
             saved_provider = session.get("internal_provider")
             if saved_provider and saved_provider in self._internal_providers:
                 self._internal_provider_var.set(saved_provider)
@@ -408,7 +399,7 @@ class UpdateFatalities(tk.Toplevel):
                         self._side_prompt.insert("1.0", saved_prompt)
                         self._side_prompt_label.configure(text=ref_state.get("promptLabel", "PROMPT: All Derived Data"))
                     if saved_response:
-                        self._side_resp_label.configure(text=ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
+                        self._set_response_label(ref_state.get("responseLabel", "RESPONSE: All Derived Data"))
                         self._side_resp_replace(saved_response)
                     # Restore side-panel visibility independently of content
                     if side_panel_visible or saved_response:
@@ -621,6 +612,17 @@ class UpdateFatalities(tk.Toplevel):
         date_of_death = sra.get("date_of_death", "")
         rank = sra.get("rank", "")
         fatality_type = sra.get("fatality_type", "")
+        dd = record.get("derived_details", {}) if isinstance(
+            record.get("derived_details"), dict
+        ) else {}
+        fl = dd.get("fatality_locations", {}) if isinstance(dd.get("fatality_locations"), dict) else {}
+        existing_data = {
+            "circumstances_of_death": (dd.get("circumstances_of_death", "") or "").strip(),
+            "death_location": (fl.get("death_location", "") or "").strip(),
+            "place_of_burial": (fl.get("place_of_burial", "") or "").strip(),
+        }
+        # Remove empty entries
+        existing_data = {k: v for k, v in existing_data.items() if v}
 
         # Build the Enhanced Circumstances prompt
         system_instruction, user_prompt = self._build_enhanced_circumstances_prompt(
@@ -630,10 +632,12 @@ class UpdateFatalities(tk.Toplevel):
             date_of_death=date_of_death,
             rank=rank,
             fatality_type=fatality_type,
+            existing_data=existing_data,
         )
 
         # Show prompt in side panel and start progress
-        self._side_resp_label.configure(text="Enhanced operation details")
+        self._show_master_web_provider = False
+        self._set_response_label("RESPONSE: Enhanced Operation Details")
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
@@ -654,12 +658,18 @@ class UpdateFatalities(tk.Toplevel):
 
     def _build_enhanced_circumstances_prompt(self, full_name, service_number,
                                               unit, date_of_death, rank,
-                                              fatality_type=""):
+                                              fatality_type="",
+                                              existing_data=None):
         """Build the Enhanced Circumstances research prompt for the current soldier.
 
         fatality_type is AUTHORITATIVE — it gates whether combat or non-combat
         research instructions are included.
+        existing_data dict (circumstances_of_death, death_location, place_of_burial)
+        provides AUTHORITATIVE ground truth — the AI must treat these as facts
+        and never override or fabricate conflicting narratives.
         """
+        if existing_data is None:
+            existing_data = {}
         system = (
             "You are a military historian specialising in Australian Army personnel "
             "records, 1st Australian Task Force (1ATF) operational history, and "
@@ -727,6 +737,33 @@ This is the OFFICIAL fatality classification. IT IS AUTHORITATIVE AND MUST NOT B
                 "This appears to be a combat-related death. Research the operational context, "
                 "enemy engagement, and military circumstances as appropriate.\n"
             )
+
+        # ── EXISTING DATA AUTHORITATIVE STATEMENT ──
+        anchor_block = ""
+        if existing_data:
+            FRIENDLY = {
+                "circumstances_of_death": "Circumstances of death",
+                "death_location": "Death location",
+                "place_of_burial": "Burial location",
+            }
+            lines = []
+            for k, v in existing_data.items():
+                label = FRIENDLY.get(k, k)
+                lines.append(f"- **{label}:** {v}")
+            anchor_block = f"""**⚠ EXISTING RECORD DATA (AUTHORITATIVE) ⚠**
+
+The following facts are already recorded in the database for THIS soldier.
+They are AUTHORITATIVE GROUND TRUTH and MUST NOT BE OVERRIDDEN or contradicted:
+
+{chr(10).join(lines)}
+
+These facts are NOT in question. Your task is to RESEARCH SUPPLEMENTARY details
+(unit context, operational background, eyewitness accounts, cross-references) —
+NOT to re-determine the cause, location, or burial of death. If your web search
+returns results about OTHER soldiers from the same unit (different death locations,
+burials, repatriation stories, etc.), those are NOT this soldier. Do NOT conflate
+unit-level or cemetery-level results with this individual.
+"""
 
         # ── Conditional research components ──
         if is_non_combat:
@@ -821,7 +858,7 @@ Your task is to **research the web for authoritative, verifiable, and cross-corr
 - **Date of death: {date_of_death}**
 
 {fatality_block}
-
+{anchor_block}
 ### Research Objective
 Research and report the factual circumstances, location, and context of this soldier's death. The fatality type stated above is authoritative and must guide all research.
 
@@ -845,7 +882,7 @@ Your final report must:
         result_text = (result_text or "").strip()
 
         # Build cost/time header — reuse the same logic as _show_derivation_result
-        header = "Enhanced operation details"
+        header = "RESPONSE: Enhanced Operation Details"
         time_str = ""
         cost_str = ""
         if model_name and elapsed:
@@ -889,14 +926,14 @@ Your final report must:
             cost_str = cost_str if cost_str else "$A ?.????"
             meta_line = f"[{model_name}]  {time_str}  {cost_str}"
             result_text = meta_line + "\n\n" + result_text
-            # header stays clean: "Enhanced operation details"
+            # header stays clean: "RESPONSE: Enhanced Operation Details"
 
-        self._side_resp_label.configure(text=header)
+        self._set_response_label(header)
         self._side_resp_replace(result_text)
         self._copy_btn.pack_forget()
 
         if not model_name:
-            self._side_resp_label.configure(text="Enhanced operation details — FAILED")
+            self._set_response_label("RESPONSE: Enhanced Operation Details — FAILED")
             _error_dialog(self, "AI Derivation Failed",
                           f"Could not derive Enhanced Circumstances.\n\n{result_text}")
             return
@@ -1496,6 +1533,15 @@ Your final report must:
                                     break
                             break
 
+        # AWM Commanders Diaries — static link
+        awm_lbl = tk.Label(
+            title_frame, text="\U0001F517 AWM-Commanders Diaries",
+            font=(FONT, 10, "underline"), bg=BG_GREY,
+            fg="#4a90d9", cursor="hand2"
+        )
+        awm_lbl.pack(side=tk.LEFT, padx=(12, 0))
+        awm_lbl.bind("<Button-1>", lambda e: _open_url("https://www.awm.gov.au/collection/C1372714"))
+
         # Web query link — updated per record in _show_record
         country_map_full = {"AU": "Australia", "NZ": "New Zealand"}
         country_name = country_map_full.get(country_code, country_code)
@@ -1589,7 +1635,8 @@ Your final report must:
         top_row = tk.Frame(bf, bg=BG_GREY)
         top_row.pack(fill=tk.X)
         self._flat_btn(top_row, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
-        self._flat_btn(top_row, "Show Master Prompt", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
+        self._flat_btn(top_row, "Show\nMaster Prompt", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT, pady=2)
+        self._flat_btn(top_row, "Show\n+ Op Prompt", self._show_ops_prompt, bg="#1565c0", fg=WHITE, side=tk.LEFT, right_pad=10, pady=2)
         self._all_hotlinks_btn = self._flat_btn(top_row, "All Hotlinks", self._all_hotlinks, bg="#e67e22", fg=WHITE, side=tk.LEFT, right_pad=10)
 
         self._side_panel_visible_var = tk.BooleanVar(value=True)
@@ -1599,12 +1646,6 @@ Your final report must:
                                 values=self._internal_providers, state="readonly",
                                 width=12, font=(FONT, 9))
         _prov_dd.pack(side=tk.LEFT, padx=(10, 0))
-        self._side_panel_chk = tk.Checkbutton(
-            top_row, text="Side Panel", variable=self._side_panel_visible_var,
-            bg=BG_GREY, fg=TEXT_DARK, activebackground=BG_GREY, font=(FONT, 9),
-            command=self._toggle_side_panel
-        )
-        self._side_panel_chk.pack(side=tk.LEFT, padx=(10, 0))
 
         self._copy_btn = self._flat_btn(
             top_row, "--> ai_response", self._copy_response_to_ai_response,
@@ -1628,9 +1669,6 @@ Your final report must:
         sh.pack(fill=tk.X)
         sh.pack_propagate(False)
         tk.Label(sh, text="AI RESULTS", font=(FONT, 10, "bold"), bg="#4a90d9", fg=WHITE).pack(side=tk.LEFT, padx=12, pady=8)
-        hb = tk.Label(sh, text="\u2715", font=(FONT, 12, "bold"), bg="#4a90d9", fg=WHITE, padx=10, pady=4, cursor="hand2")
-        hb.pack(side=tk.RIGHT)
-        hb.bind("<Button-1>", lambda e: self._hide_side_panel())
 
         self._side_prompt_label = tk.Label(
             self._side_panel, text="PROMPT", font=(FONT, 8, "bold"),
@@ -1659,7 +1697,7 @@ Your final report must:
         self._master_web_provider_var = tk.StringVar(value=_prov_names[0] if _prov_names else "Google")
         self._master_web_provider_dd = ttk.Combobox(_resp_header, textvariable=self._master_web_provider_var,
                                                      values=_prov_names, state="readonly",
-                                                     width=12, font=(FONT, 8))
+                                                     width=10, font=(FONT, 8))
         self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
 
         # URL hotlink label
@@ -1671,10 +1709,10 @@ Your final report must:
         def _on_master_web_provider_change(*args):
             provider = self._master_web_provider_var.get()
             url = self._master_web_providers.get(provider, "")
-            self._master_web_url_label.configure(text=url if url else "")
+            self._master_web_url_label.configure(text=provider if url else "")
         self._master_web_provider_var.trace_add("write", _on_master_web_provider_change)
         _on_master_web_provider_change()
-        # Hide controls initially — only shown when label is "RESPONSE: FATALITIES MASTER PROMPT"
+        # Hide controls initially — only shown when label is "RESPONSE: Fatalities Master"
         self._master_web_provider_dd.pack_forget()
         self._master_web_url_label.pack_forget()
 
@@ -1691,8 +1729,8 @@ Your final report must:
         def _on_resp_modified(_event=None):
             self._side_resp.edit_modified(False)
             text = self._side_resp.get("1.0", "end-1c")
-            is_master = self._side_resp_label.cget("text").startswith("RESPONSE: FATALITIES MASTER PROMPT")
-            is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
+            is_master = self._side_resp_label.cget("text").startswith("RESPONSE: Fatalities Master")
+            is_enhanced = self._side_resp_label.cget("text").startswith("RESPONSE: Enhanced Operation Details")
             if len(text) > self._copy_threshold and is_master:
                 try:
                     self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))
@@ -1709,13 +1747,16 @@ Your final report must:
                 self._enhanced_update_btn.pack_forget()
         self._side_resp.bind("<<Modified>>", _on_resp_modified)
 
+        # Always show side panel
+        self._show_side_panel()
+
     # ------------------------------------------------------------------
     # Flat button helper
     # ------------------------------------------------------------------
 
-    def _flat_btn(self, parent, text, command, bg, fg, side, right_pad=0) -> tk.Label:
+    def _flat_btn(self, parent, text, command, bg, fg, side, right_pad=0, pady=6) -> tk.Label:
         btn = tk.Label(parent, text=text, font=(FONT, 10, "bold"),
-                       bg=bg, fg=fg, padx=18, pady=6, cursor="hand2")
+                       bg=bg, fg=fg, padx=18, pady=pady, cursor="hand2")
         btn.pack(side=side, padx=(0, right_pad))
         hover_bg = ACCENT_HOV if bg == ACCENT else ("#3a7bc8" if bg == "#4a90d9" else "#c0c0c0")
         _bind_hover(btn, bg, hover_bg)
@@ -1958,7 +1999,12 @@ Your final report must:
                 else:
                     rf = tk.Frame(parent_frame, bg=WHITE)
                     rf.pack(fill=tk.X, padx=16 if not prefix_path else 0, pady=4)
-                    field_label = tk.Label(rf, text=f"{field_name}", font=(FONT, 10),
+                    field_display = field_name
+                    if field_name == "authoritative_ai_override":
+                        field_display = "authoritative\nai_override"
+                    elif field_name == "enhanced_operation_details":
+                        field_display = "enhanced\noperation\ndetails"
+                    field_label = tk.Label(rf, text=field_display, font=(FONT, 10),
                                            bg=WHITE, fg=TEXT_DARK)
                     field_label.pack(side=tk.LEFT, padx=(0, 10), anchor=tk.N)
                     _HOTLINK_FIELDS = {"service_status", "death_location",
@@ -2153,7 +2199,6 @@ Your final report must:
             self._on_this_day_month_entry.configure(state=tk.DISABLED)
             self._on_this_day_day_entry.configure(state=tk.DISABLED)
             self._on_this_day_chk.configure(state=tk.DISABLED)
-            self._side_panel_chk.configure(state=tk.DISABLED)
         else:
             # Mutual exclusivity: enable only the active filter widget
             if self._on_this_day_chk_var.get():
@@ -2165,7 +2210,6 @@ Your final report must:
                 self._on_this_day_month_entry.configure(state=tk.DISABLED)
                 self._on_this_day_day_entry.configure(state=tk.DISABLED)
             self._on_this_day_chk.configure(state=tk.NORMAL)
-            self._side_panel_chk.configure(state=tk.NORMAL)
         if locked:
             self._lock_frame.pack(fill=tk.X, pady=(0, 6), before=self._card)
         else:
@@ -2363,16 +2407,6 @@ Your final report must:
     def _show_side_panel(self):
         self._side_panel.pack(side=tk.LEFT, fill=tk.Y, pady=16, after=self.winfo_children()[0].winfo_children()[0])
 
-    def _hide_side_panel(self):
-        self._side_panel.pack_forget()
-
-    def _toggle_side_panel(self):
-        """Toggle side panel visibility from the checkbox."""
-        if self._side_panel_visible_var.get():
-            self._show_side_panel()
-        else:
-            self._hide_side_panel()
-
     def _open_master_web_url(self):
         """Open the selected master web provider's URL in the browser."""
         provider = self._master_web_provider_var.get()
@@ -2383,7 +2417,7 @@ Your final report must:
     def _set_response_label(self, text: str):
         """Set the response label and toggle master-web-provider controls."""
         self._side_resp_label.configure(text=text)
-        if text.startswith("RESPONSE: FATALITIES MASTER PROMPT"):
+        if getattr(self, "_show_master_web_provider", False):
             self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
             self._master_web_url_label.pack(side=tk.LEFT, padx=(4, 0))
         else:
@@ -2393,6 +2427,59 @@ Your final report must:
     # ------------------------------------------------------------------
     # AI Lookup
     # ------------------------------------------------------------------
+
+    def _show_ops_prompt(self):
+        """Show the Enhanced operation details prompt in side panel, clear response,
+        and copy prompt to clipboard for manual paste into web AI."""
+        if not self._filtered:
+            return
+        actual_idx = self._filtered[self._filtered_pos]
+        record = self.working_data[actual_idx]
+        sra = record.get("serviceRecordAuthority", {}) if isinstance(
+            record.get("serviceRecordAuthority"), dict
+        ) else {}
+        full_name = sra.get("full_name", "")
+        service_number = sra.get("service_number", "")
+        unit = sra.get("unit", "")
+        date_of_death = sra.get("date_of_death", "")
+        rank = sra.get("rank", "")
+        fatality_type = sra.get("fatality_type", "")
+        dd = record.get("derived_details", {}) if isinstance(
+            record.get("derived_details"), dict
+        ) else {}
+        fl = dd.get("fatality_locations", {}) if isinstance(dd.get("fatality_locations"), dict) else {}
+        existing_data = {
+            "circumstances_of_death": (dd.get("circumstances_of_death", "") or "").strip(),
+            "death_location": (fl.get("death_location", "") or "").strip(),
+            "place_of_burial": (fl.get("place_of_burial", "") or "").strip(),
+        }
+        existing_data = {k: v for k, v in existing_data.items() if v}
+
+        system_instruction, user_prompt = self._build_enhanced_circumstances_prompt(
+            full_name=full_name,
+            service_number=service_number,
+            unit=unit,
+            date_of_death=date_of_death,
+            rank=rank,
+            fatality_type=fatality_type,
+            existing_data=existing_data,
+        )
+
+        self._side_prompt_label.configure(text="PROMPT: Enhanced Operation Details")
+        self._show_master_web_provider = True
+        self._set_response_label("RESPONSE: Enhanced Operation Details")
+        full_prompt = "SYSTEM:\n" + system_instruction + "\n\nMESSAGE:\n" + user_prompt
+        self._side_prompt.configure(state=tk.NORMAL)
+        self._side_prompt.delete("1.0", tk.END)
+        self._side_prompt.insert("1.0", full_prompt)
+        self._side_resp.delete("1.0", tk.END)
+        self._side_resp_replace(
+            "// Prompt copied to clipboard — paste into "
+            "https://copilot.microsoft.com, then paste the result here."
+        )
+        self.clipboard_clear()
+        self.clipboard_append(full_prompt)
+        self._show_side_panel()
 
     def _ai_lookup(self):
         """
@@ -2521,7 +2608,8 @@ Your final report must:
             return
 
         self._side_prompt_label.configure(text="PROMPT: Fatalities Master Prompt")
-        self._set_response_label("RESPONSE: FATALITIES MASTER PROMPT")
+        self._show_master_web_provider = True
+        self._set_response_label("RESPONSE: Fatalities Master")
         full_prompt = "SYSTEM:\n" + config["system_text"] + "\n\nMESSAGE:\n" + config["user_prompt"]
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
@@ -2939,9 +3027,9 @@ Your final report must:
         self._side_resp.delete("1.0", tk.END)
         self._side_resp.insert("1.0", safe_text)
         # Only show COPY RESPONSE button for master responses, never for hotlinks.
-        # Identified by the side-panel label starting with "RESPONSE: FATALITIES MASTER PROMPT".
-        is_master = self._side_resp_label.cget("text").startswith("RESPONSE: FATALITIES MASTER PROMPT")
-        is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
+        # Identified by the side-panel label starting with "RESPONSE: Fatalities Master".
+        is_master = self._side_resp_label.cget("text").startswith("RESPONSE: Fatalities Master")
+        is_enhanced = self._side_resp_label.cget("text").startswith("RESPONSE: Enhanced Operation Details")
         if len(safe_text) > self._copy_threshold and is_master:
             try:
                 self._copy_btn.pack(side=tk.LEFT, padx=(10, 0))

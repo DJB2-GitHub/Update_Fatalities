@@ -1,0 +1,810 @@
+{
+  "2788085": {
+    "name": "Muller Hans L",
+    "age": "22",
+    "state": "M",
+    "unit": "5RAR",
+    "date_of_death": "5 July 1969",
+    "cause_of_death": "Enemy mine explosion"
+  },
+  "3795712": {
+    "name": "Munday Barry J",
+    "age": "22",
+    "state": "VIC",
+    "unit": "8RAR",
+    "date_of_death": "28 February 1970",
+    "cause_of_death": "Mine detonated"
+  },
+  "2788524": {
+    "name": "Murray Peter E",
+    "age": "21",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "9 July 1968",
+    "cause_of_death": "Multiple wounds in an enemy contact"
+  },
+  "4717754": {
+    "name": "Musicka Harold R",
+    "age": "23",
+    "state": "VIC",
+    "unit": "9RAR",
+    "date_of_death": "19 January 1969",
+    "cause_of_death": "Killed accidentally by friendly forces"
+  },
+  "2792729": {
+    "name": "Navarre Paul J",
+    "age": "21",
+    "state": "VIC",
+    "unit": "7RAR",
+    "date_of_death": "6 June 1970",
+    "cause_of_death": "Enemy mine"
+  },
+  "1735386": {
+    "name": "Neal Dennis W",
+    "age": "22",
+    "state": "QLD",
+    "unit": "2RAR",
+    "date_of_death": "25 May 1970",
+    "cause_of_death": "Booby trap detonated"
+  },
+  "4718427": {
+    "name": "Nelson Dennis E",
+    "age": "21",
+    "state": "SA",
+    "unit": "2RAR",
+    "date_of_death": "28 September 1967",
+    "cause_of_death": "American helicopter gunship rocket malfunctioned"
+  },
+  "3798081": {
+    "name": "Niblett Ralph J",
+    "age": "22",
+    "state": "VIC",
+    "unit": "4RAR",
+    "date_of_death": "21 September 1971",
+    "cause_of_death": "Shot dead by VC soldiers"
+  },
+  "4717546": {
+    "name": "Noack Errol W",
+    "age": "21",
+    "state": "SA",
+    "unit": "5RAR",
+    "date_of_death": "24 May 1966",
+    "cause_of_death": "Gunshot wounds from friendly forces"
+  },
+  "2787793": {
+    "name": "Noonan Michael J",
+    "age": "21",
+    "state": "NSW",
+    "unit": "4RAR",
+    "date_of_death": "13 September 1968",
+    "cause_of_death": "Shot dead by VC snipers"
+  },
+  "2786748": {
+    "name": "O'Brien John A",
+    "age": "21",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "13 May 1968",
+    "cause_of_death": "Killed in action"
+  },
+  "2782779": {
+    "name": "O'Hara John L",
+    "age": "22",
+    "state": "NSW",
+    "unit": "1 Field Squadron",
+    "date_of_death": "20 May 1967",
+    "cause_of_death": "Blast wounds from mine"
+  },
+  "4718855": {
+    "name": "Paterson David",
+    "age": "25",
+    "state": "SA",
+    "unit": "3RAR",
+    "date_of_death": "20 March 1971",
+    "cause_of_death": "Shot dead during an enemy contact"
+  },
+  "2141115": {
+    "name": "Patten Raymond B",
+    "age": "20",
+    "state": "NSW",
+    "unit": "7RAR",
+    "date_of_death": "6 February 1971",
+    "cause_of_death": "Wounded in action by an enemy mine"
+  },
+  "2784043": {
+    "name": "Pearce John G S",
+    "age": "22",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "14 May 1968",
+    "cause_of_death": "Fragmentation wounds during an enemy contact"
+  },
+  "5717657": {
+    "name": "Pengilly Bernard M",
+    "age": "22",
+    "state": "WA",
+    "unit": "4RAR",
+    "date_of_death": "30 July 1971",
+    "cause_of_death": "Hit by enemy machine fire"
+  },
+  "6709611": {
+    "name": "Penneyston Peter L",
+    "age": "22",
+    "state": "TAS",
+    "unit": "1 Field Squadron",
+    "date_of_death": "2 August 1970",
+    "cause_of_death": "Enemy mine"
+  },
+  "3789447": {
+    "name": "Perrin Robert G",
+    "age": "22",
+    "state": "VIC",
+    "unit": "7RAR",
+    "date_of_death": "2 February 1968",
+    "cause_of_death": "Helicopter winch snapped and dropped him into jungle"
+  },
+  "1733375": {
+    "name": "Petersen Victor N",
+    "age": "23",
+    "state": "QLD",
+    "unit": "4RAR",
+    "date_of_death": "16 February 1969",
+    "cause_of_death": "Blast wounds in an enemy contact"
+  },
+  "217961": {
+    "name": "Pettit Leslie J",
+    "age": "21",
+    "state": "NSW",
+    "unit": "5RAR",
+    "date_of_death": "4 July 1969",
+    "cause_of_death": "Enemy mine explosion"
+  },
+  "3790094": {
+    "name": "Pettitt Noel C",
+    "age": "21",
+    "state": "VIC",
+    "unit": "2RAR",
+    "date_of_death": "27 November 1967",
+    "cause_of_death": "Mine explosion"
+  },
+  "4719545": {
+    "name": "Phillips Reginald A",
+    "age": "21",
+    "state": "SA",
+    "unit": "9RAR",
+    "date_of_death": "18 January 1969",
+    "cause_of_death": "Gunshot wounds"
+  },
+  "3789448": {
+    "name": "Plain Douglas B",
+    "age": "22",
+    "state": "VIC",
+    "unit": "HQ 1 Task Force",
+    "date_of_death": "1 March 1968",
+    "cause_of_death": "APC collided with a South Vietnamese army truck"
+  },
+  "4719981": {
+    "name": "Plane Bruce J",
+    "age": "21",
+    "state": "SA",
+    "unit": "9RAR",
+    "date_of_death": "20 January 1969",
+    "cause_of_death": "Killed"
+  },
+  "3786644": {
+    "name": "Pomroy Victor I",
+    "age": "21",
+    "state": "VIC",
+    "unit": "3 Cavalry Regiment",
+    "date_of_death": "17 February 1967",
+    "cause_of_death": "Killed in action during an enemy contact"
+  },
+  "3795605": {
+    "name": "Poulson Daryl",
+    "age": "20",
+    "state": "VIC",
+    "unit": "8RAR",
+    "date_of_death": "3 April 1970",
+    "cause_of_death": "Enemy contact"
+  },
+  "2790170": {
+    "name": "Power Robert E",
+    "age": "22",
+    "state": "NSW",
+    "unit": "6RAR",
+    "date_of_death": "8 March 1970",
+    "cause_of_death": "Enemy contact"
+  },
+  "2782783": {
+    "name": "Powter Douglas R J",
+    "age": "21",
+    "state": "NSW",
+    "unit": "6RAR",
+    "date_of_death": "7 February 1967",
+    "cause_of_death": "Fire from friendly field battery fell short"
+  },
+  "1734329": {
+    "name": "Prior Kevin J",
+    "age": "22",
+    "state": "QLD",
+    "unit": "9RAR",
+    "date_of_death": "2 October 1969",
+    "cause_of_death": "Shot by VC"
+  },
+  "3787580": {
+    "name": "Purcell Anthony T",
+    "age": "21",
+    "state": "VIC",
+    "unit": "6RAR",
+    "date_of_death": "25 July 1966",
+    "cause_of_death": "Killed in action"
+  },
+  "4719160": {
+    "name": "Quigley Anthony V",
+    "age": "21",
+    "state": "SA",
+    "unit": "3RAR",
+    "date_of_death": "5 November 1968",
+    "cause_of_death": "Contact with the enemy on a night patrol"
+  },
+  "1733037": {
+    "name": "Ramsay Joseph S",
+    "age": "22",
+    "state": "QLD",
+    "unit": "4RAR",
+    "date_of_death": "31 January 1969",
+    "cause_of_death": "Enemy contact"
+  },
+  "2787069": {
+    "name": "Rands John M",
+    "age": "22",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "12 December 1968",
+    "cause_of_death": "Killed in action during an enemy contact"
+  },
+  "3793403": {
+    "name": "Reidy Paul F",
+    "age": "21",
+    "state": "VIC",
+    "unit": "9RAR",
+    "date_of_death": "25 May 1969",
+    "cause_of_death": "Mine explosion"
+  },
+  "4719818": {
+    "name": "Remeljej Alexander",
+    "age": "21",
+    "state": "SA",
+    "unit": "5RAR",
+    "date_of_death": "11 April 1969",
+    "cause_of_death": "Exploding mine during enemy attack"
+  },
+  "3788172": {
+    "name": "Renshaw Terrence J",
+    "age": "22",
+    "state": "VIC",
+    "unit": "1 Field Squadron",
+    "date_of_death": "30 May 1967",
+    "cause_of_death": "Own mine exploded during mine laying"
+  },
+  "2796378": {
+    "name": "Rhodes Maxwell L",
+    "age": "22",
+    "state": "NSW",
+    "unit": "4RAR",
+    "date_of_death": "19 September 1971",
+    "cause_of_death": "Gunshot wound in an accidental clash"
+  },
+  "3796110": {
+    "name": "Richter Philip M",
+    "age": "21",
+    "state": "VIC",
+    "unit": "8RAR",
+    "date_of_death": "28 February 1970",
+    "cause_of_death": "Mine"
+  },
+  "2781563": {
+    "name": "Rinkin Kerry P",
+    "age": "21",
+    "state": "NSW",
+    "unit": "5RAR",
+    "date_of_death": "7 April 1967",
+    "cause_of_death": "Mine blast"
+  },
+  "3793978": {
+    "name": "Robertson Malcolm R",
+    "age": "20",
+    "state": "VIC",
+    "unit": "1ALSG",
+    "date_of_death": "24 December 1969",
+    "cause_of_death": "Killed accidentally"
+  },
+  "4718449": {
+    "name": "Rogers John",
+    "age": "22",
+    "state": "SA",
+    "unit": "2RAR",
+    "date_of_death": "10 February 1968",
+    "cause_of_death": "Shot in an enemy contact"
+  },
+  "5715153": {
+    "name": "Roost Christopher W",
+    "age": "22",
+    "state": "WA",
+    "unit": "4RAR",
+    "date_of_death": "23 December 1968",
+    "cause_of_death": "Killed in action"
+  },
+  "1731040": {
+    "name": "Salveron Douglas J",
+    "age": "20",
+    "state": "QLD",
+    "unit": "6RAR Long Tan",
+    "date_of_death": "18 August 1966",
+    "cause_of_death": "Battle of Long Tan"
+  },
+  "1732899": {
+    "name": "Salzmann Ronald W",
+    "age": "24",
+    "state": "QLD",
+    "unit": "3RAR",
+    "date_of_death": "14 April 1971",
+    "cause_of_death": "Injuries in an accident"
+  },
+  "4719367": {
+    "name": "Scales Grantley J",
+    "age": "22",
+    "state": "SA",
+    "unit": "9RAR",
+    "date_of_death": "5 March 1969",
+    "cause_of_death": "Gunshot wound from his own unit (accidental friendly fire)"
+  },
+  "4720852": {
+    "name": "Schuit Martinus J M",
+    "age": "Unknown",
+    "state": "SA",
+    "unit": "17 Const. Squadron",
+    "date_of_death": "22 October 1970",
+    "cause_of_death": "Vehicle accident"
+  },
+  "3791583": {
+    "name": "Scott Ian J",
+    "age": "21",
+    "state": "VIC",
+    "unit": "12 Field Squadron",
+    "date_of_death": "13 May 1968",
+    "cause_of_death": "Mine blast"
+  },
+  "1735424": {
+    "name": "Scott Ian N",
+    "age": "21",
+    "state": "QLD",
+    "unit": "1 Field Squadron",
+    "date_of_death": "15 June 1970",
+    "cause_of_death": "APC struck an enemy mine"
+  },
+  "2781465": {
+    "name": "Sharp Gordon C",
+    "age": "21",
+    "state": "NSW",
+    "unit": "6RAR Long Tan",
+    "date_of_death": "18 August 1966",
+    "cause_of_death": "Killed in action in the battle of Long Tan"
+  },
+  "3790506": {
+    "name": "Sheppard Lawrence R",
+    "age": "22",
+    "state": "VIC",
+    "unit": "1RAR",
+    "date_of_death": "13 May 1968",
+    "cause_of_death": "Major battle at Fire Base Coral"
+  },
+  "2787079": {
+    "name": "Slattery John M",
+    "age": "21",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "8 October 1968",
+    "cause_of_death": "Enemy contact"
+  },
+  "3793566": {
+    "name": "Smith Baron F",
+    "age": "21",
+    "state": "QLD",
+    "unit": "5RAR",
+    "date_of_death": "11 August 1969",
+    "cause_of_death": "Fired on by sentry from his own platoon"
+  },
+  "3794831": {
+    "name": "Smith John",
+    "age": "21",
+    "state": "VIC",
+    "unit": "1 Field Squadron",
+    "date_of_death": "23 July 1969",
+    "cause_of_death": "Mine exploded"
+  },
+  "3797613": {
+    "name": "Smith Noel A",
+    "age": "22",
+    "state": "VIC",
+    "unit": "21 Eng Sppt Tport",
+    "date_of_death": "28 March 1971",
+    "cause_of_death": "Burnt by exploding petrol stove"
+  },
+  "2788912": {
+    "name": "Smith Peter C",
+    "age": "22",
+    "state": "NSW",
+    "unit": "9RAR",
+    "date_of_death": "19 January 1969",
+    "cause_of_death": "Wounds"
+  },
+  "2790417": {
+    "name": "Sorrensen Gordon D",
+    "age": "24",
+    "state": "QLD",
+    "unit": "9RAR",
+    "date_of_death": "30 June 1969",
+    "cause_of_death": "Shot in an enemy contact"
+  },
+  "2790070": {
+    "name": "Stanford Gregory Ian",
+    "age": "22",
+    "state": "NSW",
+    "unit": "6RAR",
+    "date_of_death": "18 December 1969",
+    "cause_of_death": "Enemy contact"
+  },
+  "5718122": {
+    "name": "Sprigg Roderick J",
+    "age": "21",
+    "state": "WA",
+    "unit": "4RAR",
+    "date_of_death": "21 September 1971",
+    "cause_of_death": "Killed in action"
+  },
+  "4719232": {
+    "name": "Steen David J",
+    "age": "21",
+    "state": "M",
+    "unit": "1 Field Squadron",
+    "date_of_death": "18 February 1968",
+    "cause_of_death": "Mortar round"
+  },
+  "4719573": {
+    "name": "Sukmanowsky Michael",
+    "age": "21",
+    "state": "SA",
+    "unit": "1ARU",
+    "date_of_death": "21 September 1968",
+    "cause_of_death": "Claymore mine accidentally detonated"
+  },
+  "3786696": {
+    "name": "Sullivan Paul C",
+    "age": "21",
+    "state": "NSW",
+    "unit": "5RAR",
+    "date_of_death": "27 December 1966",
+    "cause_of_death": "Enemy contact"
+  },
+  "3797623": {
+    "name": "Talbot Alan",
+    "age": "21",
+    "state": "M",
+    "unit": "7RAR",
+    "date_of_death": "1 February 1971",
+    "cause_of_death": "Wounds from an enemy mine"
+  },
+  "3787987": {
+    "name": "Taylor Leonard A",
+    "age": "22",
+    "state": "NSW",
+    "unit": "3RAR",
+    "date_of_death": "8 February 1968",
+    "cause_of_death": "Gunshot wounds in an enemy contact"
+  },
+  "2790880": {
+    "name": "Teeling Wayne E",
+    "age": "21",
+    "state": "NSW",
+    "unit": "5RAR",
+    "date_of_death": "6 June 1969",
+    "cause_of_death": "Enemy contact"
+  },
+  "2786038": {
+    "name": "Thomson Ian J",
+    "age": "22",
+    "state": "NSW",
+    "unit": "3RAR",
+    "date_of_death": "19 October 1968",
+    "cause_of_death": "Enemy rocket propelled grenade"
+  },
+  "3791207": {
+    "name": "Tinkham John R",
+    "age": "21",
+    "state": "VIC",
+    "unit": "4RAR",
+    "date_of_death": "20 October 1969",
+    "cause_of_death": "Shot dead by VC troops"
+  },
+  "4718911": {
+    "name": "Thomas William M",
+    "age": "21",
+    "state": "SA",
+    "unit": "3RAR",
+    "date_of_death": "26 May 1968",
+    "cause_of_death": "Enemy attack on Fire Support Base Coral"
+  },
+  "2789920": {
+    "name": "Thompson Barry J",
+    "age": "22",
+    "state": "NSW",
+    "unit": "5RAR",
+    "date_of_death": "1 February 1970",
+    "cause_of_death": "Booby trap"
+  },
+  "5713739": {
+    "name": "Tomas Marian",
+    "age": "21",
+    "state": "WA",
+    "unit": "5RAR",
+    "date_of_death": "8 July 1966",
+    "cause_of_death": "Shrapnel wounds from friendly artillery forces"
+  },
+  "2792254": {
+    "name": "Towler Michael",
+    "age": "21",
+    "state": "M",
+    "unit": "HQ 1 Task Force",
+    "date_of_death": "12 June 1971",
+    "cause_of_death": "Multiple blast wounds"
+  },
+  "3791291": {
+    "name": "Trimble Bevan M",
+    "age": "21",
+    "state": "VIC",
+    "unit": "1RAR",
+    "date_of_death": "13 May 1968",
+    "cause_of_death": "Fragmentation wounds"
+  },
+  "2792375": {
+    "name": "Tully Desmond J",
+    "age": "21",
+    "state": "NSW",
+    "unit": "2RAR",
+    "date_of_death": "29 May 1970",
+    "cause_of_death": "Enemy mine"
+  },
+  "4720253": {
+    "name": "Turner Timothy C",
+    "age": "21",
+    "state": "SA",
+    "unit": "5RAR",
+    "date_of_death": "15 June 1969",
+    "cause_of_death": "Enemy mine explosion"
+  },
+  "3787416": {
+    "name": "Tweedie Geoffrey L",
+    "age": "21",
+    "state": "VIC",
+    "unit": "6RAR",
+    "date_of_death": "28 January 1967",
+    "cause_of_death": "Shot accidentally"
+  },
+  "5715180": {
+    "name": "Van Rijsewijk Paul R",
+    "age": "21",
+    "state": "M",
+    "unit": "3RAR",
+    "date_of_death": "19 October 1968",
+    "cause_of_death": "Killed in action"
+  },
+  "2787255": {
+    "name": "Wallis Alan J",
+    "age": "20",
+    "state": "NSW",
+    "unit": "1RAR",
+    "date_of_death": "16 May 1968",
+    "cause_of_death": "Enemy attacks on Fire Support Base Coral"
+  },
+  "3786978": {
+    "name": "Warburton Graham F",
+    "age": "21",
+    "state": "VIC",
+    "unit": "5RAR",
+    "date_of_death": "1 October 1966",
+    "cause_of_death": "Single sniper shot"
+  },
+  "5716163": {
+    "name": "Waring Anthony E",
+    "age": "21",
+    "state": "M",
+    "unit": "5RAR",
+    "date_of_death": "16 June 1969",
+    "cause_of_death": "Enemy rocket propelled grenade"
+  },
+  "5713981": {
+    "name": "Waters Brian D",
+    "age": "21",
+    "state": "WA",
+    "unit": "6RAR",
+    "date_of_death": "17 February 1967",
+    "cause_of_death": "Encountered a large enemy force"
+  },
+  "5713748": {
+    "name": "Watson Bryan P",
+    "age": "21",
+    "state": "WA",
+    "unit": "5RAR",
+    "date_of_death": "10 November 1966",
+    "cause_of_death": "Killed in action"
+  },
+  "5713986": {
+    "name": "Webster David R",
+    "age": "21",
+    "state": "NSW",
+    "unit": "6RAR",
+    "date_of_death": "17 February 1967",
+    "cause_of_death": "Killed in action in an enemy contact"
+  },
+  "5713751": {
+    "name": "Webster James C",
+    "age": "22",
+    "state": "WA",
+    "unit": "5RAR",
+    "date_of_death": "21 February 1967",
+    "cause_of_death": "Exploding mine"
+  },
+  "1731955": {
+    "name": "Weston Leslie J",
+    "age": "22",
+    "state": "NSW",
+    "unit": "2RAR",
+    "date_of_death": "30 September 1967",
+    "cause_of_death": "Ambush"
+  },
+  "3787607": {
+    "name": "Whiston Colin J",
+    "age": "21",
+    "state": "NSW",
+    "unit": "6RAR",
+    "date_of_death": "18 August 1966",
+    "cause_of_death": "Shot by sniper in the battle of Long Tan"
+  },
+  "5715978": {
+    "name": "White James M",
+    "age": "21",
+    "state": "WA",
+    "unit": "5RAR",
+    "date_of_death": "4 April 1969",
+    "cause_of_death": "Enemy contact"
+  },
+  "5715189": {
+    "name": "Williams Archibald S",
+    "age": "Unknown",
+    "state": "WA",
+    "unit": "1RAR",
+    "date_of_death": "21 September 1968",
+    "cause_of_death": "Enemy sniper"
+  },
+  "3797671": {
+    "name": "Willoughby Garry I",
+    "age": "22",
+    "state": "VIC",
+    "unit": "2RAR",
+    "date_of_death": "8 October 1970",
+    "cause_of_death": "Enemy sniper"
+  },
+  "4717841": {
+    "name": "Wilsen Robert P",
+    "age": "21",
+    "state": "SA",
+    "unit": "3 Cavalry Regiment",
+    "date_of_death": "21 February 1967",
+    "cause_of_death": "APC hit a mine"
+  },
+  "3411951": {
+    "name": "Wilson Kevin R",
+    "age": "22",
+    "state": "VIC",
+    "unit": "2RAR",
+    "date_of_death": "16 February 1968",
+    "cause_of_death": "Gunshot wounds in an enemy contact"
+  },
+  "4718082": {
+    "name": "Woolford Richard M",
+    "age": "21",
+    "state": "SA",
+    "unit": "2RAR",
+    "date_of_death": "1 August 1967",
+    "cause_of_death": "Booby trap"
+  },
+  "3790784": {
+    "name": "Worle Jeffrey T",
+    "age": "21",
+    "state": "VIC",
+    "unit": "3RAR",
+    "date_of_death": "28 May 1968",
+    "cause_of_death": "Attack on Fire Support Base Balmoral"
+  },
+  "1732408": {
+    "name": "Young Alexander H",
+    "age": "21",
+    "state": "NSW",
+    "unit": "104 Signals Squadron",
+    "date_of_death": "16 May 1968",
+    "cause_of_death": "Killed in action in the Battle of Coral"
+  },
+  "1733095": {
+    "name": "Young Brian T",
+    "age": "21",
+    "state": "QLD",
+    "unit": "1RAR",
+    "date_of_death": "16 May 1968",
+    "cause_of_death": "VC attack on Fire Support Base Coral"
+  },
+  "1733547": {
+    "name": "Young Robert G",
+    "age": "22",
+    "state": "QLD",
+    "unit": "3 Cavalry Regiment",
+    "date_of_death": "24 June 1969",
+    "cause_of_death": "Mine exploded"
+  },
+  "14172": {
+    "name": "Hudson Kenneth Ambrose",
+    "age": "Unknown",
+    "state": "QLD",
+    "unit": "SASR",
+    "date_of_death": "21 March 1966",
+    "cause_of_death": "Swept away in a river crossing"
+  },
+  "54956": {
+    "name": "Belleville Graham H",
+    "age": "32",
+    "state": "VIC",
+    "unit": "AATTV",
+    "date_of_death": "2 February 1966",
+    "cause_of_death": "Killed in action"
+  },
+  "172377": {
+    "name": "Gollagher Peter J",
+    "age": "32",
+    "state": "QLD",
+    "unit": "21 Support Troop",
+    "date_of_death": "5 April 1968",
+    "cause_of_death": "Shot while clearing a tunnel"
+  },
+  "17693": {
+    "name": "Norris John",
+    "age": "Unknown",
+    "state": "QLD",
+    "unit": "6RAR",
+    "date_of_death": "25 July 1966",
+    "cause_of_death": "Shot dead"
+  },
+  "212612": {
+    "name": "Ross Thomas",
+    "age": "25",
+    "state": "M",
+    "unit": "1RAR",
+    "date_of_death": "12 October 1965",
+    "cause_of_death": "Wounds from an enemy mine"
+  },
+  "37003": {
+    "name": "Smith Francis J",
+    "age": "25",
+    "state": "VIC",
+    "unit": "1RAR",
+    "date_of_death": "21 September 1965",
+    "cause_of_death": "Sniper's bullet"
+  },
+  "13841": {
+    "name": "Swanton Ronald J",
+    "age": "29",
+    "state": "QLD",
+    "unit": "AATTV",
+    "date_of_death": "13 November 1965",
+    "cause_of_death": "Shot"
+  }
+}
