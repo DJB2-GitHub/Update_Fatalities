@@ -291,6 +291,8 @@ class UpdateFatalities(tk.Toplevel):
         self._loaded = False
         self._modal_title = modal_title
         self._hotlink_combined_text = ""  # cached for AI field-derivation hotlinks
+        self._hotlink_source_label = ""   # which datasource: ai_response / enhanced_operation_details
+        self._hotlink_has_override = False
         self._hotlink_active = False
         try:
             env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -553,7 +555,8 @@ class UpdateFatalities(tk.Toplevel):
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
         self._side_resp.delete("1.0", tk.END)
-        self._side_resp_replace("Deriving…")
+        override_note = " + override" if self._hotlink_has_override else ""
+        self._side_resp_replace(f"AI: {field_name} Deriving… From {self._hotlink_source_label} data{override_note}")
         self._show_side_panel()
 
         def _task():
@@ -582,7 +585,8 @@ class UpdateFatalities(tk.Toplevel):
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
         self._side_resp.delete("1.0", tk.END)
-        self._side_resp_replace("Deriving all hotlinks…")
+        override_note = " + override" if self._hotlink_has_override else ""
+        self._side_resp_replace(f"AI: All Hotlinks Deriving… From {self._hotlink_source_label} data{override_note}")
         self._show_side_panel()
 
         def _task():
@@ -634,7 +638,7 @@ class UpdateFatalities(tk.Toplevel):
         self._side_prompt.delete("1.0", tk.END)
         self._side_prompt.insert("1.0", system_instruction + "\n\n" + user_prompt)
         self._side_resp.delete("1.0", tk.END)
-        self._side_resp_replace("Deriving…")
+        self._side_resp_replace("Enhanced operation details Deriving…")
         self._show_side_panel()
 
         def _task():
@@ -883,7 +887,9 @@ Your final report must:
                     pass
             time_str = f"{elapsed:.0f}s" if elapsed else "??s"
             cost_str = cost_str if cost_str else "$A ?.????"
-            header = f"Enhanced operation details  [{model_name}]  {time_str}  {cost_str}"
+            meta_line = f"[{model_name}]  {time_str}  {cost_str}"
+            result_text = meta_line + "\n\n" + result_text
+            # header stays clean: "Enhanced operation details"
 
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(result_text)
@@ -989,9 +995,15 @@ Your final report must:
                                    model_name=None, usage_meta=None, elapsed=0.0):
         """Show a dialog with checkboxes and editable text fields for each hotlink."""
         # Always show cost/timing header, even on parse failure
-        header = self._compute_cost_header(model_name, usage_meta, elapsed,
-                                           prefix="AI: All Hotlinks — FAILED" if parsed is None else "AI: All Hotlinks")
-        self._side_resp_label.configure(text=header)
+        prefix = "RESPONSE: All Hotlinks — FAILED" if parsed is None else "RESPONSE: All Hotlinks"
+        full_header = self._compute_cost_header(model_name, usage_meta, elapsed, prefix=prefix)
+        # Strip metadata from header, prepend to response text
+        if model_name and elapsed:
+            meta_suffix = full_header[len(prefix):].strip()  # e.g. "[gemini-3.5-flash]  24s  $A 0.002365"
+            source_label = getattr(self, "_hotlink_source_label", "") or "ai_response"
+            meta_line = f"{meta_suffix}  | source: {source_label}"
+            raw_text = meta_line + "\n\n" + (raw_text or "")
+        self._side_resp_label.configure(text=prefix)
         self._side_resp_replace(raw_text)
         self._copy_btn.pack_forget()  # only for master response, not hotlinks
 
@@ -1131,8 +1143,9 @@ Your final report must:
             retry_count = 0
             max_retries = 2
             while retry_count <= max_retries:
+                source = getattr(self, "_hotlink_source_label", "") or "unknown"
                 self.after(0, lambda m=model: self._side_resp_replace(
-                    f"Deriving …  (querying {m})" + (f" (Retry {retry_count}/{max_retries})" if retry_count else "")))
+                    f"Deriving … From {source} data (querying {m})" + (f" (Retry {retry_count}/{max_retries})" if retry_count else "")))
                 t0 = _time.time()
                 try:
                     if provider.lower() == "deepseek":
@@ -1313,7 +1326,7 @@ Your final report must:
         result_text = (result_text or "").strip()
 
         # ── Build cost/time header ──
-        header = f"AI: {field_name}"
+        header = f"RESPONSE: {field_name}"
         time_str = ""
         cost_str = ""
         if model_name and elapsed:
@@ -1358,7 +1371,9 @@ Your final report must:
             # Use ?? for unknown values
             time_str = f"{elapsed:.0f}s" if elapsed else "??s"
             cost_str = cost_str if cost_str else "$A ?.????"
-            header = f"AI: {field_name}  [{model_name}]  {time_str}  {cost_str}"
+            meta_line = f"[{model_name}]  {time_str}  {cost_str}  | source: {self._hotlink_source_label}"
+            result_text = meta_line + "\n\n" + result_text
+            header = f"RESPONSE: {field_name}"
 
         self._side_resp_label.configure(text=header)
         self._side_resp_replace(result_text)
@@ -1367,14 +1382,18 @@ Your final report must:
         # If the AI call failed, display the error clearly and stop —
         # never show an accept/cancel dialog for an error.
         if not model_name:
-            self._side_resp_label.configure(text=f"AI: {field_name} \u2014 FAILED")
+            self._side_resp_label.configure(text=f"RESPONSE: {field_name} \u2014 FAILED")
             _error_dialog(self, f"AI Derivation Failed",
                           f"Could not derive '{field_name}'.\n\n{result_text}")
             return
 
         # Confirm with user — editable text box
+        # Strip metadata line (starts with '[') before showing dialog
+        dialog_text = result_text
+        if "\n" in dialog_text and dialog_text.startswith("["):
+            dialog_text = dialog_text.split("\n", 1)[1].lstrip("\n")
         title = f"AI Derived: {field_name}  [{model_name}]  {time_str}  {cost_str}"
-        edited = self._confirm_with_edit(title, field_name, result_text)
+        edited = self._confirm_with_edit(title, field_name, dialog_text)
         if edited is not None:
             self._populate_field_value(field_name, edited)
 
@@ -1570,7 +1589,7 @@ Your final report must:
         top_row = tk.Frame(bf, bg=BG_GREY)
         top_row.pack(fill=tk.X)
         self._flat_btn(top_row, "Close", self._cancel, bg="#e0e0e0", fg=TEXT_DARK, side=tk.RIGHT)
-        self._flat_btn(top_row, "AI: Create a Master Response", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
+        self._flat_btn(top_row, "Show Master Prompt", self._ai_lookup, bg="#4a90d9", fg=WHITE, side=tk.LEFT)
         self._all_hotlinks_btn = self._flat_btn(top_row, "All Hotlinks", self._all_hotlinks, bg="#e67e22", fg=WHITE, side=tk.LEFT, right_pad=10)
 
         self._side_panel_visible_var = tk.BooleanVar(value=True)
@@ -1588,13 +1607,13 @@ Your final report must:
         self._side_panel_chk.pack(side=tk.LEFT, padx=(10, 0))
 
         self._copy_btn = self._flat_btn(
-            top_row, "COPY RESPONSE: to ai_response", self._copy_response_to_ai_response,
+            top_row, "--> ai_response", self._copy_response_to_ai_response,
             bg="#2e7d32", fg=WHITE, side=tk.LEFT, right_pad=10
         )
         self._copy_btn.pack_forget()  # hidden until response exceeds 200 chars
 
         self._enhanced_update_btn = self._flat_btn(
-            top_row, "COPY RESPONSE: to enhanced_operation_details", self._copy_response_to_enhanced_operation_details,
+            top_row, "--> enhanced_operation_details", self._copy_response_to_enhanced_operation_details,
             bg="#1565c0", fg=WHITE, side=tk.LEFT, right_pad=10
         )
         self._enhanced_update_btn.pack_forget()  # hidden until Enhanced operation details result shown
@@ -1655,7 +1674,7 @@ Your final report must:
             self._master_web_url_label.configure(text=url if url else "")
         self._master_web_provider_var.trace_add("write", _on_master_web_provider_change)
         _on_master_web_provider_change()
-        # Hide controls initially — only shown when label is "RESPONSE: MASTER"
+        # Hide controls initially — only shown when label is "RESPONSE: FATALITIES MASTER PROMPT"
         self._master_web_provider_dd.pack_forget()
         self._master_web_url_label.pack_forget()
 
@@ -1672,7 +1691,7 @@ Your final report must:
         def _on_resp_modified(_event=None):
             self._side_resp.edit_modified(False)
             text = self._side_resp.get("1.0", "end-1c")
-            is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+            is_master = self._side_resp_label.cget("text").startswith("RESPONSE: FATALITIES MASTER PROMPT")
             is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
             if len(text) > self._copy_threshold and is_master:
                 try:
@@ -1882,12 +1901,22 @@ Your final report must:
 
         # ── Compute hotlink activation state ──
         ai_resp = (dd.get("ai_response", "") or "").strip()
+        enhanced_raw = (dd.get("enhanced_operation_details", "") or "").strip()
         override_raw = (dd.get("authoritative_ai_override", "") or "").strip()
         override = override_raw if override_raw and override_raw.lower() != "unassigned" else ""
+        # If enhanced_operation_details has substantive content (> threshold),
+        # use it as the primary source in place of ai_response
+        primary_source = ai_resp
+        source_label = "ai_response"
+        if len(enhanced_raw) > self._copy_threshold:
+            primary_source = enhanced_raw
+            source_label = "enhanced_operation_details"
         if override:
-            self._hotlink_combined_text = f"authoritative_ai_override:\n{override}\n\nai_response:\n{ai_resp}".strip()
+            self._hotlink_combined_text = f"authoritative_ai_override:\n{override}\n\n{source_label}:\n{primary_source}".strip()
         else:
-            self._hotlink_combined_text = ai_resp
+            self._hotlink_combined_text = primary_source
+        self._hotlink_source_label = source_label  # cached for response metadata
+        self._hotlink_has_override = bool(override)
         # Strip **[...]** metadata header produced by _make_header (see README
         # § Hotlink Metadata Filtering).  Tags must appear within the first 80
         # characters; if found the entire tagged block is removed so only the
@@ -2354,7 +2383,7 @@ Your final report must:
     def _set_response_label(self, text: str):
         """Set the response label and toggle master-web-provider controls."""
         self._side_resp_label.configure(text=text)
-        if text.startswith("RESPONSE: MASTER"):
+        if text.startswith("RESPONSE: FATALITIES MASTER PROMPT"):
             self._master_web_provider_dd.pack(side=tk.LEFT, padx=(4, 0))
             self._master_web_url_label.pack(side=tk.LEFT, padx=(4, 0))
         else:
@@ -2491,8 +2520,8 @@ Your final report must:
             _error_dialog(self, "AI Error", f"{master_provider.upper()}_API_KEY not found in .env")
             return
 
-        self._side_prompt_label.configure(text="PROMPT: Master Response")
-        self._set_response_label("RESPONSE: MASTER")
+        self._side_prompt_label.configure(text="PROMPT: Fatalities Master Prompt")
+        self._set_response_label("RESPONSE: FATALITIES MASTER PROMPT")
         full_prompt = "SYSTEM:\n" + config["system_text"] + "\n\nMESSAGE:\n" + config["user_prompt"]
         self._side_prompt.configure(state=tk.NORMAL)
         self._side_prompt.delete("1.0", tk.END)
@@ -2910,8 +2939,8 @@ Your final report must:
         self._side_resp.delete("1.0", tk.END)
         self._side_resp.insert("1.0", safe_text)
         # Only show COPY RESPONSE button for master responses, never for hotlinks.
-        # Identified by the side-panel label starting with "RESPONSE: MASTER".
-        is_master = self._side_resp_label.cget("text").startswith("RESPONSE: MASTER")
+        # Identified by the side-panel label starting with "RESPONSE: FATALITIES MASTER PROMPT".
+        is_master = self._side_resp_label.cget("text").startswith("RESPONSE: FATALITIES MASTER PROMPT")
         is_enhanced = self._side_resp_label.cget("text").startswith("Enhanced operation details")
         if len(safe_text) > self._copy_threshold and is_master:
             try:

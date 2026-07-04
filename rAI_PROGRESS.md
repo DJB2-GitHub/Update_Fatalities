@@ -19,35 +19,51 @@
 - `unit` — text Entry
 - `fatality_type` — text Entry
 
+### Hotlink source priority
+- When `enhanced_operation_details` has > `SHOW_AI_MASTER_RESPONSE_COPY` chars (default 200), it replaces `ai_response` as the primary source for field hotlinks and All Hotlinks.
+- `authoritative_ai_override` is always preserved and prepended to the combined text.
+- Instance variables: `self._hotlink_source_label` (str), `self._hotlink_has_override` (bool) — set during `_hotlink_combined_text` build.
+
 ### Enhanced operation details hotlink
 - The **DERIVED_DETAILS** heading is normal red text. Next to it is a **blue underlined label "Enhanced operation details"** with tooltip *"Click to research Enhanced Circumstances"*.
 - Click is **unconditional** — always clickable when the DERIVED_DETAILS section exists.
-- Prompt is built **dynamically per-record** from `serviceRecordAuthority` fields (rank, full_name, service_number, unit, date_of_death, fatality_type). Not hardcoded to any one soldier.
-- Result displays in the side panel RESPONSE with header `Enhanced operation details [model] time cost`.
-- **COPY RESPONSE: to enhanced_operation_details** button appears when the header starts with "Enhanced operation details" AND response text exceeds `SHOW_AI_MASTER_RESPONSE_COPY` threshold (default 200 chars from `.env`).
-- Clicking COPY RESPONSE copies the side panel text into `derived_details → enhanced_operation_details`. Same dirty/clean record handling as the ai_response COPY RESPONSE button.
-- `enhanced_operation_details` field renders as an 8-line text area with vertical scrollbar, selectable, and editable (same as `ai_response`).
+- Prompt is built **dynamically per-record** from `serviceRecordAuthority` fields (rank, full_name, service_number, unit, date_of_death, fatality_type).
+- Result displays in the side panel RESPONSE with clean header `Enhanced operation details`. Metadata `[model]  time  cost` prepended as first line of response text.
+- **--> enhanced_operation_details** button (blue `#1565c0`) appears when header starts with "Enhanced operation details" AND text > `SHOW_AI_MASTER_RESPONSE_COPY`.
+- `enhanced_operation_details` field renders as an 8-line text area with vertical scrollbar, selectable, editable.
 
 ### COPY RESPONSE buttons (two)
-- **COPY RESPONSE: to ai_response** — green (`#2e7d32`). Shows when side panel label starts with "RESPONSE: MASTER" and text > `SHOW_AI_MASTER_RESPONSE_COPY`.
-- **COPY RESPONSE: to enhanced_operation_details** — blue (`#1565c0`). Shows when side panel label starts with "Enhanced operation details" and text > `SHOW_AI_MASTER_RESPONSE_COPY`.
+- **--> ai_response** — green (`#2e7d32`). Shows when side panel label starts with "RESPONSE: FATALITIES MASTER PROMPT" and text > `SHOW_AI_MASTER_RESPONSE_COPY`.
+- **--> enhanced_operation_details** — blue (`#1565c0`). Shows when side panel label starts with "Enhanced operation details" and text > `SHOW_AI_MASTER_RESPONSE_COPY`.
 - Both use `self._copy_threshold` (read from `.env` `SHOW_AI_MASTER_RESPONSE_COPY`, default 200).
+
+### Response headers (clean)
+- Field hotlinks: `RESPONSE: {field_name}` (e.g., `RESPONSE: death_location`)
+- All Hotlinks: `RESPONSE: All Hotlinks`
+- Enhanced operation details: `Enhanced operation details`
+- Fatalities Master Prompt: `RESPONSE: FATALITIES MASTER PROMPT`
+- Metadata (model, time, cost, source) is **prepended as first line** of the response text, never in the header label.
+- Metadata is **stripped** from the Accept/Cancel dialog — only field value shown.
+
+### Deriving status messages
+- Single hotlink: `AI: {field_name} Deriving… From {source} data` + ` + override` if applicable
+- All Hotlinks: `AI: All Hotlinks Deriving… From {source} data` + ` + override`
+- Enhanced operation details: `Enhanced operation details Deriving…`
+- Retry/progress: `Deriving … From {source} data (querying {model})`
 
 ### Fatality-Type Authority Rule (2026-07-03)
 - `fatality_type` is **AUTHORITATIVE** across all hotlink prompts. It gates whether combat or non-combat research instructions are used.
 - **Two-tier classification** in `_build_enhanced_circumstances_prompt()`:
   - Combat keywords checked first (KIA, DOW, Booby trap, Land mine, Enemy grenade, etc.)
   - Non-combat fallback (Accident, Illness, Motor Vehicle, Homicide, Drowning, etc.)
-  - `accident*` prefix guard: any fatality_type starting with "accident" is forced non-combat regardless of embedded combat keywords (e.g., "Accidental- shot by a sentry... He died of wounds..." is friendly fire, not enemy action)
-- **~395 combat** / **~122 non-combat** / **~10 unknown** (GSW, Gunshot wound, Injuries, Wounds — genuinely ambiguous) across 79 unique types in AU_fatalities.json
-- **Enhanced Circumstances prompt** now receives `fatality_type` explicitly. Non-combat deaths get accident/illness investigation instructions; combat deaths get full operational/military research instructions.
-- **Field-level hotlinks** (`get_circumstances_of_death_prompt`, `get_grid_reference_prompt`, `get_all_hotlinks_prompt`) now include fatality-aware conditional instructions. `_SHARED_RULES` includes a FATALITY_TYPE AUTHORITATIVE OVERRIDE that applies to all field extractions.
-- **Rule**: If fatality_type indicates NON-COMBAT, the prompt explicitly says: "DO NOT fabricate combat scenarios, enemy contact, booby traps, ambushes, operations, or battle narratives."
+  - `accident*` prefix guard: any fatality_type starting with "accident" is forced non-combat regardless of embedded combat keywords
+- **~395 combat** / **~122 non-combat** / **~10 unknown** across 79 unique types in AU_fatalities.json
+- **Rule**: If fatality_type indicates NON-COMBAT, the prompt says: "DO NOT fabricate combat scenarios, enemy contact, booby traps, ambushes, operations, or battle narratives."
 
 ### Key env vars
 | Variable | Purpose |
 |---|---|
-| `SHOW_AI_MASTER_RESPONSE_COPY` | Char threshold for COPY RESPONSE buttons (both ai_response and enhanced_operation_details) |
+| `SHOW_AI_MASTER_RESPONSE_COPY` | Char threshold for COPY RESPONSE buttons and enhanced_operation_details source gating |
 | `AI_MODEL_PROVIDERS` | Provider dropdown (hotlinks) |
 | `AI_MASTER_WEB_PROMPT_URL` | JSON dict of provider → URL for Master Response web lookup |
 | `AI_MASTER_MODEL_PROVIDER` | Master Response provider |
@@ -69,82 +85,80 @@
 
 ## Completed — Prior Session (committed: `eec0e64`)
 
-1. **Date display formatting** — `_format_date_display()` added to `update_fatalities.py` and `ai_master_prompts.py`. Converts `yyyy-mm-dd` → `yyyy-Mmm-dd` for display and Master Prompt. JSON storage stays ISO 8601.
-2. **NZ country-aware Master Prompt** — Sources, auth label, cite refs, and home-country text all gated on `country_code`. Both `is_live_search` branches covered.
-3. **COPY RESPONSE auto-save** — Clean record: copies response + executes `_update_record()` immediately. Dirty record: Yes/No/Cancel dialog.
-4. **TEST_PROMPT.txt** — Full prompt template saved to workspace root for testing.
-5. **All Hotlinks JSON parse fix** — `_robust_json_parse()` created with two-strategy recovery (strict `json.loads` → regex key-value extraction). Replaced naive 7-line block in `_all_hotlinks()`. Handles common AI mistakes like extra text after string values.
-6. **API hardening** — timeout 15→60s; DeepSeek `max_tokens` added (8192); Gemini `maxOutputTokens` 1024→8192 (root cause of All Hotlinks truncation).
-7. **GPS prompt corrected** — Individual and "All Hotlinks" `grid_reference` prompts now target *incident location* (wounding/action site), not place of death. Prevents AI from returning hospital coordinates when the soldier died at an aid station.
-8. **Prev/Next button UX** — `_set_locked()` now sets `cursor="arrow"` + muted `fg` when locked, `cursor="hand2"` + dark `fg` when unlocked. Buttons restore correct state after navigation.
+1. **Date display formatting** — `_format_date_display()` added. Converts `yyyy-mm-dd` → `yyyy-Mmm-dd` for display and Master Prompt.
+2. **NZ country-aware Master Prompt** — Sources, auth label, cite refs, and home-country text all gated on `country_code`.
+3. **COPY RESPONSE auto-save** — Clean record: copies + auto-saves. Dirty record: Yes/No/Cancel.
+4. **All Hotlinks JSON parse fix** — `_robust_json_parse()` with two-strategy recovery.
+5. **API hardening** — timeout 15→60s; DeepSeek `max_tokens` added (8192); Gemini `maxOutputTokens` 1024→8192.
+6. **GPS prompt corrected** — `grid_reference` targets incident location (wounding/action site), not place of death.
+7. **Prev/Next button UX** — Cursor and color state restored correctly after navigation.
 
 ---
 
 ## Completed — This Session (2026-07-01)
 
-1. **FATALITY_LOCATIONS heading → clickable hotlink** — Section heading in the update modal is now a blue underlined hotlink with tooltip. Click builds a dynamic Enhanced Research Prompt from the current record and runs it through the AI side panel.
-
-2. **Three new methods added to `UpdateFatalities`**:
-   - `_on_enhanced_circumstances_click()` — orchestrates prompt build, side-panel display, background AI call, and result rendering.
-   - `_build_enhanced_circumstances_prompt()` — dynamically fills the Enhanced Research Prompt template with current record data.
-   - `_show_enhanced_circumstances_result()` — displays result in side panel with full cost/model/time header. No popup dialog.
-
-3. **fatality_type field now editable** — Added `field_name == "fatality_type"` to both `is_editable` guards. Previously greyed-out readonly; now writable and persisted on save.
-
-4. **Response truncation fixed** — `_call_ai_for_field()` signature extended: `max_tokens: int = 8192`. Backward-compatible; Enhanced Circumstances passes `max_tokens=16384`.
-
-5. **Removed confirm/populate dialog for Enhanced Circumstances** — Deleted `_confirm_with_edit` popup and field mapping. Results are read-only research in side panel only.
+1. **FATALITY_LOCATIONS heading → clickable hotlink** — Dynamic Enhanced Research Prompt from current record.
+2. **Three new methods**: `_on_enhanced_circumstances_click`, `_build_enhanced_circumstances_prompt`, `_show_enhanced_circumstances_result`.
+3. **fatality_type field now editable**.
+4. **Response truncation fixed** — `max_tokens` param; Enhanced Circumstances passes 16384.
+5. **Removed confirm/populate dialog for Enhanced Circumstances**.
 
 ---
 
 ## Completed — This Session (2026-07-03)
 
-6. **Fatality-type hallucination guardrails** — All hotlink prompts hardened against combat fabrication for non-combat deaths:
-   - `_SHARED_RULES`: added FATALITY_TYPE AUTHORITATIVE OVERRIDE covering 79 unique types
-   - `get_circumstances_of_death_prompt`: COMBAT/NON-COMBAT branches
-   - `get_grid_reference_prompt`: COMBAT/NON-COMBAT branches
-   - `get_all_hotlinks_prompt`: fatality-aware circumstances + grid_reference
-   - `_build_enhanced_circumstances_prompt`: receives `fatality_type`; two-tier keyword classification; ⚠ FATALITY TYPE (AUTHORITATIVE) block; conditional research components
-   - `_on_enhanced_circumstances_click`: extracts and passes `fatality_type`
-   - Verified against all 79 unique `fatality_type` values in AU_fatalities.json
+6. **Fatality-type hallucination guardrails** — `_SHARED_RULES`, `get_circumstances_of_death_prompt`, `get_grid_reference_prompt`, `get_all_hotlinks_prompt`, `_build_enhanced_circumstances_prompt`. Verified against 79 unique types.
+7. **Hotlink moved to DERIVED_DETAILS** — Blue "Enhanced operation details" label next to red DERIVED_DETAILS heading.
+8. **Side panel header renamed** — "AI: Enhanced circumstances" → "Enhanced operation details".
+9. **COPY RESPONSE: to enhanced_operation_details** — Blue button, same dirty/clean handling.
+10. **COPY RESPONSE button labels** — "COPY RESPONSE: to ai_response" / "COPY RESPONSE: to enhanced_operation_details".
+11. **COPY RESPONSE threshold gating** — Both buttons gated on `SHOW_AI_MASTER_RESPONSE_COPY`.
+12. **enhanced_operation_details field** — 8-line text area + scrollbar, editable.
+13. **Side panel width** — 500px → 750px.
+14. **rAI_PROGRESS.md updated**.
 
-7. **Hotlink moved to DERIVED_DETAILS** — Enhanced Circumstances hotlink moved from `FATALITY_LOCATIONS` heading to `DERIVED_DETAILS`. Heading is now normal red text with a blue "Enhanced operation details" label next to it as the clickable hotlink.
+---
 
-8. **Side panel header renamed** — All "AI: Enhanced circumstances" headers changed to "Enhanced operation details".
+## Completed — This Session (2026-07-04)
 
-9. **COPY RESPONSE: to enhanced_operation_details** — New blue button appears when Enhanced operation details result is shown. Copies side panel text to `derived_details → enhanced_operation_details` with same dirty/clean handling as the existing ai_response COPY RESPONSE.
+15. **Button rename** — "AI: Create a Master Response" → "Show Master Prompt".
 
-10. **COPY RESPONSE button labels** — Both buttons renamed: "COPY RESPONSE: to ai_response" and "COPY RESPONSE: to enhanced_operation_details" (removed "AI: " prefix).
+16. **Side panel labels renamed** — "PROMPT: Master Response" → "PROMPT: Fatalities Master Prompt"; "RESPONSE: MASTER" → "RESPONSE: FATALITIES MASTER PROMPT". All `.startswith()` checks updated.
 
-11. **COPY RESPONSE threshold gating** — Both buttons now only appear when response text exceeds `SHOW_AI_MASTER_RESPONSE_COPY` threshold (default 200 chars, from `.env`).
+17. **enhanced_operation_details as primary hotlink source** — When > `SHOW_AI_MASTER_RESPONSE_COPY` chars, replaces `ai_response` for field hotlinks and All Hotlinks. `authoritative_ai_override` preserved. Instance vars `_hotlink_source_label` + `_hotlink_has_override` track source.
 
-12. **enhanced_operation_details field** — Renders as 8-line text area with vertical scrollbar, selectable, editable — identical to `ai_response`. Added to the multi-line text widget condition tuple.
+18. **Response header metadata moved to response text** — Headers now clean (`RESPONSE: incident_location`, `RESPONSE: All Hotlinks`, `Enhanced operation details`). Metadata line `[model]  time  cost  | source: {source}` prepended as first line in response text. Stripped from Accept/Cancel dialog.
 
-13. **Side panel width** — Increased from 500px to 750px (50% wider).
+19. **Deriving status includes source and override** — Initial: `AI: death_location Deriving… From enhanced_operation_details data + override`. Progress: `Deriving … From {source} data (querying {model})`.
 
-14. **rAI_PROGRESS.md updated** — This file.
+20. **COPY RESPONSE button labels shortened** — "COPY RESPONSE: to ai_response" → "--> ai_response"; "COPY RESPONSE: to enhanced_operation_details" → "--> enhanced_operation_details".
 
 ---
 
 ## Incomplete Work — Carry-Over
 
-*None.* All changes from this session are complete, syntax-verified, and import-tested.
+*None.* All changes from this session are complete, syntax-verified, and import-tested. Not yet committed/pushed.
 
 ---
 
 ## Next Steps
 
-- [ ] Test "Enhanced operation details" hotlink with **Accidental** record (e.g., MITCHELL, David AU_1201249): verify ⚠ FATALITY TYPE (AUTHORITATIVE) block, non-combat components, NO combat language
-- [ ] Test "Enhanced operation details" hotlink with **KIA** record: verify combat research components
-- [ ] Test COPY RESPONSE: to enhanced_operation_details — click, verify text copies to field, verify dirty/clean dialog
-- [ ] Test COPY RESPONSE: to ai_response — verify still works as before
-- [ ] Test both COPY RESPONSE buttons only appear when response > SHOW_AI_MASTER_RESPONSE_COPY threshold
-- [ ] Test enhanced_operation_details field: verify 8-line text area, scrollbar, editable
-- [ ] Test individual hotlink clicks (circumstances_of_death, grid_reference) on Accidental record
+- [ ] Test field hotlink with `enhanced_operation_details` > 200 chars → verify uses as primary source
+- [ ] Test field hotlink with `enhanced_operation_details` < 200 chars → verify falls back to `ai_response`
+- [ ] Test "+ override" suffix appears in Deriving status when `authoritative_ai_override` exists
+- [ ] Test response header is clean (`RESPONSE: field_name`) with metadata as first line
+- [ ] Test Accept/Cancel dialog does NOT contain metadata line
+- [ ] Test "Show Master Prompt" button label
+- [ ] Test side panel shows "PROMPT: Fatalities Master Prompt" / "RESPONSE: FATALITIES MASTER PROMPT"
+- [ ] Test "Enhanced operation details" hotlink with Accidental record
+- [ ] Test "Enhanced operation details" hotlink with KIA record
+- [ ] Test COPY RESPONSE buttons: `--> ai_response` and `--> enhanced_operation_details`
+- [ ] Test both COPY buttons only appear when response > `SHOW_AI_MASTER_RESPONSE_COPY`
+- [ ] Test `enhanced_operation_details` field: 8-line text area, scrollbar, editable
+- [ ] Test individual hotlink clicks on Accidental record
 - [ ] Test "All Hotlinks" on Accidental record
-- [ ] Test Enhanced Circumstances with long response — verify no mid-sentence truncation (16384 tokens)
-- [ ] Test fatality_type edit: change, navigate away and back, confirm persisted
-- [ ] Test date display: `date_of_death` and `date_of_birth` as `yyyy-Mmm-dd`
-- [ ] Test NZ Master Prompt: NZ_fatalities.json → confirm NZ sources
-- [ ] Test AU Master Prompt: confirm regression
-- [ ] Add `openrouter.log` to `.gitignore` if not already present
+- [ ] Test Enhanced Circumstances with long response — no truncation (16384 tokens)
+- [ ] Test fatality_type edit: persist across navigation
+- [ ] Test date display: `yyyy-Mmm-dd`
+- [ ] Test NZ / AU Master Prompt regression
+- [ ] Add `openrouter.log` to `.gitignore`
