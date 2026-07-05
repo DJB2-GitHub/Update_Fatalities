@@ -114,6 +114,18 @@
 ### AU-specific sources (unchanged)
 - AWM, VWMA, DVA, NAA, Trove, The Age, Sydney Morning Herald, unit histories, AATTV
 
+### Australian 6R coordinate parsing (AWM Commander Logs)
+- **`mgrs_converter.py`** — MGRS Province Converter. Maps Australian 6R map series 100 km squares (VU, UT, VT, VS, VR, UU) to correct MGRS squares (YS, YT, XT, XS, XR) via `_AU_TO_MGRS_SQUARE`. Accepts province names or bare 6-digit grids with easting-band heuristic fallback.
+- **`upm49p.py`** — UTM WGS-72 converter. Treats partial grids as raw UTM Zone 48 WGS-72 (NOT MGRS). Uses `south=False` (northern hemisphere), x100 multiplier (each digit = 100 m), calibrated square baselines at module level for performance.
+- **Parser priority in `coords.py`**: PARSER 1 = Decimal, PARSER 2 = Australian 6R, PARSER 3 = Vietnam MGRS, PARSER 4 = Generic MGRS, PARSER 5 = DMS. 6R runs before MGRS because "6R VU 536567" -> "6RVU536567" looks like valid MGRS (zone 6 band R square VU).
+- **Accepted 6R formats**: `"6R 536567"`, `"6R VU 536567"`, `"6R Phuoc Tuy 536567"`, bare `"536567"` (auto-detected when input is purely numeric).
+- **WGS-72 datum**: Operational mapping standard for US/allied forces in Vietnam. ~20-30 m difference from WGS-84 — negligible at 100 m grid precision.
+
+### Double-click text popup
+- **`_show_text_popup()`** — 720x520 resizable modal dialog with large read-only (but selectable) Text widget, scrollbar, Copy All button (flashes "Copied!" feedback), Close button, and Escape key dismiss.
+- **Bound to**: `<Double-Button-1>` on `ai_response` and `enhanced_operation_details` Text fields (height=8, width=42).
+- Only fires when field has content; empty fields do nothing.
+
 ---
 
 ## Completed — Prior Sessions (committed: `eec0e64`)
@@ -164,22 +176,37 @@
 
 ---
 
+## Completed — This Session (2026-07-09)
+
+39. **`mgrs_converter.py` created** — MGRS Province Converter. Reconstructs full MGRS from partial AWM grid references with Australian->MGRS square mapping. Fixed incorrect VU->Cambodia bug (Australian squares differ from MGRS). Unused `pyproj` import removed, Unicode symbols replaced with ASCII.
+40. **`upm49p.py` created** — Correct UTM converter. Treats 6R partial grids as UTM Zone 48 WGS-72. Fixed `south=True`->`south=False`, x1000->x100 multiplier, added hardcoded square baselines calibrated from province centroids. Cross-referenced with `mgrs_converter.py`.
+41. **Both modules documented** — Full header docstrings with usage, datum rationale, Australian<->MGRS mapping tables, cross-references. All Unicode symbols replaced with ASCII for Windows console compatibility.
+42. **`coords.py` — `_try_parse_awm_6r()`** — New parser for Australian 6R partial grid references. Recognizes `6R`-prefixed and bare 6-digit formats. Delegates to `upm49p.awm_partial_to_latlon()`. Token-based parsing (last token = 6 digits, prefix tokens = square or province).
+43. **Parser reorder in `coords.py`** — 6R parser placed as PARSER 2 (before Vietnam MGRS) to prevent "6R VU 536567" being misparsed as MGRS zone 6 band R. All downstream parsers renumbered (Vietnam MGRS -> 3, Generic MGRS -> 4, DMS -> 5). Docstring priority table updated.
+44. **Error messages updated** — `coords.py` validation error now lists "2. Australian 6R: '6R 536567' or '6R VU 536567'". `update_fatalities.py` dialog includes Supported formats section and 6R Australian squares reference table (VU, UT, VT, VS, VR, UU).
+45. **Double-click text popup** — `_show_text_popup(title, content)` method added to `UpdateFatalities`. 720x520 resizable modal with selectable read-only Text widget, Copy All button (flashes "Copied!" for 1.2s), Close button, and Escape key dismiss. Bound to `<Double-Button-1>` on `ai_response` and `enhanced_operation_details` fields. Only fires when field has content.
+
+---
+
 ## Incomplete Work — Carry-Over
 
-*None.* All changes from this session are complete and syntax-verified.
+*None.* All changes from this session are complete and syntax-verified via `ast.parse()`.
 
 ---
 
 ## Next Steps
 
+- [ ] Test 6R coordinate conversion in GUI — enter `//6R 536567//` in incident_location, click incident_coordinates hotlink
+- [ ] Test bare 6-digit auto-detection — enter `//536567//` in incident_location
+- [ ] Test 6R with explicit square — `//6R VU 536567//` and `//6R UT 536567//`
+- [ ] Test 6R with province name — `//6R Phuoc Tuy 536567//`
+- [ ] Test double-click popup on ai_response field with long content — verify modal opens, text selectable, Copy All works
+- [ ] Test double-click popup on enhanced_operation_details field
+- [ ] Verify existing MGRS formats still work (YS 426 694, 48P YS 426 694)
+- [ ] Verify decimal degrees still work (10.6895, 107.3305)
 - [ ] Test "Show + Op Prompt" — verify prompt appears, response shows clipboard instruction, provider dropdown visible
 - [ ] Test "Show Master Prompt" — verify provider dropdown visible
-- [ ] Test "Enhanced operation details" hotlink — verify provider dropdown hidden, label shows RESPONSE: Enhanced Operation Details
-- [ ] Test hallucination guardrail — Enhanced operation details with a record that has populated `circumstances_of_death`/`death_location`/`place_of_burial`; verify AI does not fabricate conflicting locations
-- [ ] Test field label display — `authoritative_ai_override` and `enhanced_operation_details` line breaks
-- [ ] Test AWM-Commanders Diaries link opens correct URL
-- [ ] Test provider selector hotlink shows name not URL
+- [ ] Test "Enhanced operation details" hotlink — verify provider dropdown hidden
+- [ ] Test hallucination guardrail with populated circumstances_of_death/death_location/place_of_burial
 - [ ] Test session restore — reopen app with a RESPONSE active; verify provider dropdown state preserved
-- [ ] Test side panel always visible on launch
-- [ ] Test COPY RESPONSE buttons with new header prefixes
 - [ ] Add `openrouter.log` to `.gitignore`

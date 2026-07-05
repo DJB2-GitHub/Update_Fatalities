@@ -303,6 +303,82 @@ def _try_parse_vietnam_mgrs(coord_str: str):
 
 
 # ---------------------------------------------------------------------------
+# _try_parse_awm_6r(coord_str: str) → (float, float) | None
+# ---------------------------------------------------------------------------
+#
+# Parse Australian 6R map series partial grid references from AWM
+# Commander Logs.  These are NOT MGRS — they are truncated UTM
+# coordinates from the South Vietnam 1:50,000 map series (6430-II,
+# 6430-III, 6429-I, 6429-IV) using the Australian 100 km square
+# lettering (VU, UT, VT, VS, VR, UU).
+#
+# Accepted forms:
+#     "6R 536567"              → default square (VU / Phuoc Tuy)
+#     "6R VU 536567"           → explicit Australian square
+#     "6R Phuoc Tuy 536567"    → province name (case-insensitive)
+#     "536567"                 → bare 6 digits (auto-detected)
+#
+# Conversion path: UTM Zone 48 WGS-72 → WGS-84 lat/lon.
+# Delegates to upm49p.awm_partial_to_latlon().
+# ---------------------------------------------------------------------------
+def _try_parse_awm_6r(coord_str: str):
+    """Try to parse an Australian 6R partial grid reference.
+
+    Returns (lat, lon) rounded to 5 decimal places, or None.
+    """
+    clean = str(coord_str).strip()
+    if not clean:
+        return None
+
+    # ---- detect and strip "6R" prefix -----------------------------------
+    had_prefix = False
+    prefix_match = re.match(r'^6R\s+', clean, re.IGNORECASE)
+    if prefix_match:
+        clean = clean[prefix_match.end():].strip()
+        had_prefix = True
+
+    # ---- split into tokens; last token must be exactly 6 digits --------
+    tokens = clean.split()
+    if not tokens or not re.match(r'^\d{6}$', tokens[-1]):
+        return None
+
+    digits = tokens[-1]
+    prefix_tokens = tokens[:-1]   # everything before the digits
+
+    square = None
+    province = None
+
+    if prefix_tokens:
+        # If the first prefix token is exactly 2 letters, treat as
+        # an Australian 100 km square code (e.g. "VU", "UT", "VT").
+        if re.match(r'^[A-Z]{2}$', prefix_tokens[0], re.IGNORECASE):
+            square = prefix_tokens[0].upper()
+        else:
+            # Otherwise treat all prefix tokens as a province name
+            # (e.g. "Phuoc Tuy", "Bien Hoa").
+            province = ' '.join(prefix_tokens)
+    elif not had_prefix:
+        # Bare 6 digits with no "6R" prefix: only accept if the
+        # original input is purely numeric (no stray letters) so we
+        # don't steal input meant for another parser.
+        if not re.match(r'^\s*\d{6}\s*$', str(coord_str).strip()):
+            return None
+
+    # ---- delegate to the UTM WGS-72 converter --------------------------
+    try:
+        from upm49p import awm_partial_to_latlon
+        if square:
+            lat, lon = awm_partial_to_latlon(digits, square=square)
+        elif province:
+            lat, lon = awm_partial_to_latlon(digits, province=province)
+        else:
+            lat, lon = awm_partial_to_latlon(digits)   # defaults to VU
+        return round(lat, 5), round(lon, 5)
+    except (ImportError, ValueError):
+        return None
+
+
+# ---------------------------------------------------------------------------
 # validate_and_parse_coordinate(coord_str: str)
 #     → (is_valid: bool, message: str, coordinates: (float, float) | None)
 # ---------------------------------------------------------------------------
@@ -318,14 +394,18 @@ def _try_parse_vietnam_mgrs(coord_str: str):
 #   ────────  ──────────────────  ──────────────────────────────────────
 #    1 (hi)   Decimal Degrees      "10.6895, 107.3305"
 #                                 "10.34694 N, 107.07263 E"
-#    2        Vietnam-era MGRS     "48Q YS 426 694"
+#    2        Australian 6R        "6R 536567"
+#                                 "6R VU 536567"
+#                                 "536567"  (bare 6 digits)
+#    3        Vietnam-era MGRS     "48Q YS 426 694"
 #                                 "YS 426 694"
-#    3        Generic MGRS         "48PYS458630"
+#    4        Generic MGRS         "48PYS458630"
 #                                 (any non-Vietnam MGRS worldwide)
-#    4 (lo)   DMS                  "10° 20' N, 107° 04' E"
+#    5 (lo)   DMS                  "10° 20' N, 107° 04' E"
 #
-# Vietnam-era MGRS (priority 2) is placed BEFORE generic MGRS (priority 3)
-# so that Vietnam-specific corrections (zone fix + datum shift) are
+# Australian 6R (priority 2) and Vietnam-era MGRS (priority 3) are placed
+# BEFORE generic MGRS (priority 4) so that Vietnam-specific corrections
+# (UTM WGS-72 conversion for 6R, zone fix + datum shift for MGRS) are
 # applied before the generic converter gets a chance to misinterpret the
 # coordinate as a raw WGS84 MGRS.
 #
@@ -434,7 +514,36 @@ def validate_and_parse_coordinate(coord_str: str):
         return True, "Valid Decimal Degrees", (round(lat, 5), round(lon, 5))
 
     # =========================================================================
-    # PARSER 2 — Vietnam-era MGRS (with zone correction & datum shift)
+    # PARSER 2 — Australian 6R partial grid (AWM Commander Logs, UTM WGS-72)
+    # =========================================================================
+    #
+    # Handles truncated 6-digit grid references from the South Vietnam
+    # 1:50,000 "6R" map series.  These are NOT MGRS — they use Australian
+    # 100 km square lettering and must be converted via UTM Zone 48
+    # WGS-72 → WGS-84.
+    #
+    # Checked before Vietnam MGRS because the "6R" prefix can be
+    # misinterpreted as MGRS zone 6 band R by the MGRS parser
+    # (e.g. "6R VU 536567" → "6RVU536567" looks like valid MGRS).
+    #
+    # Accepted forms:
+    #     "6R 536567"              → default square (VU / Phuoc Tuy)
+    #     "6R VU 536567"           → explicit Australian square
+    #     "6R Phuoc Tuy 536567"    → province name
+    #     "536567"                 → bare 6 digits (auto-detected)
+    #
+    # _try_parse_awm_6r returns None if the input does not match a 6R
+    # pattern, which causes this parser to yield.
+    awm6r_result = _try_parse_awm_6r(coord_str)
+    if awm6r_result is not None:
+        return (
+            True,
+            "Valid Australian 6R grid reference (UTM Zone 48 WGS-72)",
+            awm6r_result,
+        )
+
+    # =========================================================================
+    # PARSER 3 — Vietnam-era MGRS (with zone correction & datum shift)
     # =========================================================================
     #
     # Try the Vietnam-specific parser BEFORE the generic MGRS parser.
@@ -443,7 +552,7 @@ def validate_and_parse_coordinate(coord_str: str):
     #
     # _try_parse_vietnam_mgrs returns None if the input does not look
     # like a Vietnam-era MGRS, which causes this parser to yield and
-    # let parser 3 attempt it instead.
+    # let the next parser attempt it instead.
     vietnam_result = _try_parse_vietnam_mgrs(coord_str)
     if vietnam_result is not None:
         return (
@@ -453,7 +562,7 @@ def validate_and_parse_coordinate(coord_str: str):
         )
 
     # =========================================================================
-    # PARSER 3 — Generic MGRS (worldwide, WGS84 assumed)
+    # PARSER 4 — Generic MGRS (worldwide, WGS84 assumed)
     # =========================================================================
     #
     # Catches any MGRS that does not match the Vietnam patterns: NATO
@@ -467,7 +576,7 @@ def validate_and_parse_coordinate(coord_str: str):
     #   - 4-10 numerical digits (even count)
     #
     # NOTE: this regex requires the full GZD prefix, so "YS426694" would
-    # NOT match here — it was already handled by parser 2 (Vietnam MGRS).
+    # NOT match here — it was already handled by parser 3 (Vietnam MGRS).
     clean_mgrs = re.sub(r"\s+", "", coord_str).upper()
     mgrs_regex = re.compile(
         r"^[1-6][0-9][C-X][A-Z]{2}\d{4,10}$", re.IGNORECASE
@@ -498,7 +607,7 @@ def validate_and_parse_coordinate(coord_str: str):
             )
 
     # =========================================================================
-    # PARSER 4 — Degrees/Minutes/Seconds (DMS)
+    # PARSER 5 — Degrees/Minutes/Seconds (DMS)
     # =========================================================================
     #
     # Lightweight detection: looks for at least two degree-minute pairs
@@ -599,9 +708,10 @@ def validate_and_parse_coordinate(coord_str: str):
         "Acceptable formats are:\n"
         "  1. Decimal Degrees: '10.34694 N, 107.07263 E'"
         " or '10.34694, 107.07263'\n"
-        "  2. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
-        "  3. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
-        "  4. DMS: '10\u00b0 20' N, 107\u00b0 04' E'"
+        "  2. Australian 6R: '6R 536567' or '6R VU 536567'\n"
+        "  3. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
+        "  4. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
+        "  5. DMS: '10\u00b0 20' N, 107\u00b0 04' E'"
     )
     return False, error_msg, None
 

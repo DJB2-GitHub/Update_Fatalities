@@ -971,16 +971,23 @@ Your final report must:
             _error_dialog(self, "Unable to calculate coordinates",
                           f"{msg}\n\n"
                           "---\n\n"
+                          "## Supported coordinate formats\n\n"
+                          "**Decimal Degrees**\n"
+                          "`10.6895, 107.3305`\n\n"
+                          "**MGRS (Vietnam War)** — include the 100 km square\n"
+                          "`//YS 426 694//`  or  `//48Q YS 426 694//`\n\n"
+                          "**Australian 6R partial grid (AWM Commander Logs)**\n"
+                          "`//6R 536567//`  or  `//6R VU 536567//`\n\n"
                           "## MGRS Grid-Square Reference (Vietnam War)\n\n"
-                          "If using an MGRS coordinate, include the **100 km "
-                          "grid-square letters** after the UTM zone.\n\n"
                           "**YS** — Phuoc Tuy, Long Khanh\n"
                           "`Nui Dat, Long Tan, Long Phuoc, Horseshoe`\n\n"
                           "**XT** — Tay Ninh, Binh Duong, Hau Nghia\n"
                           "`Tay Ninh, Nui Ba Den, War Zone C, Ho Bo Woods`\n\n"
                           "**YT** — Long Khanh, Bien Hoa, NW Phuoc Tuy\n"
                           "`Xuan Loc, Hat Dich, Courtenay Plantation`\n\n"
-                          "Example: `//YS 328 456//` or `//48Q YS 328 456//`")
+                          "**6R Australian squares** — `VU` (Phuoc Tuy), "
+                          "`UT` (Long Khanh), `VT` (Bien Hoa), "
+                          "`VS` (Ben Cat), `VR` (Tay Ninh), `UU` (Vung Tau)")
             return
         formatted = f"{parsed[0]}, {parsed[1]}"
         if isinstance(coord_entry, tk.Text):
@@ -1356,6 +1363,72 @@ Your final report must:
 
         dlg.wait_window()
         return result[0]
+
+    def _show_text_popup(self, title: str, content: str):
+        """Open a large modal viewer for a text field.
+
+        Displays the full text in a read-only but selectable Text widget
+        so the user can read long content and copy it with Ctrl+C.
+        Includes a "Copy All" button for convenience.
+        """
+        dlg = tk.Toplevel(self)
+        dlg.title(title)
+        dlg.geometry("720x520")
+        dlg.configure(bg=WHITE)
+        dlg.resizable(True, True)
+        dlg.transient(self)
+        dlg.grab_set()
+        _center_on_parent(dlg, self)
+
+        # ── text area with scrollbar ───────────────────────────────
+        text_frame = tk.Frame(dlg, bg=WHITE)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=(16, 8))
+
+        text_widget = tk.Text(
+            text_frame, font=(FONT, 11), wrap=tk.WORD,
+            bg=WHITE, fg=TEXT_DARK,
+            relief=tk.SOLID, borderwidth=1,
+            padx=12, pady=10,
+        )
+        text_scroll = tk.Scrollbar(text_frame, command=text_widget.yview)
+        text_widget.configure(yscrollcommand=text_scroll.set)
+        text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        text_widget.insert("1.0", content or "(empty)")
+        text_widget.configure(state="disabled")   # read-only but selectable
+
+        # ── bottom bar: Copy All + Close ────────────────────────────
+        bar = tk.Frame(dlg, bg=BG_GREY, height=44)
+        bar.pack(fill=tk.X, side=tk.BOTTOM)
+        bar.pack_propagate(False)
+
+        def _copy_all():
+            dlg.clipboard_clear()
+            dlg.clipboard_append(content or "")
+            # Flash feedback on the button
+            copy_btn.configure(text="Copied!")
+            dlg.after(1200, lambda: copy_btn.configure(text="Copy All"))
+
+        copy_btn = tk.Label(
+            bar, text="Copy All", font=(FONT, 10, "bold"),
+            bg=WHITE, fg=TEXT_DARK, padx=18, pady=6,
+            relief=tk.SOLID, borderwidth=1, cursor="hand2",
+        )
+        copy_btn.pack(side=tk.LEFT, padx=(16, 0), pady=7)
+        _bind_hover(copy_btn, WHITE, "#e8e8e8")
+        copy_btn.bind("<Button-1>", lambda e: _copy_all())
+
+        close_btn = tk.Label(
+            bar, text="Close", font=(FONT, 10, "bold"),
+            bg=ACCENT, fg=WHITE, padx=18, pady=6, cursor="hand2",
+        )
+        close_btn.pack(side=tk.RIGHT, padx=(0, 16), pady=7)
+        _bind_hover(close_btn, ACCENT, ACCENT_HOV)
+        close_btn.bind("<Button-1>", lambda e: dlg.destroy())
+
+        # Escape key to close
+        dlg.bind("<Escape>", lambda e: dlg.destroy())
 
     def _show_derivation_result(self, field_name: str, result_text: str,
                                  model_name=None, usage_meta=None, elapsed=0.0):
@@ -2060,6 +2133,14 @@ Your final report must:
 
                             entry.bind("<KeyRelease>", _on_text_edited)
                             self._apply_hotlinks(entry)
+
+                            # Double-click → popup viewer for long text fields
+                            if field_name in ("ai_response", "enhanced_operation_details"):
+                                def _on_dbl_click(_e, tw=entry, fn=field_name):
+                                    content = tw.get("1.0", "end-1c").strip()
+                                    if content:
+                                        self._show_text_popup(fn, content)
+                                entry.bind("<Double-Button-1>", _on_dbl_click)
                         elif isinstance(raw_value, list):
                             # references or other list fields: multi-line text, one item per line
                             text_height = 3
