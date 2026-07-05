@@ -976,6 +976,8 @@ Your final report must:
                           "`10.6895, 107.3305`\n\n"
                           "**MGRS (Vietnam War)** — include the 100 km square\n"
                           "`//YS 426 694//`  or  `//48Q YS 426 694//`\n\n"
+                          "**Indian 1960 MGRS** — prefix with I60: for Indian datum\n"
+                          "`//I60:48P YS 734 982//`  or  `//I60:YS 734 982//`\n\n"
                           "**Australian 6R partial grid (AWM Commander Logs)**\n"
                           "`//6R 536567//`  or  `//6R VU 536567//`\n\n"
                           "## MGRS Grid-Square Reference (Vietnam War)\n\n"

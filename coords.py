@@ -6,6 +6,14 @@ import json
 import tkinter as tk
 from tkinter import ttk
 
+# Deferred import — pyproj is needed only for Indian-1960 datum transformation.
+# The import is also tried inside _transform_indian1960_to_wgs84
+# with a friendlier error message when the library is missing.
+try:
+    from pyproj import Transformer as _PyprojTransformer
+except ImportError:
+    _PyprojTransformer = None
+
 # ---------------------------------------------------------------------------
 # Update {incident_location} value by scanning the input text for any substring
 # that resembles a coordinate and applying masking rules to protect location data.
@@ -99,12 +107,82 @@ _VIETNAM_48P_SQUARES = {
 }
 
 # ---------------------------------------------------------------------------
+# MGRS column / row letter mappings (I and O are omitted per MGRS spec)
+# ---------------------------------------------------------------------------
+_MGRS_COLS = "ABCDEFGHJKLMNPQRSTUVWXYZ"   # 24 letters (columns)
+_MGRS_ROWS = "ABCDEFGHJKLMNPQRSTUV"        # 20 letters (rows, only A–V)
+
+
+# ---------------------------------------------------------------------------
+# _mgrs_square_to_utm(zone, lat_band, square, e_off, n_off, precision)
+#   → (utm_e, utm_n, hemisphere)
+# ---------------------------------------------------------------------------
+# Pure grid math: converts an MGRS 100 km square + offsets to full UTM
+# easting / northing in metres.  Datum-independent — this only computes
+# where the grid lines fall, not how they relate to the geoid.
+# ---------------------------------------------------------------------------
+def _mgrs_square_to_utm(zone, lat_band, square, easting_offset, northing_offset,
+                        precision):
+    """Return (utm_easting, utm_northing, 'N'|'S') for an MGRS square + offsets."""
+    col_letter = square[0].upper()
+    row_letter = square[1].upper()
+
+    col_idx = _MGRS_COLS.index(col_letter)   # 0–23
+    row_idx = _MGRS_ROWS.index(row_letter)   # 0–19
+
+    zone_in_set = (zone - 1) % 3
+    first_col_for_zone = zone_in_set * 8
+    col_in_zone = col_idx - first_col_for_zone
+
+    if col_in_zone < 0:
+        col_in_zone += 24
+    elif col_in_zone >= 8:
+        col_in_zone -= 24
+
+    square_easting = col_in_zone * 100_000
+
+    hemisphere = 'N' if lat_band.upper() >= 'N' else 'S'
+    if hemisphere == 'N':
+        square_northing = row_idx * 100_000
+    else:
+        square_northing = 10_000_000 - (row_idx + 1) * 100_000
+
+    utm_e = square_easting + easting_offset
+    utm_n = square_northing + northing_offset
+    return utm_e, utm_n, hemisphere
+
+
+# ---------------------------------------------------------------------------
+# _transform_indian1960_to_wgs84(zone, utm_e, utm_n, hemisphere)
+#   → (lat, lon) | None
+# ---------------------------------------------------------------------------
+def _transform_indian1960_to_wgs84(zone, utm_e, utm_n, hemisphere='N'):
+    """Transform UTM coordinates from Indian 1960 datum to WGS84 lat/lon.
+
+    Uses pyproj with EPSG:3148 (zone 48N) or EPSG:3149 (zone 49N).
+    Returns (lat, lon) or None if the zone is unsupported / pyproj missing.
+    """
+    if _PyprojTransformer is None:
+        return None
+
+    _INDIAN1960_EPSG = {48: 3148, 49: 3149}
+    epsg = _INDIAN1960_EPSG.get(zone)
+    if epsg is None:
+        return None
+
+    transformer = _PyprojTransformer.from_crs(
+        f"EPSG:{epsg}", "EPSG:4326", always_xy=True)
+    lon, lat = transformer.transform(utm_e, utm_n)
+    return lat, lon
+
+
+# ---------------------------------------------------------------------------
 # _try_parse_vietnam_mgrs(coord_str: str) → (float, float) | None
 # ---------------------------------------------------------------------------
 #
 # The core Vietnam-era MGRS normaliser.
 #
-# Accepts any of these input shapes (spaces are stripped, case-insensitive):
+# Accepts any of these input shapes (spaces stripped, case-insensitive):
 #
 #     "48P YS 426 694"   — full, correct zone
 #     "48Q YS 426 694"   — full, WRONG zone  → auto-corrected 48Q→48P
@@ -113,33 +191,47 @@ _VIETNAM_48P_SQUARES = {
 #     "YS426694"         — compact partial
 #     "48Q YS 42600 69400" — 10-digit fine precision
 #
+# Datum tagging — prefix the MGRS with one of:
+#     "I60:", "INDIAN1960:", or "INDIAN:"
+# to force Indian 1960 (Vietnam) datum transformation (EPSG:24305/24306
+# → EPSG:4326) instead of the default SVN60 shift.
+# Example:  "I60:48P YS 734 982"  or  "I60:YS 734 982"
+#
 # Pipeline (each step is documented inline):
 #
+#   0. Detect optional Indian-1960 datum tag (I60:/INDIAN1960:/INDIAN:)
 #   1. Clean & normalise whitespace / case
 #   2. Match against a full-MGRS regex or a partial (no-GZD) regex
 #   3. If partial, infer zone 48 + band P or Q from the square lookup table
 #   4. Auto-correct 48Q → 48P for squares known to be in 48P
 #   5. Split the numerical half into Easting / Northing components
 #   6. Expand abbreviated digits to full-metre values
-#      (e.g. "426" → 42600 m for 6-digit input)
-#   7. Add the SVN60 → WGS84 datum shift to both Easting and Northing
-#   8. Clamp shifted values to the 0–99999 m range of a 100 km square
-#   9. Round back to the input's original precision
-#  10. Reconstruct a corrected MGRS string
-#  11. Convert MGRS → decimal lat/lon (WGS84) using the `mgrs` library
+#   7a. IF Indian-1960: convert MGRS → UTM, then pyproj datum-shift to WGS84
+#   7b. ELSE (default SVN60): shift easting/northing, reconstruct MGRS,
+#        convert via mgrs library.
 #
 # Returns a (lat, lon) tuple rounded to 5 decimal places (~1 m precision),
 # or None if the input does not match any Vietnam MGRS pattern.
 # ---------------------------------------------------------------------------
 def _try_parse_vietnam_mgrs(coord_str: str):
-    # Deferred import so the file can be loaded even without `mgrs` installed,
+    # Deferred imports so the file can be loaded even without these libraries,
     # and to avoid a heavy import on every coordinate-parse attempt.
     import mgrs as mgrs_lib
+
+    # ---- step 0: detect Indian-1960 datum tag ------------------------------
+    use_indian1960 = False
+    raw_input = str(coord_str).strip()
+    indian_match = re.match(
+        r'^(?:I60|INDIAN\s*1960|INDIAN)\s*[:/-]?\s*(.*)$',
+        raw_input, re.IGNORECASE)
+    if indian_match:
+        use_indian1960 = True
+        raw_input = indian_match.group(1).strip()
 
     # ---- step 1: normalise -------------------------------------------------
     # Strip all whitespace, convert to uppercase.  This collapses
     # "48P YS 426 694" → "48PYS426694" and "ys 426 694" → "YS426694".
-    clean = re.sub(r"\s+", "", str(coord_str).strip()).upper()
+    clean = re.sub(r"\s+", "", raw_input).upper()
     if not clean:
         return None
 
@@ -240,7 +332,31 @@ def _try_parse_vietnam_mgrs(coord_str: str):
     easting = int(e_str) * scale
     northing = int(n_str) * scale
 
-    # ---- step 7: apply SVN60 → WGS84 datum shift --------------------------
+    # ---- step 7: datum transformation (Indian-1960 or SVN60) -------------
+    if use_indian1960:
+        # ---- Indian 1960 pathway (pyproj datum transformation) ---------
+        # Reconstruct the original (unshifted) MGRS string, use the mgrs
+        # library's MGRSToUTM to parse it into UTM coordinates, then
+        # transform from Indian 1960 datum to WGS84 via pyproj.
+        #
+        # MGRS-to-UTM conversion is datum-independent grid math — the
+        # same easting/northing values apply regardless of datum.  The
+        # datum only matters when converting UTM ↔ lat/lon, which pyproj
+        # handles correctly.
+        orig_mgrs = f"{zone_str}{lat_band}{square}{e_str}{n_str}"
+        try:
+            _, _, utm_e, utm_n = mgrs_lib.MGRS().MGRSToUTM(orig_mgrs)
+        except Exception:
+            return None
+        result = _transform_indian1960_to_wgs84(zone, utm_e, utm_n, lat_band)
+        if result is not None:
+            lat, lon = result
+            return round(lat, 5), round(lon, 5)
+        # pyproj unavailable or zone not supported — fall through to
+        # return None so the caller shows a helpful error.
+        return None
+
+    # ---- default SVN60 pathway (legacy shift + mgrs library) -----------
     #
     # The original coordinate was recorded on an SVN60 map.  To express the
     # same physical point in WGS84 (used by GPS, Google Maps, etc.) we must
@@ -710,8 +826,9 @@ def validate_and_parse_coordinate(coord_str: str):
         " or '10.34694, 107.07263'\n"
         "  2. Australian 6R: '6R 536567' or '6R VU 536567'\n"
         "  3. Vietnam-era MGRS: 'YS 426 694' or '48P YS 426 694'\n"
-        "  4. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
-        "  5. DMS: '10\u00b0 20' N, 107\u00b0 04' E'"
+        "  4. Indian-1960 MGRS: 'I60:48P YS 734 982' or 'I60:YS 734 982'\n"
+        "  5. Standard MGRS: '48PYS458630' or '48P YS 458 630'\n"
+        "  6. DMS: '10\u00b0 20' N, 107\u00b0 04' E'"
     )
     return False, error_msg, None
 
