@@ -673,7 +673,32 @@ class UpdateFatalities(tk.Toplevel):
         system = (
             "You are a military historian specialising in Australian Army personnel "
             "records, 1st Australian Task Force (1ATF) operational history, and "
-            "Vietnam War fatality analysis (1962–1972)."
+            "Vietnam War fatality analysis (1962–1972).\n\n"
+            "CRITICAL ANTI-HALLUCINATION RULES:\n"
+            "1. You MUST include the exact URL for EVERY factual claim you make. "
+            "If you cannot provide a real, working URL from an authoritative source "
+            "(AWM, DVA, VWMA, NAA, Trove, etc.), the claim MUST be marked NOT_DOCUMENTED.\n"
+            "2. NEVER invent war diary entries. Unit war diaries for Vietnam-era "
+            "Australian units are NOT publicly accessible online as full text. "
+            "Do NOT fabricate their contents.\n"
+            "3. NEVER invent eyewitness accounts, veteran quotes, or first-hand "
+            "testimony. Unless you can cite a specific, published, named source "
+            "with URL, mark this as NOT_DOCUMENTED.\n"
+            "4. NEVER fabricate chronological timelines, patrol movements, platoon "
+            "positions, radio calls, Dustoff times, or tactical details. "
+            "These are NOT in the public record for individual soldiers.\n"
+            "5. NEVER name specific books, memoirs, or authors as sources unless "
+            "you can provide a URL confirming they specifically mention THIS soldier.\n"
+            "6. Do NOT construct plausible-sounding narratives. NOT_DOCUMENTED is "
+            "the correct, honest answer when the source record does not exist. "
+            "A missing fact is FAR better than a fabricated fact.\n"
+            "7. For unit operational context: ONLY use publicly available unit "
+            "histories and AWM collection summaries. State the unit and date range; "
+            "do NOT fabricate daily patrol details or contact reports.\n"
+            "8. Every section that lacks verifiable information MUST be explicitly "
+            "headed NOT_DOCUMENTED with a brief explanation of why.\n"
+            "9. If you are uncertain or your knowledge is limited, state that "
+            "explicitly rather than guessing or constructing plausible narratives."
         )
 
         # Build a readable name line
@@ -767,82 +792,80 @@ unit-level or cemetery-level results with this individual.
 
         # ── Conditional research components ──
         if is_non_combat:
-            research_components = f"""### 1. Circumstances of Death
-- Research the exact nature of this {fatality_type} fatality.
-- Identify WHERE the {fatality_type} occurred (e.g. base camp, training area, barracks, hospital, road, civilian location).
-- Identify any official inquiry, investigation, or coroner findings.
-- Look for accident reports, unit safety records, or administrative investigations.
+            research_components = f"""### 1. Authoritative Identification
+- Search the Australian War Memorial (AWM) Roll of Honour for this soldier by service number and name.
+- Search the DVA Nominal Roll for enlistment and service details.
+- EVERY claim in this section MUST include a URL to the source page.
 
-### 2. Location Details
-- Identify the **province**, **district**, and general location where the death occurred.
-- Note any nearby bases, camps, hospitals, or towns.
-- Do NOT search for fire support bases, grid references, or combat incident locations.
-- If the location is only known at province/country level (e.g. 'South Vietnam'), that is sufficient.
+### 2. Circumstances of Death (VERIFIED ONLY)
+- Report ONLY the official cause/circumstances as stated in AWM, DVA, or VWMA records with URL.
+- The fatality type is AUTHORITATIVE: '{fatality_type}'. Do NOT override it.
+- If the source says no more than the fatality type, state that and mark further details as NOT_DOCUMENTED.
+- Do NOT fabricate: accident scenarios, investigation findings, coroner reports, or medical details unless you have a URL.
 
-### 3. Eyewitness and Official Accounts
-- Identify any first-hand accounts of the incident.
-- Look for unit administrative records, accident reports, or medical records.
-- Check for newspaper reports or contemporary media coverage.
+### 3. Location Details (VERIFIED ONLY)
+- Report ONLY locations that appear in authoritative sources with URLs.
+- If only province/country level (e.g. 'South Vietnam') is available, state that — do NOT fabricate town, base, or hospital names.
+- Do NOT fabricate grid references or coordinates.
 
-### 4. Cross-Verification
-All findings must be **cross-checked** against:
-- Australian War Memorial (AWM) Roll of Honour
-- Department of Veterans' Affairs (DVA) Nominal Roll
-- Trove newspaper archives
-- Virtual War Memorial Australia (VWMA)
-- National Archives of Australia (NAA)
+### 4. Eyewitness and Published Accounts
+- ONLY report accounts that you can cite with a specific URL containing the actual text.
+- If no first-hand accounts, newspaper reports, or published records specifically naming this soldier are found online, state NOT_DOCUMENTED.
+- Do NOT fabricate investigation findings or accident reports.
+
+### 5. Cross-Verification
+All findings must be **cross-checked** against — and every claim must include a URL from:
+- Australian War Memorial (AWM) awm.gov.au
+- Department of Veterans' Affairs (DVA) dva.gov.au
+- Virtual War Memorial Australia (VWMA) vwma.org.au
+- Trove newspaper archives trove.nla.gov.au
+- National Archives of Australia (NAA) naa.gov.au
 """
         else:
-            research_components = """### 1. Precise Location of Death
-- Identify the **province**, **district**, and—if available—**hamlet or grid reference**.
-- Name **nearby geographical features**, such as:
-  - Roads (e.g., QL-1, Route 2, Route 20)
-  - Rivers, streams, ridgelines
-  - Villages, hamlets, or known Viet Cong base areas
-  - Any terrain features mentioned in war diaries or eyewitness accounts
+            research_components = """### 1. Authoritative Identification
+- Search the Australian War Memorial (AWM) Roll of Honour for this soldier by service number and name.
+- Search the DVA Nominal Roll for enlistment and service details.
+- Search the Virtual War Memorial Australia (VWMA) for commemoration records.
+- EVERY claim in this section MUST include a URL to the source page.
 
-### 2. Fire Support Base (FSB) Context
-- Identify the **FSB or 1ATF base** from which the unit was operating at the time.
-- Include:
-  - Artillery support arrangements
-  - Likely supporting batteries (RAA or US artillery)
-  - Any forward operating bases relevant to the soldier's company
+### 2. Unit and Operational Context (PUBLICLY AVAILABLE ONLY)
+- Identify the unit's role and operational area during the period of death using ONLY:
+  - AWM unit history pages (awm.gov.au/collection/U...)
+  - Published 1ATF operational summaries
+  - Official AWM timeline entries
+- State the unit name, its parent formation, and the general area of operations.
+- Do NOT invent specific patrol routes, platoon movements, daily schedules, or contact reports.
+- If an operation name is publicly documented on AWM's website for this unit and period, cite it with URL. Otherwise state NOT_DOCUMENTED.
 
-### 3. Operation Name and Operational Context
-- Identify the **specific operation** (if named) conducted by the unit or 1ATF on or around the date of death.
-- If the action was part of **routine pacification patrols**, state this clearly and explain the operational framework.
-- Include:
-  - Battalion-level mission
-  - Company-level tasking
-  - Platoon-level movement and objective
-  - Any relevant 1ATF operational orders
+### 3. Location of Death (VERIFIED ONLY)
+- Report ONLY locations that appear in authoritative sources with URLs:
+  - AWM Roll of Honour place-of-death field
+  - DVA Nominal Roll
+  - VWMA records
+- If only province-level (e.g. "Phuoc Tuy Province, South Vietnam") is available, state that — do NOT fabricate village or hamlet names.
+- Do NOT fabricate grid references, map coordinates, or FSB names unless they appear in an authoritative source with URL.
 
-### 4. Unit War Diary Extracts
-- Locate and summarise **unit**, **company**, or **platoon** war diary entries for the period around the date of death.
-- Extract:
-  - Contact reports
-  - Movement logs
-  - Intelligence summaries
-  - Casualty reports
-  - Any mention of bunker systems, ambushes, or enemy activity
+### 4. Circumstances of Death (VERIFIED ONLY)
+- Report ONLY the official cause/circumstances as stated in AWM, DVA, or VWMA records with URL.
+- If the AWM Roll of Honour says "Killed in action" with no further detail, state that exactly and mark further tactical details as NOT_DOCUMENTED.
+- Do NOT fabricate: enemy contact type, weapon used, nature of wounds, evacuation details, radio calls, Dustoff times, or combat narrative.
 
-*(If direct diary text is not accessible, summarise secondary sources that quote or reference the diaries.)*
+### 5. Commemoration and Burial (VERIFIED ONLY)
+- Report burial location and memorial listings from AWM, VWMA, or cemetery authority websites with URLs.
+- Do NOT fabricate funeral attendance, eulogy details, or repatriation stories.
 
-### 5. Eyewitness Accounts
-- Identify and summarise **first-hand accounts** of the incident, including:
-  - Statements from surviving members of the soldier's platoon and company
-  - Accounts published in books (e.g., *Contact Front* by Don Tate)
-  - Interviews, oral histories, or veteran submissions
-  - Any corroborating Australian War Memorial (AWM) material
+### 6. Eyewitness and Published Accounts
+- ONLY report accounts that you can cite with a specific URL containing the actual text.
+- If no eyewitness accounts, veteran memoirs, or published books specifically naming this soldier are found online, state NOT_DOCUMENTED.
+- Do NOT name books or authors as sources unless you can provide a URL confirming the book specifically discusses this soldier by name.
 
-### 6. Cross-Verification
-All findings must be **cross-checked** against:
-- Australian War Memorial (AWM) Roll of Honour
-- AWM unit histories
-- Department of Veterans' Affairs (DVA) Nominal Roll
-- Trove newspaper archives
-- Virtual War Memorial Australia (VWMA)
-- Any credible academic or military history sources
+### 7. Cross-Verification
+All findings must be **cross-checked** against — and every claim must include a URL from:
+- Australian War Memorial (AWM) awm.gov.au
+- Department of Veterans' Affairs (DVA) dva.gov.au
+- Virtual War Memorial Australia (VWMA) vwma.org.au
+- Trove newspaper archives trove.nla.gov.au
+- National Archives of Australia (NAA) naa.gov.au
 """
 
         user_prompt = f"""## Enhanced Research Prompt (Optimised for Maximum Historical Accuracy)
@@ -867,12 +890,15 @@ Research and report the factual circumstances, location, and context of this sol
 
 ### Output Requirements
 Your final report must:
-- Present **only verified facts**, clearly distinguishing:
-  - **Confirmed information**
-  - **Reasoned inference** (explicitly labelled)
-- Include **citations** for every factual claim.
-- Provide a **chronological reconstruction** of the events leading to the death.
-- Identify any **gaps in the historical record**."""
+- Present **only verified facts** that are backed by a specific, working URL from an authoritative source.
+- For EVERY factual claim, include the URL in this format: `[Source Name](https://...)`
+- If NO URL can be provided for a claim, that claim MUST be marked **NOT_DOCUMENTED**.
+- Clearly distinguish:
+  - **Confirmed** (URL-backed fact from AWM, DVA, VWMA, NAA, or Trove)
+  - **NOT_DOCUMENTED** (no verifiable source found — the honest answer)
+- Do NOT provide a chronological reconstruction — these details are NOT in the public record for individual soldiers.
+- Identify any **gaps in the historical record** honestly and specifically.
+- REMEMBER: NOT_DOCUMENTED is better than a fabricated fact. "I don't know" is better than a plausible lie."""
 
         return (system, user_prompt)
 
