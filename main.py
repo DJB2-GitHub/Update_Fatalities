@@ -8,9 +8,12 @@ The app guards against quitting with unsaved changes.
 
 from __future__ import annotations
 
+import glob
 import json
 import os
+import re
 import tkinter as tk
+import webbrowser
 from tkinter import ttk
 
 from update_fatalities import UpdateFatalities
@@ -25,6 +28,7 @@ BG_GREY       = "#f5f5f5"
 WHITE         = "#ffffff"
 TEXT_DARK     = "#333333"
 TEXT_MUTED    = "#888888"
+BORDER        = "#dcdcdc"
 FONT_FAMILY   = "Segoe UI"
 
 ENV_PATH = ".env"
@@ -102,9 +106,10 @@ def save_json(path: str, data: list[dict]) -> bool:
 # Custom styled modals (replace messagebox)
 # ---------------------------------------------------------------------------
 
-def _show_error(message: str):
+def _show_error(message: str, auto_close_seconds: float = 0):
     """Custom error dialog."""
-    StyledDialog(None, "Error", message, icon="error", buttons=[("OK", None)])
+    StyledDialog(None, "Error", message, icon="error", buttons=[("OK", None)],
+                 auto_close_seconds=auto_close_seconds)
 
 
 def _ask_yes_no_cancel(parent: tk.Tk, title: str, message: str) -> bool | None:
@@ -129,12 +134,17 @@ class StyledDialog(tk.Toplevel):
     """Flat-design modal dialog replacing tkinter messagebox."""
 
     def __init__(self, parent, title: str, message: str, *,
-                 icon: str = "info", buttons: list[tuple[str, object]]):
+                 icon: str = "info", buttons: list[tuple[str, object]],
+                 auto_close_seconds: float = 0):
         super().__init__(parent)
         self.result: object = None
         self.title(title)
         self.resizable(False, False)
         self.configure(bg=WHITE)
+
+        if auto_close_seconds > 0:
+            print(f"StyledDialog: scheduling auto-close in {auto_close_seconds}s", flush=True)
+            self.after(int(auto_close_seconds * 1000), self._auto_close)
 
         if parent:
             self.transient(parent)
@@ -212,6 +222,14 @@ class StyledDialog(tk.Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", lambda: self._choose(None))
         self.wait_window()
+
+    def _auto_close(self):
+        """Auto-close the dialog (called by after() timer)."""
+        print("_auto_close firing", flush=True)
+        try:
+            self.destroy()
+        except Exception:
+            pass
 
     def _on_hover(self, event, btn_frame, label):
         btn_frame.configure(bg=label._hover_bg)
@@ -337,6 +355,380 @@ class HelpViewer(tk.Toplevel):
         if first_match:
             self.text_w.see(first_match)
 
+
+# ---------------------------------------------------------------------------
+# Report Modal
+# ---------------------------------------------------------------------------
+
+RECIPIENTS_PATH = "recipients.json"
+EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+
+
+def _load_recipients() -> list[str]:
+    if not os.path.exists(RECIPIENTS_PATH):
+        return ["darryljbaker@live.com"]
+    try:
+        with open(RECIPIENTS_PATH, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+            if isinstance(data, list):
+                return [str(e) for e in data if isinstance(e, str)]
+    except (json.JSONDecodeError, OSError):
+        pass
+    return ["darryljbaker@live.com"]
+
+
+def _save_recipients(recipients: list[str]):
+    with open(RECIPIENTS_PATH, "w", encoding="utf-8") as fh:
+        json.dump(recipients, fh, indent=2, ensure_ascii=False)
+
+
+class ReportModal(tk.Toplevel):
+    """Modal for creating and distributing the OnThisDay report."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Create and Distribute Report")
+        self.resizable(False, False)
+        self.configure(bg=WHITE)
+        self.transient(parent)
+        self.grab_set()
+
+        self._recipients = _load_recipients()
+        self._check_vars: list[tk.BooleanVar] = []
+
+        self._build()
+        self._centre(parent)
+
+    def _build(self):
+        # Header
+        header = tk.Frame(self, bg=RED_PRIMARY, height=48)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+        tk.Label(header, text="Create and Distribute Report", bg=RED_PRIMARY, fg=WHITE,
+                 font=(FONT_FAMILY, 14, "bold")).pack(side=tk.LEFT, padx=20, pady=10)
+
+        body = tk.Frame(self, bg=WHITE, padx=24, pady=16)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        # Hotlink to report site
+        report_link = tk.Label(body, text="\U0001F517 Create Report", bg=WHITE, fg="#4a90d9",
+                               font=(FONT_FAMILY, 10, "underline"), cursor="hand2", anchor="w")
+        report_link.pack(fill=tk.X, pady=(0, 8))
+        report_link.bind("<Button-1>", lambda e: webbrowser.open(_read_env().get("ONTHISDAY_WEB_APP", "https://djb-OnThisDay.web.app")))
+
+        # --- Recipients list with checkboxes ---
+        tk.Label(body, text="Email Recipients", bg=WHITE, fg=TEXT_DARK,
+                 font=(FONT_FAMILY, 10, "bold"), anchor="w").pack(fill=tk.X)
+
+        list_frame = tk.Frame(body, bg=WHITE, highlightbackground=BORDER, highlightthickness=1)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=(4, 8))
+
+        self._list_canvas = tk.Canvas(list_frame, bg=WHITE, borderwidth=0, highlightthickness=0,
+                                       height=150)
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self._list_canvas.yview)
+        self._list_inner = tk.Frame(self._list_canvas, bg=WHITE)
+        self._list_inner.bind("<Configure>",
+                              lambda _e: self._list_canvas.configure(
+                                  scrollregion=self._list_canvas.bbox("all")))
+        self._list_canvas_window = self._list_canvas.create_window(
+            (0, 0), window=self._list_inner, anchor="nw")
+        self._list_canvas.configure(yscrollcommand=scrollbar.set)
+        self._list_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # CRUD buttons
+        crud_frame = tk.Frame(body, bg=WHITE)
+        crud_frame.pack(fill=tk.X, pady=(0, 12))
+
+        add_btn = tk.Frame(crud_frame, bg=RED_PRIMARY, cursor="hand2")
+        add_btn.pack(side=tk.LEFT, padx=(0, 6))
+        al = tk.Label(add_btn, text="  Add  ", bg=RED_PRIMARY, fg=WHITE,
+                       font=(FONT_FAMILY, 9), padx=10, pady=3)
+        al.pack()
+        al.bind("<Button-1>", lambda e: self._add_recipient())
+
+        edit_btn = tk.Frame(crud_frame, bg="#4a90d9", cursor="hand2")
+        edit_btn.pack(side=tk.LEFT, padx=(0, 6))
+        el = tk.Label(edit_btn, text="  Edit  ", bg="#4a90d9", fg=WHITE,
+                       font=(FONT_FAMILY, 9), padx=10, pady=3)
+        el.pack()
+        el.bind("<Button-1>", lambda e: self._edit_recipient())
+
+        del_btn = tk.Frame(crud_frame, bg="#e67e22", cursor="hand2")
+        del_btn.pack(side=tk.LEFT)
+        dl = tk.Label(del_btn, text="  Delete  ", bg="#e67e22", fg=WHITE,
+                       font=(FONT_FAMILY, 9), padx=10, pady=3)
+        dl.pack()
+        dl.bind("<Button-1>", lambda e: self._delete_recipients())
+
+        # --- HTML Report file lookup ---
+        tk.Label(body, text="HTML Report", bg=WHITE, fg=TEXT_DARK,
+                 font=(FONT_FAMILY, 10, "bold"), anchor="w").pack(fill=tk.X)
+        self._report_var = tk.StringVar()
+        html_files = self._scan_html_reports()
+        if html_files:
+            self._report_var.set(html_files[0])
+        report_cb = ttk.Combobox(body, textvariable=self._report_var, values=html_files,
+                                  state="readonly", font=(FONT_FAMILY, 9))
+        report_cb.pack(fill=tk.X, pady=(4, 4))
+
+        # Status label
+        self._status_label = tk.Label(body, text="", bg=WHITE, fg=RED_PRIMARY,
+                                       font=(FONT_FAMILY, 9, "bold"), anchor="w")
+        self._status_label.pack(fill=tk.X, pady=(0, 4))
+
+        # --- Action buttons ---
+        btn_row = tk.Frame(body, bg=WHITE)
+        btn_row.pack(fill=tk.X, pady=(4, 0))
+
+        close_btn = tk.Frame(btn_row, bg="#e0e0e0", cursor="hand2")
+        close_btn.pack(side=tk.RIGHT, padx=(6, 0))
+        cl = tk.Label(close_btn, text="  Close  ", bg="#e0e0e0", fg=TEXT_DARK,
+                       font=(FONT_FAMILY, 10), padx=16, pady=6)
+        cl.pack()
+        cl.bind("<Button-1>", lambda e: self.destroy())
+
+        self._send_btn_frame = tk.Frame(btn_row, bg=RED_PRIMARY, cursor="hand2")
+        self._send_btn_frame.pack(side=tk.RIGHT, padx=(6, 0))
+        self._send_btn_label = tk.Label(self._send_btn_frame, text="  Email OnThisDay Report  ",
+                                         bg=RED_PRIMARY, fg=WHITE,
+                                         font=(FONT_FAMILY, 10, "bold"), padx=16, pady=6)
+        self._send_btn_label.pack()
+        self._send_btn_label.bind("<Button-1>", lambda e: self._create_report())
+        self._refresh_list()
+
+    # ------------------------------------------------------------------
+    # Recipient list rendering
+    # ------------------------------------------------------------------
+
+    def _refresh_list(self):
+        for w in self._list_inner.winfo_children():
+            w.destroy()
+        self._check_vars.clear()
+
+        for email in self._recipients:
+            var = tk.BooleanVar(value=False)
+            self._check_vars.append(var)
+            row = tk.Frame(self._list_inner, bg=WHITE)
+            row.pack(fill=tk.X)
+            cb = tk.Checkbutton(row, text=email, variable=var,
+                                bg=WHITE, fg=TEXT_DARK, font=(FONT_FAMILY, 9),
+                                anchor="w", selectcolor=WHITE,
+                                activebackground=WHITE)
+            cb.pack(fill=tk.X, padx=6, pady=2)
+
+    # ------------------------------------------------------------------
+    # CRUD operations
+    # ------------------------------------------------------------------
+
+    def _add_recipient(self):
+        dialog = _RecipientDialog(self, "Add Recipient", "")
+        if dialog.result:
+            email = dialog.result.strip()
+            if not EMAIL_RE.match(email):
+                _show_error("Invalid email address.")
+                return
+            if email in self._recipients:
+                _show_error("Email already in list.")
+                return
+            self._recipients.append(email)
+            _save_recipients(self._recipients)
+            self._refresh_list()
+
+    def _edit_recipient(self):
+        selected = self._get_selected_indices()
+        if len(selected) != 1:
+            _show_error("Select exactly one recipient to edit.")
+            return
+        idx = selected[0]
+        old_email = self._recipients[idx]
+        dialog = _RecipientDialog(self, "Edit Recipient", old_email)
+        if dialog.result:
+            new_email = dialog.result.strip()
+            if not EMAIL_RE.match(new_email):
+                _show_error("Invalid email address.")
+                return
+            if new_email != old_email and new_email in self._recipients:
+                _show_error("Email already in list.")
+                return
+            self._recipients[idx] = new_email
+            _save_recipients(self._recipients)
+            self._refresh_list()
+
+    def _delete_recipients(self):
+        selected = self._get_selected_indices()
+        if not selected:
+            _show_error("Select at least one recipient to delete.")
+            return
+        for idx in sorted(selected, reverse=True):
+            del self._recipients[idx]
+        _save_recipients(self._recipients)
+        self._refresh_list()
+
+    def _get_selected_indices(self) -> list[int]:
+        return [i for i, v in enumerate(self._check_vars) if v.get()]
+
+    def _scan_html_reports(self) -> list[str]:
+        env = _read_env()
+        report_dir = env.get("ONTHISDAY_HTML_REPORT_DIR", "")
+        prefix = env.get("ONTHISDAY_HTML_FILE_PREFIX", "")
+        if not report_dir or not os.path.isdir(report_dir):
+            return []
+        pattern = os.path.join(report_dir, f"{prefix}*.html")
+        files = sorted(glob.glob(pattern))
+        return [os.path.basename(f) for f in files]
+
+    def _create_report(self):
+        """Send HTML report via Outlook to selected recipients."""
+        env = _read_env()
+        warn_timeout = float(env.get("WARNING_MESSAGE_AUTOCLOSE_SECONDS", "0") or 0)
+        print(f"_create_report: WARNING_MESSAGE_AUTOCLOSE_SECONDS={warn_timeout}", flush=True)
+        selected = self._get_selected_indices()
+        if not selected:
+            _show_error("Select at least one recipient.", auto_close_seconds=warn_timeout)
+            return
+        report_name = self._report_var.get().strip()
+        if not report_name:
+            _show_error("No HTML report selected.", auto_close_seconds=warn_timeout)
+            return
+        report_dir = env.get("ONTHISDAY_HTML_REPORT_DIR", "")
+        report_path = os.path.join(report_dir, report_name)
+        if not os.path.isfile(report_path):
+            _show_error(f"Report file not found:\n{report_path}", auto_close_seconds=warn_timeout)
+            return
+        # Extract date from filename for subject (e.g. "08Jul2026" → "08-Jul")
+        date_match = re.search(r'(\d{2}[A-Z][a-z]{2}\d{4})', report_name)
+        if date_match:
+            from datetime import datetime
+            try:
+                dt = datetime.strptime(date_match.group(1), "%d%b%Y")
+                date_display = dt.strftime("%d-%b")
+            except ValueError:
+                date_display = date_match.group(1)
+        else:
+            date_display = ""
+        subject = f"On this day in Vietnam - {date_display}" if date_display else "On this day in Vietnam"
+        emails = [self._recipients[i] for i in selected]
+        # Read HTML content for body
+        try:
+            with open(report_path, "r", encoding="utf-8") as fh:
+                html_body = fh.read()
+        except OSError as exc:
+            _show_error(f"Cannot read report file:\n{exc}", auto_close_seconds=warn_timeout)
+            return
+        # Disable button and show status
+        self._set_sending(True)
+        try:
+            import pythoncom
+            import win32com.client
+            pythoncom.CoInitialize()
+            try:
+                outlook = win32com.client.GetActiveObject("Outlook.Application")
+            except Exception:
+                outlook = win32com.client.Dispatch("Outlook.Application")
+            mail = outlook.CreateItem(0)  # 0 = olMailItem
+            mail.To = "; ".join(emails)
+            mail.Subject = subject
+            mail.HTMLBody = html_body
+            try:
+                mail.Send()
+            except Exception:
+                # Fallback: open compose window for manual send
+                mail.Display(False)
+            self._set_sending(False)
+            StyledDialog(
+                self, "Report Sent",
+                f"Email sent to:\n" +
+                "\n".join(f"  \u2022 {e}" for e in emails) +
+                f"\n\nSubject: {subject}\nReport: {report_name}",
+                icon="info",
+                buttons=[("OK", None)],
+            )
+        except Exception as exc:
+            self._set_sending(False)
+            _show_error(f"Failed to send email:\n{exc}", auto_close_seconds=warn_timeout)
+
+    def _set_sending(self, sending: bool):
+        if sending:
+            self._status_label.configure(text="Sending email with attachment...")
+            self._send_btn_label.configure(state=tk.DISABLED, cursor="watch")
+            self._send_btn_frame.configure(cursor="watch")
+        else:
+            self._status_label.configure(text="")
+            self._send_btn_label.configure(state=tk.NORMAL, cursor="hand2")
+            self._send_btn_frame.configure(cursor="hand2")
+        self.update_idletasks()
+
+    def _centre(self, parent):
+        self.update_idletasks()
+        w = max(self.winfo_width(), 480)
+        h = max(self.winfo_height(), 420)
+        pw = parent.winfo_screenwidth()
+        ph = parent.winfo_screenheight()
+        x = (pw - w) // 2
+        y = (ph - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+
+
+class _RecipientDialog(tk.Toplevel):
+    """Simple single-field entry dialog for add/edit recipient."""
+
+    def __init__(self, parent, title: str, initial: str):
+        super().__init__(parent)
+        self.title(title)
+        self.resizable(False, False)
+        self.configure(bg=WHITE)
+        self.transient(parent)
+        self.grab_set()
+        self.result: str | None = None
+
+        body = tk.Frame(self, bg=WHITE, padx=24, pady=16)
+        body.pack()
+
+        tk.Label(body, text="Email address:", bg=WHITE, fg=TEXT_DARK,
+                 font=(FONT_FAMILY, 10)).pack(anchor="w", pady=(0, 4))
+        self._entry = tk.Entry(body, font=(FONT_FAMILY, 10), width=36,
+                               bg=WHITE, fg=TEXT_DARK, relief=tk.SOLID,
+                               highlightbackground=BORDER, highlightthickness=1)
+        self._entry.insert(0, initial)
+        self._entry.pack(pady=(0, 12))
+        self._entry.focus_set()
+        self._entry.select_range(0, tk.END)
+
+        btn_row = tk.Frame(body, bg=WHITE)
+        btn_row.pack(fill=tk.X)
+
+        cancel = tk.Label(btn_row, text="  Cancel  ", bg="#e0e0e0", fg=TEXT_DARK,
+                          font=(FONT_FAMILY, 10), padx=12, pady=4, cursor="hand2")
+        cancel.pack(side=tk.RIGHT, padx=(4, 0))
+        cancel.bind("<Button-1>", lambda e: self._choose(None))
+
+        ok_btn = tk.Label(btn_row, text="  OK  ", bg=RED_PRIMARY, fg=WHITE,
+                          font=(FONT_FAMILY, 10, "bold"), padx=16, pady=4, cursor="hand2")
+        ok_btn.pack(side=tk.RIGHT, padx=(4, 0))
+        ok_btn.bind("<Button-1>", lambda e: self._choose(self._entry.get()))
+
+        self._entry.bind("<Return>", lambda e: self._choose(self._entry.get()))
+        self._entry.bind("<Escape>", lambda e: self._choose(None))
+
+        self._centre(parent)
+        self.wait_window()
+
+    def _choose(self, value):
+        self.result = value
+        self.destroy()
+
+    def _centre(self, parent):
+        self.update_idletasks()
+        w = max(self.winfo_width(), 340)
+        h = max(self.winfo_height(), 120)
+        pw = parent.winfo_screenwidth()
+        ph = parent.winfo_screenheight()
+        x = (pw - w) // 2
+        y = (ph - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+
+
 # ---------------------------------------------------------------------------
 # Main Menu modal
 # ---------------------------------------------------------------------------
@@ -415,6 +807,11 @@ class MainMenu(tk.Toplevel):
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(12, 12))
 
+        report_btn = self._flat_button(body, "  Create and Distribute Report", lambda _e: self._open_report_modal(), None)
+        report_btn.pack(fill=tk.X, pady=3)
+
+        ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(12, 12))
+
         quit_btn = self._flat_button(body, "  Quit", lambda _e: self._quit(), None, is_danger=False)
         quit_btn.pack(fill=tk.X, pady=3)
 
@@ -488,6 +885,15 @@ class MainMenu(tk.Toplevel):
         tk.Button(about_win, text="CLOSE", command=about_win.destroy, bg="#1A237E", 
                   fg="white", font=("Helvetica", 10, "bold"), padx=30, pady=5, 
                   relief=tk.FLAT).pack(pady=20)
+
+    def _open_report_modal(self):
+        if self._buttons_locked:
+            return
+        self._set_buttons_locked(True)
+        try:
+            ReportModal(self)
+        finally:
+            self._set_buttons_locked(False)
 
     def _flat_button(self, parent, text, command, user_data, is_danger=False):
         """Create a flat-design clickable button using a Frame + Label."""
