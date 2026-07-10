@@ -135,7 +135,7 @@ class StyledDialog(tk.Toplevel):
 
     def __init__(self, parent, title: str, message: str, *,
                  icon: str = "info", buttons: list[tuple[str, object]],
-                 auto_close_seconds: float = 0):
+                 auto_close_seconds: float = 0, width: int = 50):
         super().__init__(parent)
         self.result: object = None
         self.title(title)
@@ -180,7 +180,7 @@ class StyledDialog(tk.Toplevel):
             top, bg=WHITE, fg=TEXT_DARK, font=(FONT_FAMILY, 10),
             wrap=tk.WORD, relief=tk.FLAT, borderwidth=0,
             highlightthickness=0, padx=0, pady=0,
-            cursor="arrow", state=tk.NORMAL, width=50,
+            cursor="arrow", state=tk.NORMAL, width=width,
         )
         msg_lbl.insert("1.0", message)
         lines = message.count("\n") + 1
@@ -380,6 +380,325 @@ def _load_recipients() -> list[str]:
 def _save_recipients(recipients: list[str]):
     with open(RECIPIENTS_PATH, "w", encoding="utf-8") as fh:
         json.dump(recipients, fh, indent=2, ensure_ascii=False)
+
+
+class MaintenanceModal(tk.Toplevel):
+    """Modal for maintenance actions."""
+
+    FIELD_PATHS = {
+        "death_location": ("derived_details", "fatality_locations", "death_location"),
+        "incident_location": ("derived_details", "fatality_locations", "incident_location"),
+        "circumstances_of_death": ("derived_details", "circumstances_of_death"),
+    }
+
+    _SESSION_KEY = "maintenance_field"
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Maintenance")
+        self.resizable(False, False)
+        self.configure(bg=WHITE)
+        self.transient(parent)
+        self.grab_set()
+
+        self._field_to_update = self._load_field_setting()
+
+        self._build()
+        self._centre(parent)
+
+    def _build(self):
+        # Header
+        header = tk.Frame(self, bg=RED_PRIMARY, height=48)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+        tk.Label(header, text="Maintenance", bg=RED_PRIMARY, fg=WHITE,
+                 font=(FONT_FAMILY, 14, "bold")).pack(side=tk.LEFT, padx=20, pady=10)
+
+        body = tk.Frame(self, bg=WHITE, padx=24, pady=20)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        # Field selector
+        field_frame = tk.Frame(body, bg=WHITE)
+        field_frame.pack(fill=tk.X, pady=(0, 12))
+        tk.Label(field_frame, text="Field to update:", bg=WHITE, fg=TEXT_DARK,
+                 font=(FONT_FAMILY, 10, "bold")).pack(side=tk.LEFT, padx=(0, 8))
+        self._field_var = tk.StringVar(value=self._field_to_update)
+        field_cb = ttk.Combobox(field_frame, textvariable=self._field_var,
+                                 values=list(self.FIELD_PATHS.keys()),
+                                 state="readonly", font=(FONT_FAMILY, 10), width=28)
+        field_cb.pack(side=tk.LEFT)
+        field_cb.bind("<<ComboboxSelected>>", self._on_field_changed)
+
+        # AU_Correct_Vietnamese button
+        au_btn_frame = tk.Frame(body, bg=RED_PRIMARY, cursor="hand2")
+        au_btn_frame.pack(fill=tk.X, pady=(0, 8))
+        au_lbl = tk.Label(au_btn_frame, text="AU_Correct_Vietnamese", bg=RED_PRIMARY, fg=WHITE,
+                          font=(FONT_FAMILY, 11, "bold"), padx=20, pady=10)
+        au_lbl.pack(fill=tk.X)
+        au_lbl.bind("<Button-1>", lambda e: self._on_au_correct())
+
+        # NZ_Correct_Vietnamese button
+        nz_btn_frame = tk.Frame(body, bg=RED_PRIMARY, cursor="hand2")
+        nz_btn_frame.pack(fill=tk.X, pady=(0, 8))
+        nz_lbl = tk.Label(nz_btn_frame, text="NZ_Correct_Vietnamese", bg=RED_PRIMARY, fg=WHITE,
+                          font=(FONT_FAMILY, 11, "bold"), padx=20, pady=10)
+        nz_lbl.pack(fill=tk.X)
+        nz_lbl.bind("<Button-1>", lambda e: self._on_nz_correct())
+
+        # Close button
+        close_frame = tk.Frame(body, bg=WHITE)
+        close_frame.pack(fill=tk.X, pady=(8, 0))
+        close_btn_frame = tk.Frame(close_frame, bg="#e0e0e0", cursor="hand2")
+        close_btn_frame.pack(side=tk.RIGHT)
+        close_lbl = tk.Label(close_btn_frame, text="  Close  ", bg="#e0e0e0", fg=TEXT_DARK,
+                             font=(FONT_FAMILY, 10), padx=16, pady=6)
+        close_lbl.pack()
+        close_lbl.bind("<Button-1>", lambda e: self.destroy())
+
+    def _on_au_correct(self):
+        self._correct_vietnamese_names("AU", self._field_var.get())
+
+    def _on_nz_correct(self):
+        self._correct_vietnamese_names("NZ", self._field_var.get())
+
+    # ------------------------------------------------------------------
+    # Field selector session persistence
+    # ------------------------------------------------------------------
+
+    def _load_field_setting(self) -> str:
+        """Load last-used field from session.json, default to death_location."""
+        sp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session.json")
+        try:
+            if os.path.exists(sp):
+                with open(sp, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                if isinstance(data, dict):
+                    val = data.get(self._SESSION_KEY)
+                    if val in self.FIELD_PATHS:
+                        return val
+        except (json.JSONDecodeError, OSError):
+            pass
+        return "death_location"
+
+    def _save_field_setting(self, field: str):
+        """Persist the selected field to session.json."""
+        sp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session.json")
+        try:
+            data: dict = {}
+            if os.path.exists(sp):
+                with open(sp, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+            if not isinstance(data, dict):
+                data = {}
+            data[self._SESSION_KEY] = field
+            with open(sp, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, indent=2, ensure_ascii=False)
+        except OSError:
+            pass
+
+    def _on_field_changed(self, event=None):
+        self._save_field_setting(self._field_var.get())
+
+    # ------------------------------------------------------------------
+    # Correction logic
+    # ------------------------------------------------------------------
+
+    def _correct_vietnamese_names(self, country: str, field_key: str):
+        """Scan fatalities JSON and correct Vietnamese names in the selected field.
+        Processes in batches of 10 with preview."""
+        import re
+        from tkinter import messagebox
+
+        BATCH_SIZE = 10
+        field_path = self.FIELD_PATHS.get(field_key)
+        if not field_path:
+            messagebox.showerror("Error", f"Unknown field: {field_key}")
+            return
+
+        # Helper: navigate nested dict path to get value
+        def _get_nested(d, path):
+            for key in path:
+                if isinstance(d, dict):
+                    d = d.get(key, {})
+                else:
+                    return ""
+            return d if isinstance(d, str) else ""
+
+        # Load lookup mapping
+        lookup_path = "correct_vietnamese_names.json"
+        if not os.path.exists(lookup_path):
+            messagebox.showerror("Error", f"Lookup file not found:\n{lookup_path}")
+            return
+
+        with open(lookup_path, "r", encoding="utf-8") as fh:
+            mapping = json.load(fh)
+
+        # Find the correct JSON file
+        env = _read_env()
+        directory = env.get("FATALITY_FILE_DIRECTORY", "")
+        files_str = env.get("FILES_AVAILABLE_FOR_UPDATE", "")
+
+        target_file = None
+        for f in files_str.split(","):
+            f = f.strip()
+            if f.lower().startswith(country.lower()) and f.lower().endswith(".json"):
+                target_file = os.path.join(directory, f)
+                break
+
+        if not target_file or not os.path.exists(target_file):
+            messagebox.showerror("Error", f"{country}_fatalities.json not found.\nChecked: {target_file}")
+            return
+
+        # Load data
+        data = load_json(target_file)
+        if data is None:
+            return
+
+        # Build regex — case-insensitive, word-boundary, escaped keys
+        escaped_keys = [re.escape(k) for k in mapping.keys()]
+        pattern = re.compile(r'\b(' + '|'.join(escaped_keys) + r')\b', re.IGNORECASE)
+
+        # First pass: collect all records that need changes
+        changes: list[dict] = []
+        for i, record in enumerate(data):
+            try:
+                loc = _get_nested(record, field_path)
+            except (AttributeError, TypeError):
+                continue
+            if not loc:
+                continue
+
+            def replace_fn(m, _mapping=mapping):
+                return _mapping[m.group(1).lower()]
+
+            new_loc = pattern.sub(replace_fn, loc)
+            if new_loc != loc:
+                srv = record.get("serviceRecordAuthority", {})
+                changes.append({
+                    "idx": i,
+                    "svc_no": srv.get("service_number", "?") if isinstance(srv, dict) else "?",
+                    "name": srv.get("full_name", "?") if isinstance(srv, dict) else "?",
+                    "old": loc,
+                    "new": new_loc,
+                })
+
+        if not changes:
+            messagebox.showinfo(
+                "No Changes",
+                f"No invalid Vietnamese names found in '{field_key}' field in\n{os.path.basename(target_file)}."
+            )
+            return
+
+        total_changes = len(changes)
+        total_batches = (total_changes + BATCH_SIZE - 1) // BATCH_SIZE
+
+        # Show summary and ask to proceed
+        if not messagebox.askyesno(
+            "Batch Update",
+            f"Found {total_changes} record(s) needing correction in\n{os.path.basename(target_file)}.\n\n"
+            f"Will process in {total_batches} batch(es) of up to {BATCH_SIZE}.\n\nProceed with first batch?"
+        ):
+            return
+
+        updated_total = 0
+        for batch_num in range(total_batches):
+            start = batch_num * BATCH_SIZE
+            batch = changes[start:start + BATCH_SIZE]
+
+            # Build preview text
+            lines = []
+            for c in batch:
+                lines.append(f"{c['svc_no']}  {c['name']}")
+                lines.append(f"  OLD: {c['old']}")
+                lines.append(f"  NEW: {c['new']}")
+                lines.append("")
+            preview = "\n".join(lines)
+
+            # Show batch preview and ask to update
+            dialog = StyledDialog(
+                self,
+                f"Batch {batch_num + 1} of {total_batches} — {country}_Correct_Vietnamese",
+                f"{len(batch)} record(s) in this batch:\n\n{preview}",
+                icon="question",
+                buttons=[("Update These", True), ("Skip Batch", False), ("Cancel All", None)],
+                width=90,
+            )
+            result = dialog.result
+
+            if result is None:
+                # Cancel all — save what we've already updated
+                if updated_total > 0:
+                    save_json(target_file, data)
+                    messagebox.showinfo(
+                        "Partial Update",
+                        f"Saved {updated_total} correction(s) before cancelling.\n{total_changes - start} remaining."
+                    )
+                return
+
+            if result is True:
+                # Apply this batch
+                for c in batch:
+                    # Navigate to set the nested field
+                    _target = data[c["idx"]]
+                    for _key in field_path[:-1]:
+                        if _key not in _target or not isinstance(_target[_key], dict):
+                            _target[_key] = {}
+                        _target = _target[_key]
+                    _target[field_path[-1]] = c["new"]
+                    updated_total += 1
+                # Save after each batch
+                save_json(target_file, data)
+
+                remaining = total_changes - start - len(batch)
+                if remaining > 0:
+                    if not messagebox.askyesno(
+                        "Continue?",
+                        f"Batch {batch_num + 1} done. {updated_total} total corrected.\n"
+                        f"{remaining} record(s) remaining.\n\nContinue to next batch?"
+                    ):
+                        messagebox.showinfo(
+                            "Partial Update",
+                            f"Saved {updated_total} correction(s).\n{remaining} record(s) not processed."
+                        )
+                        return
+                else:
+                    messagebox.showinfo(
+                        "Done",
+                        f"All {updated_total} record(s) corrected in:\n{os.path.basename(target_file)}"
+                    )
+            else:
+                # Skip — ask if want to continue
+                remaining = total_changes - start - len(batch)
+                if remaining > 0:
+                    if not messagebox.askyesno(
+                        "Continue?",
+                        f"Batch skipped. {updated_total} total corrected.\n"
+                        f"{remaining} record(s) remaining.\n\nContinue to next batch?"
+                    ):
+                        if updated_total > 0:
+                            messagebox.showinfo(
+                                "Partial Update",
+                                f"Saved {updated_total} correction(s).\n{remaining} record(s) not processed."
+                            )
+                        return
+                else:
+                    if updated_total > 0:
+                        messagebox.showinfo(
+                            "Done",
+                            f"{updated_total} record(s) corrected in:\n{os.path.basename(target_file)}"
+                        )
+                    else:
+                        messagebox.showinfo("No Changes", "No records were updated.")
+
+    def _centre(self, parent):
+        self.update_idletasks()
+        w = max(self.winfo_width(), 360)
+        h = max(self.winfo_height(), 220)
+        pw = parent.winfo_screenwidth()
+        ph = parent.winfo_screenheight()
+        x = (pw - w) // 2
+        y = (ph - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
 
 
 class ReportModal(tk.Toplevel):
@@ -802,6 +1121,11 @@ class MainMenu(tk.Toplevel):
 
         ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(16, 12))
 
+        maintenance_btn = self._flat_button(body, "  Maintenance", lambda _e: self._open_maintenance_modal(), None)
+        maintenance_btn.pack(fill=tk.X, pady=3)
+
+        ttk.Separator(body, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(12, 12))
+
         backup_btn = self._flat_button(body, "  Backup Fatalities.json to folder for OneDrive sync", lambda _e: self._backup_files(), None)
         backup_btn.pack(fill=tk.X, pady=3)
 
@@ -892,6 +1216,15 @@ class MainMenu(tk.Toplevel):
         self._set_buttons_locked(True)
         try:
             ReportModal(self)
+        finally:
+            self._set_buttons_locked(False)
+
+    def _open_maintenance_modal(self):
+        if self._buttons_locked:
+            return
+        self._set_buttons_locked(True)
+        try:
+            MaintenanceModal(self)
         finally:
             self._set_buttons_locked(False)
 

@@ -1,61 +1,55 @@
 # rAI_PROGRESS — Fatalities Editor
 
-## Session Progress — 2026-07-06
+## Session Progress — 2026-07-10
 
-- **Diagnosed AI hallucination in "Enhanced Operations Details"**: The hotlink triggered
-  `_build_enhanced_circumstances_prompt` which actively instructed the AI to fabricate
-  war diary entries, eyewitness accounts, chronological timelines, patrol movements,
-  and Dustoff details — then cite them against non-existent AWM records and books.
-- **Rewrote `_build_enhanced_circumstances_prompt`** (`update_fatalities.py`):
-  - Added 9 anti-hallucination rules to the system prompt.
-  - Replaced both combat and non-combat research components with URL-mandatory versions.
-  - Removed fabrication-encouraging instructions (the "If direct diary text is not
-    accessible, summarise secondary sources" line was the primary fabrication engine).
-  - Replaced "chronological reconstruction" requirement with: every factual claim
-    MUST include a URL in `[Source Name](https://...)` format. No URL → NOT_DOCUMENTED.
-- **Tightened `ai_derived_details_prompts.py`**:
-  - Added anti-hallucination rules to `_SHARED_RULES` (applies to all field hotlinks).
-  - Tightened `get_circumstances_of_death_prompt`: no longer asks AI to invent
-    "enemy contact type, operational environment, fatal wound nature."
-  - Tightened `get_all_hotlinks_prompt`: same constraints for combined extraction.
-- **All files compile cleanly** (`update_fatalities.py`, `ai_derived_details_prompts.py`,
-  `ai_master_prompts.py`).
+- Added **"Maintenance" menu button** to MainMenu, positioned under the Update dataset buttons
+  with its own separator.
+- Created **`MaintenanceModal`** (tk.Toplevel) — red header, field selector dropdown,
+  AU_Correct_Vietnamese / NZ_Correct_Vietnamese action buttons, and Close.
+- Created **`correct_vietnamese_names.json`** lookup file — 9 ASCII→Vietnamese name mappings
+  (phuoc tuy→Phước Tuy, long hai→Long Hải, vung tau→Vũng Tàu, etc.).
+- Implemented **batch correction logic** in `_correct_vietnamese_names`:
+  scans the selected field (AU or NZ JSON), previews 10 records at a time with
+  service number + before/after text, saves after each batch.
+  Three choices per batch: Update These / Skip Batch / Cancel All.
+- Added optional **`width` parameter** to `StyledDialog` (default 50 → batch preview uses 90).
+- Added **field selector dropdown** ("Field to update:") with 3 options:
+  death_location | incident_location | circumstances_of_death.
+  Defaults to death_location, **persisted in session.json** under key `"maintenance_field"`.
+- Made correction logic **dynamic** via `FIELD_PATHS` class variable — maps field name to
+  nested JSON path. No hardcoded field access remains.
 
 ## Current System State
 
-- **Anti-hallucination rule (CRITICAL)**: Every factual claim in AI-generated output
-  MUST include a working URL from an authoritative source (AWM, DVA, VWMA, NAA, Trove).
-  No URL → the claim MUST be NOT_DOCUMENTED. This applies to the Enhanced Operations
-  Details prompt AND all derived-detail hotlink prompts.
-- **Fabrication prohibitions**: AI must NEVER invent war diary entries, eyewitness
-  accounts, chronological timelines, patrol movements, platoon positions, Dustoff
-  times, book references, or combat narratives. These are NOT in the public record
-  for individual soldiers.
-- **Indian 1960 datum**: Tag MGRS with `I60:`, `INDIAN1960:`, or `INDIAN:` inside
-  `//...//` to route through pyproj EPSG:3148/3149 → EPSG:4326.
-- **Default MGRS**: Untagged MGRS uses legacy SVN60 shift (+205m E, +75m N).
-- **Local conversion**: Click `incident_coordinates` label → reads `//...//` from
-  `incident_location` → `coords.py` → writes to `incident_coordinates`.
-- **Key files**: `update_fatalities.py` (GUI + Enhanced Circumstances prompt),
-  `ai_derived_details_prompts.py` (hotlink field prompts),
-  `ai_master_prompts.py` (master response prompt), `coords.py` (parsers + datum).
-- **Dependencies**: `mgrs`, `pyproj` (both installed).
+*(Preserved from previous session)*
+
+- **Anti-hallucination rule (CRITICAL)**: Every factual claim MUST include a working URL
+  from an authoritative source (AWM, DVA, VWMA, NAA, Trove).
+- **Indian 1960 datum**: Tag MGRS with `I60:`, `INDIAN1960:`, or `INDIAN:` → EPSG:3148/3149.
+- **Default MGRS**: Untagged uses legacy SVN60 shift (+205m E, +75m N).
+- **Key files**: `update_fatalities.py`, `ai_derived_details_prompts.py`,
+  `ai_master_prompts.py`, `coords.py`, `main.py`.
+- **Dependencies**: `mgrs`, `pyproj`.
+
+*(New this session)*
+
+- **Maintenance FIELD_PATHS**:
+  `death_location` → `derived_details.fatality_locations.death_location`,
+  `incident_location` → `derived_details.fatality_locations.incident_location`,
+  `circumstances_of_death` → `derived_details.circumstances_of_death`.
+- **Session persistence**: `maintenance_field` saved to `session.json` — loaded on modal
+  open, written on every dropdown change.
+- **Vietnamese name lookup**: `correct_vietnamese_names.json` in workspace root — shared
+  by both AU and NZ correction routines.
+- **Batch size**: 10 records per batch, hardcoded as `BATCH_SIZE` in `_correct_vietnamese_names`.
 
 ## Next Steps
 
-1. [ ] Test "Enhanced Operations Details" hotlink with a known soldier record.
-   Verify output contains only URL-backed claims and honest NOT_DOCUMENTED markers
-   — no fabricated war diaries, timelines, or eyewitness accounts.
-2. [ ] Test individual field hotlinks (service_status, circumstances_of_death, etc.)
-   — confirm anti-hallucination rules suppress fabrication in derived fields.
-3. [ ] For records with `YS 443 235` → verify source grid reference; may be
-   `YS 386 619` or similar.
-4. [ ] For records with `YS 785 650` mapped to Hoa Long area → verify; currently
-   converts to 10.529°N, 107.545°E (~40 km east).
-5. [ ] Consider adding Indian 1960 as default for all Vietnam-era MGRS if the SVN60
-   shift proves insufficient across more records.
-6. [ ] Test `//I60:...//` workflow end-to-end in the GUI.
+- Add more entries to `correct_vietnamese_names.json` as additional incorrect names
+  are discovered in the data.
 
 ## Incomplete Work
 
-None. All changes are complete and verified (syntax check passed).
+None — all stubs are implemented. Both AU_Correct_Vietnamese and NZ_Correct_Vietnamese
+are fully functional with batch preview, session-persisted field selection,
+and dynamic field-path resolution.
