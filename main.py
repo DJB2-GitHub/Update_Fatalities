@@ -509,7 +509,7 @@ class MaintenanceModal(tk.Toplevel):
         import re
         from tkinter import messagebox
 
-        BATCH_SIZE = 10
+        BATCH_SIZE = 20
         field_path = self.FIELD_PATHS.get(field_key)
         if not field_path:
             messagebox.showerror("Error", f"Unknown field: {field_key}")
