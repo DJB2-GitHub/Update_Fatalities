@@ -505,11 +505,11 @@ class MaintenanceModal(tk.Toplevel):
 
     def _correct_vietnamese_names(self, country: str, field_key: str):
         """Scan fatalities JSON and correct Vietnamese names in the selected field.
-        Processes in batches of 10 with preview."""
+        Processes in batches of 500 with preview."""
         import re
         from tkinter import messagebox
 
-        BATCH_SIZE = 20
+        BATCH_SIZE = 500
         field_path = self.FIELD_PATHS.get(field_key)
         if not field_path:
             messagebox.showerror("Error", f"Unknown field: {field_key}")

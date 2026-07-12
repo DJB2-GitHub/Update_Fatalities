@@ -19,9 +19,14 @@
 - Made correction logic **dynamic** via `FIELD_PATHS` class variable — maps field name to
   nested JSON path. No hardcoded field access remains.
 
+## Session Progress — 2026-07-12
+
+- Increased **`BATCH_SIZE`** in `_correct_vietnamese_names` from **20 → 500** records per batch
+  (`main.py` line 512). Also updated the docstring (line 508) to reflect the new size.
+
 ## Current System State
 
-*(Preserved from previous session)*
+*(Preserved from previous sessions)*
 
 - **Anti-hallucination rule (CRITICAL)**: Every factual claim MUST include a working URL
   from an authoritative source (AWM, DVA, VWMA, NAA, Trove).
@@ -31,7 +36,7 @@
   `ai_master_prompts.py`, `coords.py`, `main.py`.
 - **Dependencies**: `mgrs`, `pyproj`.
 
-*(New this session)*
+*(Established prior)*
 
 - **Maintenance FIELD_PATHS**:
   `death_location` → `derived_details.fatality_locations.death_location`,
@@ -41,7 +46,11 @@
   open, written on every dropdown change.
 - **Vietnamese name lookup**: `correct_vietnamese_names.json` in workspace root — shared
   by both AU and NZ correction routines.
-- **Batch size**: 10 records per batch, hardcoded as `BATCH_SIZE` in `_correct_vietnamese_names`.
+
+*(Updated this session)*
+
+- **Batch size**: **500** records per batch, hardcoded as `BATCH_SIZE` in `_correct_vietnamese_names`
+  (`main.py` line 512). Previously 10 → 20 → now 500.
 
 ## Next Steps
 
@@ -50,6 +59,4 @@
 
 ## Incomplete Work
 
-None — all stubs are implemented. Both AU_Correct_Vietnamese and NZ_Correct_Vietnamese
-are fully functional with batch preview, session-persisted field selection,
-and dynamic field-path resolution.
+None — both AU_Correct_Vietnamese and NZ_Correct_Vietnamese are fully functional.
