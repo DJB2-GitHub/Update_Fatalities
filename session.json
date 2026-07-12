@@ -501,5 +501,5 @@
       "sidePanelVisible": 0
     }
   },
-  "maintenance_field": "death_location"
+  "maintenance_field": "circumstances_of_death"
 }

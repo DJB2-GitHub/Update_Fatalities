@@ -35,6 +35,21 @@
   - Dynamically renamed the dataset labels in `main.py` to "Update AU_Fatalities (Honor_Roll)" and "Update NZ_Fatalities (Honor_Roll)".
   - Refactored `_backup_files` in `main.py` to pull the latest data directly from Firestore and dump it to JSON in the OneDrive sync directory, restoring backup functionality.
 
+## Session Progress — 2026-07-12 (Late Session)
+
+- **Removed Maintenance Menu**: Deleted `MaintenanceModal` class, Maintenance button + separators, and `_open_maintenance_modal` method from `main.py`. The batch Vietnamese correction UI is gone.
+- **Auto Vietnamese Name Correction on Save**: Extracted the regex-based Vietnamese name correction from the old `MaintenanceModal._correct_vietnamese_names` into standalone module-level functions in `update_fatalities.py`:
+  - `_apply_vietnamese_correction(text)` — lazy-loads `correct_vietnamese_names.json` once (cached), applies case-insensitive word-boundary regex substitution.
+  - `_correct_record_vietnamese(record)` — traverses `derived_details.fatality_locations.death_location`, `derived_details.fatality_locations.incident_location`, and `derived_details.circumstances_of_death`, applying corrections silently.
+  - Wired into `_update_record()` — runs after `_read_form()` succeeds, before user confirmation dialog. No UI, no preview, no dialogs.
+- **Backup Button UX**:
+  - Renamed: "Backup Fatalities.json to folder for OneDrive sync" → "Backup Firestore Fatalities to folder for OneDrive sync".
+  - Disabled state: label grays to `TEXT_MUTED`, text changes to "Backing up...", click unbound.
+  - Re-enabled via `try/finally` wrapping the backup body in a nested `_do_backup()` function — covers all exit paths (early returns, errors, success).
+- **Window Titles**: Default title format changed from "Update AU_fatalities.json" → "Update AU_fatalities [Firestore]" (strips `.json` extension and appends `[Firestore]`). Applied in `update_fatalities._build_ui`.
+- **Main Menu Labels**: "AU_Fatalities (Honor_Roll)" → "AU_Fatalities (Firestore->Honor_Roll)". Same for NZ.
+- **README.md Updates**: App description, prerequisites (`firebase-admin`, `firebase-key.json`), env vars, architecture (`coords.py` Firestore role), and state management all now reflect Firestore as the live data source.
+
 ## Current System State
 
 *(Preserved from previous sessions)*
@@ -47,17 +62,6 @@
   `ai_master_prompts.py`, `coords.py`, `main.py`.
 - **Dependencies**: `mgrs`, `pyproj`, `firebase-admin`.
 
-*(Established prior)*
-
-- **Maintenance FIELD_PATHS**:
-  `death_location` → `derived_details.fatality_locations.death_location`,
-  `incident_location` → `derived_details.fatality_locations.incident_location`,
-  `circumstances_of_death` → `derived_details.circumstances_of_death`.
-- **Session persistence**: `maintenance_field` saved to `session.json` — loaded on modal
-  open, written on every dropdown change.
-- **Vietnamese name lookup**: `correct_vietnamese_names.json` in workspace root — shared
-  by both AU and NZ correction routines.
-
 *(Updated this session)*
 
 - **Data Persistence Architecture**: 
@@ -67,7 +71,13 @@
   - **NZ Path**: `/countries/NZ/wars/vietnam/honor_roll`
   - **Batching Rule**: Writes are chunked into db.batch() max 500 size arrays.
   - **Merge Rule**: All sets must use `merge=True`.
-- **Batch size**: **500** records per batch, hardcoded as `BATCH_SIZE` in `_correct_vietnamese_names`.
+- **Vietnamese Name Correction**: 
+  - **Lookup**: `correct_vietnamese_names.json` in workspace root — 20 entries.
+  - **Applied fields**: `death_location`, `incident_location`, `circumstances_of_death`.
+  - **Execution**: Silent, on every record save, before Firestore write. No UI.
+  - **Location**: Module-level in `update_fatalities.py` (`_apply_vietnamese_correction`, `_correct_record_vietnamese`).
+  - **Field paths**: `derived_details.fatality_locations.death_location`, `derived_details.fatality_locations.incident_location`, `derived_details.circumstances_of_death`.
+- **Backup button**: "Backup Firestore Fatalities to folder for OneDrive sync" — disabled (grayed, "Backing up...") during backup; re-enabled via try/finally.
 
 ## Next Steps
 
@@ -77,4 +87,4 @@
 
 ## Incomplete Work
 
-None. The Firestore migration for AU and NZ honor roll datasets, the corresponding UI updates, and the backup logic refactor are fully functional.
+None.

@@ -1,12 +1,14 @@
 # Fatalities Editor Application
 
-A Python Tkinter-based GUI application designed to read, edit, and safely update complex JSON structures, specifically tailored for editing structured fatality records.
+A Python Tkinter-based GUI application designed to read, edit, and safely update fatality records stored in Firebase Firestore (`djb-onthisday`), with reads streamed from Firestore and writes merged back via batch commits.
 
 ## 🛠 Development Environment
 
 ### Prerequisites
 - **Python 3.10+**
 - **Tkinter** (usually included with standard Python installations)
+- **Firebase Admin SDK** (`firebase-admin`) — for Firestore read/write access
+- **`firebase-key.json`** — Service Account Key placed in project root
 
 ### Environment Configuration (`.env`)
 The application relies on an environment configuration file for routing paths and managing API keys for integrated AI capabilities. To set up your local environment:
@@ -14,9 +16,10 @@ The application relies on an environment configuration file for routing paths an
 2. Configure the paths and API keys as needed.
 
 **Key Environment Variables:**
-- `FATALITY_FILE_DIRECTORY`: The absolute path pointing to your live JSON database files (e.g., your Firebase Hub `src/data` directory).
-- `FILES_AVAILABLE_FOR_UPDATE`: A comma-separated list of JSON filenames the app is allowed to load.
-- `ONEDRIVE_DIRECTORY`: Path used for maintaining structural backups.
+- `FATALITY_FILE_DIRECTORY`: Reserved — retained for legacy path resolution but no longer controls the primary data source.
+- `FILES_AVAILABLE_FOR_UPDATE`: Comma-separated filenames used as keys to map to Firestore collections (e.g. `AU_fatalities.json` → `/countries/AU/wars/vietnam/honor_roll`).
+- `BACKUP_FATALITIES_TO_ONEDRIVE_SYNC`: Path for OneDrive-synced Firestore backup dumps.
+- `firebase-key.json`: Service Account Key for Firestore authentication (project `djb-onthisday`).
 
 ---
 
@@ -201,6 +204,7 @@ If the format is unrecognized, the application blocks the save and displays a to
 The application is built using a monolithic Tkinter architecture focused on direct DOM-like manipulation of widgets.
 - **`main.py`**: Entry point. Parses `.env`, renders the main menu, and spawns the editor.
 - **`update_fatalities.py`**: The core editor modal. Contains all UI bindings, coordinate parsing (`_try_parse_vietnam_mgrs`), session management (`session.json`), and the threaded AI Master Response pipeline (`_ai_lookup`).
+- **`coords.py`**: Data access layer. `_load_json` streams records from Firestore (mapping filenames to collection paths like `/countries/AU/wars/vietnam/honor_roll`). `_save_json` uses Firestore batch writes (chunked by 500, `merge=True`).
 
 ### AI Pipeline Flow (`_ai_lookup`)
 1. **Data Collection**: Extracts identity anchor values from `serviceRecordAuthority` (read-only truth).
@@ -209,8 +213,7 @@ The application is built using a monolithic Tkinter architecture focused on dire
 4. **Resilience**: Automatically falls back to secondary models on 503/429 HTTP errors.
 
 ### State Management (`session.json`)
-- Each JSON dataset has a corresponding `session.json` created in the same directory.
-- It tracks the user's last viewed record index (`pos`) and active search filter (`search`), ensuring they return exactly where they left off.
+- Tracks the user's last viewed record index (`pos`) and active search filter (`search`) per dataset, ensuring they return exactly where they left off.
 
 ## 🚀 Running the App
 To run the application cleanly without an active terminal window, use the wrapper:

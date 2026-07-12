@@ -265,6 +265,57 @@ from coords import (
 )
 import coords
 
+# ---------------------------------------------------------------------------
+# Vietnamese name correction (applied silently on every save)
+# ---------------------------------------------------------------------------
+
+_vietnamese_lookup: dict[str, str] | None = None
+_vietnamese_pattern: re.Pattern | None = None
+
+
+def _apply_vietnamese_correction(text: str) -> str:
+    """Apply Vietnamese name corrections to a single text value."""
+    global _vietnamese_lookup, _vietnamese_pattern
+    if not text:
+        return text
+    if _vietnamese_lookup is None:
+        lookup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "correct_vietnamese_names.json")
+        try:
+            with open(lookup_path, "r", encoding="utf-8") as fh:
+                _vietnamese_lookup = json.load(fh)
+            escaped = [re.escape(k) for k in _vietnamese_lookup.keys()]
+            _vietnamese_pattern = re.compile(r'\b(' + '|'.join(escaped) + r')\b', re.IGNORECASE)
+        except (OSError, json.JSONDecodeError):
+            _vietnamese_lookup = {}
+            return text
+    if not _vietnamese_lookup or _vietnamese_pattern is None:
+        return text
+    return _vietnamese_pattern.sub(lambda m: _vietnamese_lookup[m.group(1).lower()], text)
+
+
+_VIETNAMESE_FIELD_PATHS = [
+    ("derived_details", "fatality_locations", "death_location"),
+    ("derived_details", "fatality_locations", "incident_location"),
+    ("derived_details", "circumstances_of_death"),
+]
+
+
+def _correct_record_vietnamese(record: dict) -> None:
+    """Apply Vietnamese corrections to nested fields inside a record dict (mutates in place)."""
+    for path in _VIETNAMESE_FIELD_PATHS:
+        target = record
+        for key in path[:-1]:
+            if not isinstance(target, dict):
+                target = {}
+            target = target.setdefault(key, {})
+        if isinstance(target, dict):
+            val = target.get(path[-1])
+            if isinstance(val, str):
+                corrected = _apply_vietnamese_correction(val)
+                if corrected != val:
+                    target[path[-1]] = corrected
+
+
 class UpdateFatalities(tk.Toplevel):
     """Modern flat-design modal for editing fatality records with AI side panel."""
 
@@ -1589,7 +1640,8 @@ Your final report must:
         if self._modal_title:
             self.title(self._modal_title)
         else:
-            self.title(f"Update {filename}")
+            basename = os.path.splitext(filename)[0]
+            self.title(f"Update {basename} [Firestore]")
 
         outer = tk.Frame(self, bg=BG_GREY)
         outer.pack(fill=tk.BOTH, expand=True)
@@ -2435,6 +2487,7 @@ Your final report must:
         updated = self._read_form()
         if updated is None:
             return
+        _correct_record_vietnamese(updated)
         record_id = updated.get("referenceID", str(self._filtered_pos + 1))
         ok = _confirm_yesno(self, "Confirm Update", f'Please confirm update for "{record_id}"')
         if not ok:
