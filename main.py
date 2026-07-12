@@ -53,10 +53,20 @@ def _read_env(path: str = ENV_PATH) -> dict[str, str]:
 
 def _make_datasets(env: dict[str, str], directory: str, env_key: str) -> dict[str, str]:
     """Build {label: full_path} from a comma-separated env value."""
-    return {
-        os.path.splitext(f.strip())[0]: os.path.join(directory, f.strip())
-        for f in env.get(env_key, "").split(",") if f.strip()
-    }
+    datasets = {}
+    for f in env.get(env_key, "").split(","):
+        f = f.strip()
+        if not f:
+            continue
+        base = os.path.splitext(f)[0]
+        if base.lower() == "au_fatalities":
+            label = "AU_Fatalities (Honor_Roll)"
+        elif base.lower() == "nz_fatalities":
+            label = "NZ_Fatalities (Honor_Roll)"
+        else:
+            label = base
+        datasets[label] = os.path.join(directory, f)
+    return datasets
 
 
 def load_config() -> dict[str, dict[str, str]]:
@@ -1340,12 +1350,13 @@ class MainMenu(tk.Toplevel):
         super().destroy()
 
     def _backup_files(self):
-        """Copy AU/NZ Fatalities.json to OneDrive sync folder with timestamp.
+        """Fetch AU/NZ Fatalities from Firestore and save to OneDrive sync folder as JSON with timestamp.
         Keeps only the 3 most recent backups per file; deletes older ones."""
-        import shutil
+        import json
         import glob as _glob
         from datetime import datetime
         from tkinter import messagebox
+        from coords import _load_json
 
         env = _read_env()
         backup_dir = env.get("BACKUP_FATALITIES_TO_ONEDRIVE_SYNC", "")
@@ -1353,10 +1364,9 @@ class MainMenu(tk.Toplevel):
             messagebox.showerror("Backup Error", "BACKUP_FATALITIES_TO_ONEDRIVE_SYNC not found in .env")
             return
 
-        src_dir = env.get("FATALITY_FILE_DIRECTORY", "")
         files_str = env.get("FILES_AVAILABLE_FOR_UPDATE", "")
-        if not src_dir or not files_str:
-            messagebox.showerror("Backup Error", "FATALITY_FILE_DIRECTORY or FILES_AVAILABLE_FOR_UPDATE missing in .env")
+        if not files_str:
+            messagebox.showerror("Backup Error", "FILES_AVAILABLE_FOR_UPDATE missing in .env")
             return
 
         src_files = [f.strip() for f in files_str.split(",") if f.strip()]
@@ -1376,20 +1386,22 @@ class MainMenu(tk.Toplevel):
         errors = []
 
         for filename in src_files:
-            src_path = os.path.join(src_dir, filename)
-            if not os.path.exists(src_path):
-                errors.append(f"Source not found: {src_path}")
-                continue
-
             base, ext = os.path.splitext(filename)
             dest_name = f"{base}_{timestamp}{ext}"
             dest_path = os.path.join(backup_dir, dest_name)
 
             try:
-                shutil.copy2(src_path, dest_path)
+                # Fetch data from Firestore using our modified load logic
+                data = _load_json(filename)
+                if data is None:
+                    errors.append(f"Failed to fetch data for {filename} from Firestore")
+                    continue
+                
+                with open(dest_path, "w", encoding="utf-8") as fh:
+                    json.dump(data, fh, indent=2, ensure_ascii=False)
                 copied.append(dest_name)
-            except OSError as e:
-                errors.append(f"Copy failed for {filename}: {e}")
+            except Exception as e:
+                errors.append(f"Backup failed for {filename}: {e}")
                 continue
 
             # Prune old backups — keep only the 3 most recent for this base name
@@ -1481,9 +1493,6 @@ class App(tk.Tk):
     # ------------------------------------------------------------------
 
     def _open_editor(self, file_path: str, modal_title: str | None = None):
-        if not os.path.exists(file_path):
-            _show_error(f"'{file_path}' does not exist.")
-            return
         UpdateFatalities(self._menu, file_path, modal_title=modal_title)
 
     # ------------------------------------------------------------------

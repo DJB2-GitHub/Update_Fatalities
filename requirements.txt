@@ -1,2 +1,3 @@
 mgrs
 pyproj
+firebase-admin

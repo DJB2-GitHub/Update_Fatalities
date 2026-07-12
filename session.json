@@ -4,7 +4,7 @@
     "search": "",
     "ai_option": "Option A: 1-Step (JSON Schema)",
     "live_search": true,
-    "lastRefId": "NZ_37221",
+    "lastRefId": "NZ_346598",
     "NZ_37221": {
       "prompt": "SYSTEM:\nYou are a military historian specialising in New Zealand Army personnel records and Vietnam War (1962–1972) fatality analysis. Your task is to RESEARCH the web for authoritative, verifiable information about a specific soldier's death. You MUST search these primary sources:\n- Australian War Memorial (awm.gov.au) — Roll of Honour\n- Virtual War Memorial Australia (vwma.org.au)\n- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n- National Archives of Australia (naa.gov.au)\n- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n- Published unit histories and AATTV records\n\nCRITICAL: You MUST retrieve the actual, documented facts. Do NOT fabricate or guess. If a fact is not found after thorough searching, mark it 'NOT_DOCUMENTED'. Distinguish clearly between facts found in sources and inferences. Internal memory may be used ONLY as a secondary cross-reference, never as the primary source.\n\nIMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. Many died from illness (cancer, heart attack, disease), accidents (motor vehicle, training), or by natural causes — sometimes in Australia, sometimes after returning from deployment. These ARE classified as Vietnam War fatalities if their death was attributable to service. Do NOT default to assuming a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nMESSAGE:\nIdentify the soldier using these authoritative fields, then extract ALL details for that soldier. You MUST search the web using the sources listed in your system instructions.\n\nAuthoritative Identification (Australian War Memorial):\n- Army Country: New Zealand\n- War: Vietnam War (1962–1972)\n- Surname: DON\n- Date of Death: 1965-September-14\n\nAll Known Details:\n- Service Number: 37221\n- Full Name: DON, Alastair John Sherwood\n- Rank: Sergeant\n- Unit: 161 Battery, Royal New Zealand Artillery\n\nIMPORTANT — Multiple Matches: If the authoritative identification (Surname + Date of Death) matches more than one soldier, return each soldier's findings as a separate response, labelled by Full Name and Service Number.\n\nResearch Requirements:\nSearch the web for all information relating to the soldier's death: cause, location, circumstances, operation (if applicable), unit involvement, eyewitness accounts, medical treatment, burial, repatriation, awards, investigations, and historical analysis. The soldier may have died from illness, accident, or natural causes (in Australia or elsewhere), not necessarily in combat. Do NOT assume a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nFor every fact you report, cite the specific source (AWM, VWMA, DVA, etc.). If a detail cannot be verified from authoritative sources, mark it NOT_DOCUMENTED. Do not invent or assume facts.",
       "response": "// Prompt copied to clipboard — paste into https://gemini.google.com, then paste the result here.",
@@ -17,20 +17,27 @@
     "on_this_day": false,
     "on_this_day_month": "07",
     "on_this_day_day": "01",
-    "side_panel_visible": true
+    "side_panel_visible": true,
+    "NZ_346598": {
+      "prompt": "SYSTEM:\nYou are a military historian specialising in New Zealand Army personnel records and Vietnam War (1962–1972) fatality analysis. Your task is to RESEARCH the web for authoritative, verifiable information about a specific soldier's death. You MUST search these primary sources:\n- Australian War Memorial (awm.gov.au) — Roll of Honour\n- Virtual War Memorial Australia (vwma.org.au)\n- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n- National Archives of Australia (naa.gov.au)\n- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n- Published unit histories and AATTV records\n\nCRITICAL: You MUST retrieve the actual, documented facts. Do NOT fabricate or guess. If a fact is not found after thorough searching, mark it 'NOT_DOCUMENTED'. Distinguish clearly between facts found in sources and inferences. Internal memory may be used ONLY as a secondary cross-reference, never as the primary source.\n\nIMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. Many died from illness (cancer, heart attack, disease), accidents (motor vehicle, training), or by natural causes — sometimes in Australia, sometimes after returning from deployment. These ARE classified as Vietnam War fatalities if their death was attributable to service. Do NOT default to assuming a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nMESSAGE:\nIdentify the soldier using these authoritative fields, then extract ALL details for that soldier. You MUST search the web using the sources listed in your system instructions.\n\nAuthoritative Identification (Australian War Memorial):\n- Army Country: New Zealand\n- War: Vietnam War (1962–1972)\n- Surname: DON\n- Date of Death: 1965-September-14\n\nAll Known Details:\n- Service Number: 37221\n- Full Name: DON, Alastair John Sherwood\n- Rank: Sergeant\n- Unit: 161 Battery, Royal New Zealand Artillery\n\nIMPORTANT — Multiple Matches: If the authoritative identification (Surname + Date of Death) matches more than one soldier, return each soldier's findings as a separate response, labelled by Full Name and Service Number.\n\nResearch Requirements:\nSearch the web for all information relating to the soldier's death: cause, location, circumstances, operation (if applicable), unit involvement, eyewitness accounts, medical treatment, burial, repatriation, awards, investigations, and historical analysis. The soldier may have died from illness, accident, or natural causes (in Australia or elsewhere), not necessarily in combat. Do NOT assume a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nFor every fact you report, cite the specific source (AWM, VWMA, DVA, etc.). If a detail cannot be verified from authoritative sources, mark it NOT_DOCUMENTED. Do not invent or assume facts.",
+      "response": "// Prompt copied to clipboard — paste into https://gemini.google.com, then paste the result here.",
+      "promptLabel": "PROMPT: Master Response",
+      "responseLabel": "RESPONSE: MASTER",
+      "sidePanelVisible": 1
+    }
   },
   "AU_fatalities.json": {
     "pos": 0,
-    "search": "18665",
+    "search": "1731426",
     "ai_option": "Option A: 1-Step (JSON Schema)",
     "live_search": true,
-    "lastRefId": "AU_18665",
+    "lastRefId": "AU_1731426",
     "AU_43326": {
       "prompt": "",
       "response": "",
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
-      "sidePanelVisible": 0
+      "sidePanelVisible": 1
     },
     "AU_218453": {
       "prompt": "",
@@ -288,7 +295,7 @@
       "response": "",
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
-      "sidePanelVisible": 1
+      "sidePanelVisible": 0
     },
     "AU_218041": {
       "prompt": "",
@@ -478,6 +485,21 @@
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
       "sidePanelVisible": 1
+    },
+    "AU_1730888": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "AU_1200083": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 0
     }
-  }
+  },
+  "maintenance_field": "death_location"
 }
