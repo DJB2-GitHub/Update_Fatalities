@@ -1631,6 +1631,18 @@ Your final report must:
 
         self._on_field_edited()
 
+        # When unit_served_with is updated, also mirror the value into
+        # serviceRecordAuthority.unit so both stay in sync.
+        if field_name == "unit_served_with":
+            unit_entry = self._entry_widgets.get(("serviceRecordAuthority", "unit"))
+            if unit_entry is not None:
+                if isinstance(unit_entry, tk.Text):
+                    unit_entry.delete("1.0", tk.END)
+                    unit_entry.insert("1.0", cleaned)
+                else:
+                    unit_entry.delete(0, tk.END)
+                    unit_entry.insert(0, cleaned)
+
     # ------------------------------------------------------------------
     # UI
     # ------------------------------------------------------------------
@@ -2492,11 +2504,11 @@ Your final report must:
         ok = _confirm_yesno(self, "Confirm Update", f'Please confirm update for "{record_id}"')
         if not ok:
             return
-        # Update record_status: mark as changed (today's date)
-        # record_status.update_to_firestore is managed by a separate process — leave as-is
+        # Update record_status: mark as changed (today's date) and set update_to_firestore = false
         if "record_status" not in updated:
             updated["record_status"] = {}
         updated["record_status"]["changed"] = date.today().strftime("%Y-%m-%d")
+        updated["record_status"]["update_to_firestore"] = "false"
         actual_idx = self._filtered[self._filtered_pos]
         self.working_data[actual_idx] = updated
         if not _save_json(self.file_path, self.working_data):

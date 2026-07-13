@@ -1,15 +1,15 @@
 {
   "NZ_fatalities.json": {
     "pos": 0,
-    "search": "",
+    "search": "awatere",
     "ai_option": "Option A: 1-Step (JSON Schema)",
     "live_search": true,
-    "lastRefId": "NZ_346598",
+    "lastRefId": "NZ_699033",
     "NZ_37221": {
-      "prompt": "SYSTEM:\nYou are a military historian specialising in New Zealand Army personnel records and Vietnam War (1962–1972) fatality analysis. Your task is to RESEARCH the web for authoritative, verifiable information about a specific soldier's death. You MUST search these primary sources:\n- Australian War Memorial (awm.gov.au) — Roll of Honour\n- Virtual War Memorial Australia (vwma.org.au)\n- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n- National Archives of Australia (naa.gov.au)\n- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n- Published unit histories and AATTV records\n\nCRITICAL: You MUST retrieve the actual, documented facts. Do NOT fabricate or guess. If a fact is not found after thorough searching, mark it 'NOT_DOCUMENTED'. Distinguish clearly between facts found in sources and inferences. Internal memory may be used ONLY as a secondary cross-reference, never as the primary source.\n\nIMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. Many died from illness (cancer, heart attack, disease), accidents (motor vehicle, training), or by natural causes — sometimes in Australia, sometimes after returning from deployment. These ARE classified as Vietnam War fatalities if their death was attributable to service. Do NOT default to assuming a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nMESSAGE:\nIdentify the soldier using these authoritative fields, then extract ALL details for that soldier. You MUST search the web using the sources listed in your system instructions.\n\nAuthoritative Identification (Australian War Memorial):\n- Army Country: New Zealand\n- War: Vietnam War (1962–1972)\n- Surname: DON\n- Date of Death: 1965-September-14\n\nAll Known Details:\n- Service Number: 37221\n- Full Name: DON, Alastair John Sherwood\n- Rank: Sergeant\n- Unit: 161 Battery, Royal New Zealand Artillery\n\nIMPORTANT — Multiple Matches: If the authoritative identification (Surname + Date of Death) matches more than one soldier, return each soldier's findings as a separate response, labelled by Full Name and Service Number.\n\nResearch Requirements:\nSearch the web for all information relating to the soldier's death: cause, location, circumstances, operation (if applicable), unit involvement, eyewitness accounts, medical treatment, burial, repatriation, awards, investigations, and historical analysis. The soldier may have died from illness, accident, or natural causes (in Australia or elsewhere), not necessarily in combat. Do NOT assume a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nFor every fact you report, cite the specific source (AWM, VWMA, DVA, etc.). If a detail cannot be verified from authoritative sources, mark it NOT_DOCUMENTED. Do not invent or assume facts.",
-      "response": "// Prompt copied to clipboard — paste into https://gemini.google.com, then paste the result here.",
-      "promptLabel": "PROMPT: Master Response",
-      "responseLabel": "RESPONSE: MASTER",
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
       "sidePanelVisible": 1
     },
     "internal_provider": "Google",
@@ -19,19 +19,215 @@
     "on_this_day_day": "01",
     "side_panel_visible": true,
     "NZ_346598": {
-      "prompt": "SYSTEM:\nYou are a military historian specialising in New Zealand Army personnel records and Vietnam War (1962–1972) fatality analysis. Your task is to RESEARCH the web for authoritative, verifiable information about a specific soldier's death. You MUST search these primary sources:\n- Australian War Memorial (awm.gov.au) — Roll of Honour\n- Virtual War Memorial Australia (vwma.org.au)\n- Department of Veterans' Affairs Nominal Rolls (dva.gov.au)\n- National Archives of Australia (naa.gov.au)\n- Contemporary newspaper archives (Trove, The Age, Sydney Morning Herald)\n- Published unit histories and AATTV records\n\nCRITICAL: You MUST retrieve the actual, documented facts. Do NOT fabricate or guess. If a fact is not found after thorough searching, mark it 'NOT_DOCUMENTED'. Distinguish clearly between facts found in sources and inferences. Internal memory may be used ONLY as a secondary cross-reference, never as the primary source.\n\nIMPORTANT: Not all Vietnam War fatalities died in combat or in Vietnam. Many died from illness (cancer, heart attack, disease), accidents (motor vehicle, training), or by natural causes — sometimes in Australia, sometimes after returning from deployment. These ARE classified as Vietnam War fatalities if their death was attributable to service. Do NOT default to assuming a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nMESSAGE:\nIdentify the soldier using these authoritative fields, then extract ALL details for that soldier. You MUST search the web using the sources listed in your system instructions.\n\nAuthoritative Identification (Australian War Memorial):\n- Army Country: New Zealand\n- War: Vietnam War (1962–1972)\n- Surname: DON\n- Date of Death: 1965-September-14\n\nAll Known Details:\n- Service Number: 37221\n- Full Name: DON, Alastair John Sherwood\n- Rank: Sergeant\n- Unit: 161 Battery, Royal New Zealand Artillery\n\nIMPORTANT — Multiple Matches: If the authoritative identification (Surname + Date of Death) matches more than one soldier, return each soldier's findings as a separate response, labelled by Full Name and Service Number.\n\nResearch Requirements:\nSearch the web for all information relating to the soldier's death: cause, location, circumstances, operation (if applicable), unit involvement, eyewitness accounts, medical treatment, burial, repatriation, awards, investigations, and historical analysis. The soldier may have died from illness, accident, or natural causes (in Australia or elsewhere), not necessarily in combat. Do NOT assume a combat or in-theatre death — search broadly and follow the evidence wherever it leads.\n\nFor every fact you report, cite the specific source (AWM, VWMA, DVA, etc.). If a detail cannot be verified from authoritative sources, mark it NOT_DOCUMENTED. Do not invent or assume facts.",
-      "response": "// Prompt copied to clipboard — paste into https://gemini.google.com, then paste the result here.",
-      "promptLabel": "PROMPT: Master Response",
-      "responseLabel": "RESPONSE: MASTER",
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_209440": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_388111": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_699033": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_211075": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_37404": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_38655": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41081": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41240": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41243": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41301": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41383": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41530": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41576": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_41708": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_42116": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_42294": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_42742": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_42752": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43032": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43134": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43221": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43233": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43349": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43648": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_43651": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_463211": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_482859": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "NZ_483256": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
       "sidePanelVisible": 1
     }
   },
   "AU_fatalities.json": {
-    "pos": 1,
+    "pos": 3,
     "search": "",
     "ai_option": "Option A: 1-Step (JSON Schema)",
     "live_search": true,
-    "lastRefId": "AU_NEW_1783920462",
+    "lastRefId": "AU_1730947",
     "AU_43326": {
       "prompt": "",
       "response": "",
@@ -76,7 +272,7 @@
     "on_this_day": true,
     "on_this_day_date": "26-06",
     "on_this_day_month": "08",
-    "on_this_day_day": "14",
+    "on_this_day_day": "18",
     "AU_37867": {
       "prompt": "",
       "response": "",
@@ -520,6 +716,27 @@
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
       "sidePanelVisible": 1
+    },
+    "AU_1730929": {
+      "prompt": "You are a military historian specialising in Australian Army personnel records, 1st Australian Task Force (1ATF) operational history, and Vietnam War fatality analysis (1962–1972).\n\nCRITICAL ANTI-HALLUCINATION RULES:\n1. You MUST include the exact URL for EVERY factual claim you make. If you cannot provide a real, working URL from an authoritative source (AWM, DVA, VWMA, NAA, Trove, etc.), the claim MUST be marked NOT_DOCUMENTED.\n2. NEVER invent war diary entries. Unit war diaries for Vietnam-era Australian units are NOT publicly accessible online as full text. Do NOT fabricate their contents.\n3. NEVER invent eyewitness accounts, veteran quotes, or first-hand testimony. Unless you can cite a specific, published, named source with URL, mark this as NOT_DOCUMENTED.\n4. NEVER fabricate chronological timelines, patrol movements, platoon positions, radio calls, Dustoff times, or tactical details. These are NOT in the public record for individual soldiers.\n5. NEVER name specific books, memoirs, or authors as sources unless you can provide a URL confirming they specifically mention THIS soldier.\n6. Do NOT construct plausible-sounding narratives. NOT_DOCUMENTED is the correct, honest answer when the source record does not exist. A missing fact is FAR better than a fabricated fact.\n7. For unit operational context: ONLY use publicly available unit histories and AWM collection summaries. State the unit and date range; do NOT fabricate daily patrol details or contact reports.\n8. Every section that lacks verifiable information MUST be explicitly headed NOT_DOCUMENTED with a brief explanation of why.\n9. If you are uncertain or your knowledge is limited, state that explicitly rather than guessing or constructing plausible narratives.\n\n## Enhanced Research Prompt (Optimised for Maximum Historical Accuracy)\n\nYou are a **military historian specialising in Australian Army personnel records, 1st Australian Task Force (1ATF) operational history, and Vietnam War fatality analysis (1962–1972).**\n\nYour task is to **research the web for authoritative, verifiable, and cross-corroborated information** about a specific Australian soldier's **location, circumstances, and context of death**.\n\n### Soldier Details\n- **Private DRABBLE, Glenn Alfred**\n- **Service Number: 1730929**\n- **Unit: 6th Battalion**\n- **Date of death: 1966-08-18**\n\n**⚠ FATALITY TYPE (AUTHORITATIVE): Killed in Action ⚠**\n\nThis is the OFFICIAL fatality classification. IT IS AUTHORITATIVE AND MUST NOT BE OVERRIDDEN.\nThis appears to be a combat-related death. Research the operational context, enemy engagement, and military circumstances as appropriate.\n\n**⚠ EXISTING RECORD DATA (AUTHORITATIVE) ⚠**\n\nThe following facts are already recorded in the database for THIS soldier.\nThey are AUTHORITATIVE GROUND TRUTH and MUST NOT BE OVERRIDDEN or contradicted:\n\n- **Circumstances of death:** Killed in action Long Tân.\n- **Death location:** Long Tân, Phước Tuy Province, South Vietnam\n\nThese facts are NOT in question. Your task is to RESEARCH SUPPLEMENTARY details\n(unit context, operational background, eyewitness accounts, cross-references) —\nNOT to re-determine the cause, location, or burial of death. If your web search\nreturns results about OTHER soldiers from the same unit (different death locations,\nburials, repatriation stories, etc.), those are NOT this soldier. Do NOT conflate\nunit-level or cemetery-level results with this individual.\n\n### Research Objective\nResearch and report the factual circumstances, location, and context of this soldier's death. The fatality type stated above is authoritative and must guide all research.\n\n### Required Research Components\n### 1. Authoritative Identification\n- Search the Australian War Memorial (AWM) Roll of Honour for this soldier by service number and name.\n- Search the DVA Nominal Roll for enlistment and service details.\n- Search the Virtual War Memorial Australia (VWMA) for commemoration records.\n- EVERY claim in this section MUST include a URL to the source page.\n\n### 2. Unit and Operational Context (PUBLICLY AVAILABLE ONLY)\n- Identify the unit's role and operational area during the period of death using ONLY:\n  - AWM unit history pages (awm.gov.au/collection/U...)\n  - Published 1ATF operational summaries\n  - Official AWM timeline entries\n- State the unit name, its parent formation, and the general area of operations.\n- Do NOT invent specific patrol routes, platoon movements, daily schedules, or contact reports.\n- If an operation name is publicly documented on AWM's website for this unit and period, cite it with URL. Otherwise state NOT_DOCUMENTED.\n\n### 3. Location of Death (VERIFIED ONLY)\n- Report ONLY locations that appear in authoritative sources with URLs:\n  - AWM Roll of Honour place-of-death field\n  - DVA Nominal Roll\n  - VWMA records\n- If only province-level (e.g. \"Phuoc Tuy Province, South Vietnam\") is available, state that — do NOT fabricate village or hamlet names.\n- Do NOT fabricate grid references, map coordinates, or FSB names unless they appear in an authoritative source with URL.\n\n### 4. Circumstances of Death (VERIFIED ONLY)\n- Report ONLY the official cause/circumstances as stated in AWM, DVA, or VWMA records with URL.\n- If the AWM Roll of Honour says \"Killed in action\" with no further detail, state that exactly and mark further tactical details as NOT_DOCUMENTED.\n- Do NOT fabricate: enemy contact type, weapon used, nature of wounds, evacuation details, radio calls, Dustoff times, or combat narrative.\n\n### 5. Commemoration and Burial (VERIFIED ONLY)\n- Report burial location and memorial listings from AWM, VWMA, or cemetery authority websites with URLs.\n- Do NOT fabricate funeral attendance, eulogy details, or repatriation stories.\n\n### 6. Eyewitness and Published Accounts\n- ONLY report accounts that you can cite with a specific URL containing the actual text.\n- If no eyewitness accounts, veteran memoirs, or published books specifically naming this soldier are found online, state NOT_DOCUMENTED.\n- Do NOT name books or authors as sources unless you can provide a URL confirming the book specifically discusses this soldier by name.\n\n### 7. Cross-Verification\nAll findings must be **cross-checked** against — and every claim must include a URL from:\n- Australian War Memorial (AWM) awm.gov.au\n- Department of Veterans' Affairs (DVA) dva.gov.au\n- Virtual War Memorial Australia (VWMA) vwma.org.au\n- Trove newspaper archives trove.nla.gov.au\n- National Archives of Australia (NAA) naa.gov.au\n\n\n### Output Requirements\nYour final report must:\n- Present **only verified facts** that are backed by a specific, working URL from an authoritative source.\n- For EVERY factual claim, include the URL in this format: `[Source Name](https://...)`\n- If NO URL can be provided for a claim, that claim MUST be marked **NOT_DOCUMENTED**.\n- Clearly distinguish:\n  - **Confirmed** (URL-backed fact from AWM, DVA, VWMA, NAA, or Trove)\n  - **NOT_DOCUMENTED** (no verifiable source found — the honest answer)\n- Do NOT provide a chronological reconstruction — these details are NOT in the public record for individual soldiers.\n- Identify any **gaps in the historical record** honestly and specifically.\n- REMEMBER: NOT_DOCUMENTED is better than a fabricated fact. \"I don't know\" is better than a plausible lie.",
+      "response": "Deriving … From ai_response data (querying deepseek-v4-flash)",
+      "promptLabel": "PROMPT: Fatalities Master Prompt",
+      "responseLabel": "RESPONSE: Enhanced Operation Details",
+      "sidePanelVisible": 1
+    },
+    "AU_1730941": {
+      "prompt": "Your task is to extract a single value called \"service_status\" from the provided text.\n\nValid outputs:\n- Regular\n- National Service\n- Unassigned\n\nExtraction rules (in order of priority):\n\n1. If the text contains an explicitly labelled service-status marker (e.g. a line starting with 'Authoritative:', 'Override:', 'Service Status:', '1_service_status', or similar):\n     - Treat the content following that marker as the primary evidence.\n     - Search ONLY inside that marked section for the words \"Regular\", \"National Service\", \"Unassigned\".\n     - If one of these appears, return it exactly.\n     - If none appear, ignore the marker and continue to the next rule.\n\n2. Else if the text anywhere contains an explicit service-status label followed by one of the valid values, return that value exactly.\n\n3. Else search ALL provided text for evidence indicating service status:\n     - DO NOT infer service status from corps, regiment, unit, rank, trade, or branch.\n     - If the text describes voluntary enlistment, Regular Army, Regular soldier, or similar, return \"Regular\".\n     - If the text specifically mentions Australian National Service, National Serviceman, \"Nasho\", or the National Service Act, return \"National Service\".\n\n4. If no determination can be made, return \"Regular\".\n\nOutput format:\nReturn ONLY the final value as a plain string with no JSON, no punctuation, and no explanation.\nBefore producing the final output, internally summarize the provided text to ensure full context loading. Do not include this summary in the output.\n\nThe SOURCE TEXT to analyse is provided below between the <source> tags.\nThis text is compiled from the record's AI-generated master response and any authoritative override notes.\n\n<source>\n### Identified soldier\n\n**Full Name:** Kenneth Howard Gant  \n**Service Number:** 1730941  \n**Rank at death:** Private  \n**Service:** Australian Army  \n**Unit:** 6th Battalion, Royal Australian Regiment (6RAR)  \n**War:** Vietnam War, 1962–1975  \n**Date of Death:** 18 August 1966  \n**Primary identification sources:** Australian War Memorial Roll of Honour; DVA Vietnam Nominal Roll; Virtual War Memorial Australia   [Australian War Memorial](https://www.awm.gov.au/collection/P11012838)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n---\n\n### Core personal and service details (documented facts)\n\n- **Date of birth:** 6 January 1945  \n  - Source: DVA Vietnam Nominal Roll   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Place of birth:** Brisbane, Queensland, Australia  \n  - Source: DVA Vietnam Nominal Roll   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Home town:** Brisbane, Queensland  \n  - Source: Virtual War Memorial Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n- **Pre‑war occupation:** Butcher  \n  - Source: AWM Last Post Ceremony transcript; VWMA personal details   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n- **Service status:** **National Service (conscripted)**  \n  - DVA Nominal Roll explicitly records “National Service: Yes”.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Enlistment / call‑up:**\n  - Called up for National Service on 30 June 1965.  \n  - Source: AWM Last Post Ceremony transcript   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Training and posting:**\n  - Trained at 3rd Training Battalion, Singleton, and the Infantry Centre at Ingleburn.  \n  - Subsequently posted to 6th Battalion, Royal Australian Regiment, joining 11 Platoon, D Company.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Unit service in Vietnam:**\n  - DVA Nominal Roll records service with **6th Battalion, The Royal Australian Regiment** from 8 June 1966 to 18 August 1966.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n---\n\n### Circumstances of death (documented facts)\n\n- **Date of death:** 18 August 1966  \n  - AWM Roll of Honour and DVA Nominal Roll both record this date.   [Australian War Memorial](https://www.awm.gov.au/collection/P11012838)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Place of death:**  \n  - Vietnam: South Vietnam, Phuoc Tuy Province, Long Tan.  \n  - Source: AWM Roll of Honour entry for Private Kenneth Howard Gant.   [Australian War Memorial](https://www.awm.gov.au/collection/P11012838)  \n\n- **Manner of death (official classification):**  \n  - “Killed in Action, South Vietnam, 18 August 1966, aged 21 years.”  \n  - Source: Virtual War Memorial Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n  - AWM Last Post Ceremony transcript also describes him as “KIA 18 August 1966”.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Immediate tactical situation:**\n  - On 17 August 1966, the Australian base at Nui Dat was subjected to mortar and rifle fire, causing 24 casualties; patrols then located enemy firing positions.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n  - On 18 August, D Company, 6RAR, moved its search into the Long Tan area and, shortly after 3 pm, made contact with Viet Cong forces in the Long Tan rubber plantation.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Section and role at time of death:**\n  - Gant was a machine‑gunner in 5 Section, 11 Platoon, D Company, 6RAR.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Cause of death (direct):**\n  - Around 4 pm, enemy forces opened fire with machine‑guns and small arms; during the first probing attack, Gant was shot and killed while 5 Section took cover.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Broader engagement:**\n  - After Gant’s death, 11 Platoon was engaged on three sides and in danger of being wiped out; heavy monsoonal rain reduced visibility and turned the ground to mud while a larger Vietnamese force attempted to overrun D Company. Close artillery support and helicopter resupply were crucial in preventing the company’s destruction, and a relief column of APCs with A Company, 6RAR, arrived around 7 pm.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n> **Inference (clearly marked):**  \n> These circumstances correspond to what is widely known as the **Battle of Long Tan**, but the specific term “Battle of Long Tan” and the operation name are not explicitly cited in the AWM Roll of Honour entry or the DVA Nominal Roll extracts provided here. The identification of the engagement as the Battle of Long Tan is therefore an informed historical inference based on date, location (Long Tan rubber plantation, Phuoc Tuy Province), unit (D Company, 6RAR), and the described tactical events.\n\n---\n\n### Location, medical treatment, and immediate aftermath\n\n- **Location of fatal wounding:**  \n  - Long Tan rubber plantation, Phuoc Tuy Province, South Vietnam, during contact with Viet Cong forces.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  [Australian War Memorial](https://www.awm.gov.au/collection/P11012838)  \n\n- **Medical treatment:**  \n  - NOT_DOCUMENTED  \n  - None of the cited sources (AWM Roll of Honour, AWM Last Post Ceremony transcript, DVA Nominal Roll, VWMA) provide details of any medical treatment administered to Gant after he was shot, or whether he died instantly or after evacuation.\n\n- **Eyewitness accounts:**  \n  - NOT_DOCUMENTED (direct, named eyewitness testimony)  \n  - The AWM Last Post Ceremony narrative is a researched commemorative speech, not a verbatim eyewitness account; it does not attribute specific statements to named witnesses present at the moment of Gant’s death.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n---\n\n### Burial, commemoration, and repatriation\n\n- **Burial place (documented):**  \n  - Mount Gravatt Cemetery & Crematorium, Brisbane  \n  - ANZAC Portion 1, Section E, Grave 297.  \n  - Source: Virtual War Memorial Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n- **Official commemoration (DVA):**  \n  - Garden of Remembrance, Queensland – Commemoration Position: Wall 2, Row D.  \n  - Source: DVA Vietnam Nominal Roll (Official Commemoration field).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Other memorials (documented):**  \n  - VWMA lists multiple memorials on which Gant is commemorated, including:  \n    - Australian War Memorial Roll of Honour  \n    - Brisbane 11 Platoon Delta Company Memorial Plaque  \n    - Cleveland War Memorial  \n    - Clarence Valley Vietnam Veterans Memorial (Grafton)  \n    - Kallangur Vietnam Veterans’ Place  \n    - National Servicemen’s Memorial, Manly  \n    - Manly War Memorial, Maryborough  \n    - Long Tan Cross memorials (McLaren Vale, Rutherglen, Seymour)  \n    - Vietnam Veterans Commemorative Walk Roll of Honour, Seymour  \n    - Wollongong Vietnam Memorial  \n  - Source: Virtual War Memorial Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n- **Repatriation of remains:**  \n  - **Inference:** Burial at Mount Gravatt Cemetery in Brisbane strongly implies that Gant’s remains were repatriated from South Vietnam to Australia. However, no explicit documentary statement about the repatriation process (date, transport, or formal arrangements) is present in the sources cited here. Therefore:  \n  - **Repatriation details:** NOT_DOCUMENTED (process, dates, transport), with repatriation itself treated as an inference from the documented burial location.\n\n---\n\n### Honours, awards, and decorations\n\n- **Honours (as displayed on DVA Nominal Roll):**  \n  - “Honours: None for display.”   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253976&c=VIETNAM)  \n\n- **Campaign and service medals:**  \n  - NOT_DOCUMENTED in the specific sources retrieved (AWM Roll of Honour entry, AWM Last Post Ceremony transcript, DVA Nominal Roll extract, VWMA page).  \n  - While, historically, Australian Vietnam veterans generally qualified for campaign and service medals, the exact medal entitlement and issue for Gant is not explicitly listed in the cited records; any assumption would be speculative.\n\n---\n\n### Additional biographical and contextual details (documented)\n\n- **Family background and nickname:**\n  - Born to Harold and Beryl Gant; grew up on the family property at Belmont (near Brisbane).  \n  - Known as “Kenny” and nicknamed “Bing” due to his singing; he was popular locally and often entertained at parties.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  [Virtual War Memorial](https://vwma.org.au/explore/people/654335)  \n\n- **Attitude to conscription:**\n  - His mother recalled that he did not like the idea of conscription, feeling there were already many regular soldiers, but “he was not a coward” and did his duty.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Pre‑deployment training exercises:**\n  - Participated in exercises at Canungra and Shoalwater Bay.  \n  - During an exercise at Tin Can Bay, local trawler men invited D Company to a dinner at a nearby hotel where Gant sang Roy Orbison’s “Leah” with a local band, reportedly bringing “the house down.”   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Deployment to Vietnam:**\n  - 6RAR arrived in Saigon in mid‑1966; Nui Dat base had recently been established and 1st Australian Task Force formed.  \n  - Immediately after arrival, the battalion undertook a search‑and‑clearance operation in a nearby village, followed by a five‑day search‑and‑destroy operation, during which 6RAR first encountered the Viet Cong D445 Provincial Mobile Battalion.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n- **Correspondence:**\n  - Gant wrote weekly letters to his family describing his impressions of Vietnam (generally unfavourable), the actions he took part in, the food, and his mates.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n\n---\n\n### Gaps and NOT_DOCUMENTED items\n\nThe following aspects are **not** documented in the sources retrieved (AWM Roll of Honour, AWM Last Post Ceremony transcript, DVA Nominal Roll, VWMA) and therefore must be treated as NOT_DOCUMENTED unless further archival work (e.g., NAA service file, Trove newspapers, unit war diaries) is undertaken:\n\n- **Exact time of death beyond “around 4 pm”** – NOT_DOCUMENTED.   [Australian War Memorial](https://www.awm.gov.au/collection/C2133837)  \n- **Detailed medical treatment, evacuation chain, or attending medical personnel** – NOT_DOCUMENTED.  \n- **Formal investigation reports or Board of Inquiry findings relating specifically to Gant’s death** – NOT_DOCUMENTED.  \n- **Detailed National Archives of Australia service record contents (enlistment paperwork, training reports, casualty forms)** – NOT_DOCUMENTED in the material surfaced here.  \n- **Contemporary newspaper obituaries or casualty notices (Trove, The Age, Sydney Morning Herald)** – NOT_DOCUMENTED in the material surfaced here.  \n- **Specific operation name (e.g., “Operation Smithfield”) attached to his death in the cited records** – NOT_DOCUMENTED; any association is an historical inference.  \n- **Exact date and method of repatriation of remains to Australia** – NOT_DOCUMENTED.  \n- **Any posthumous awards or mentions in dispatches specific to Gant** – NOT_DOCUMENTED in the cited sources.  \n\n---\n\nIf you’d like, we can next dig into unit war diaries and published 6RAR histories to place Gant’s death within the minute‑by‑minute sequence of the Long Tan engagement, and tease out how his section’s position shaped the battle’s outcome.\n</source>\n\nExtract the requested information based on your system instructions from the source text above.",
+      "response": "[deepseek-v4-flash]  2s  $A 0.000363  | source: ai_response\n\nNational Service",
+      "promptLabel": "PROMPT: Fatalities Master Prompt",
+      "responseLabel": "RESPONSE: service_status",
+      "sidePanelVisible": 1
+    },
+    "AU_1730947": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 0
     }
   },
   "maintenance_field": "circumstances_of_death"
