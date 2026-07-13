@@ -60,9 +60,9 @@ def _make_datasets(env: dict[str, str], directory: str, env_key: str) -> dict[st
             continue
         base = os.path.splitext(f)[0]
         if base.lower() == "au_fatalities":
-            label = "AU_Fatalities (Firestore->Honor_Roll)"
+            label = "AU_Fatalities.json"
         elif base.lower() == "nz_fatalities":
-            label = "NZ_Fatalities (Firestore->Honor_Roll)"
+            label = "NZ_Fatalities.json"
         else:
             label = base
         datasets[label] = os.path.join(directory, f)
@@ -1058,8 +1058,6 @@ class MainMenu(tk.Toplevel):
 
             for filename in src_files:
                 base, ext = os.path.splitext(filename)
-                dest_name = f"{base}_{timestamp}{ext}"
-                dest_path = os.path.join(backup_dir, dest_name)
 
                 try:
                     # Fetch data from Firestore using our modified load logic
@@ -1068,9 +1066,12 @@ class MainMenu(tk.Toplevel):
                         errors.append(f"Failed to fetch data for {filename} from Firestore")
                         continue
 
+                    dest_name = f"{base}_{len(data)}_{timestamp}{ext}"
+                    dest_path = os.path.join(backup_dir, dest_name)
+
                     with open(dest_path, "w", encoding="utf-8") as fh:
                         json.dump(data, fh, indent=2, ensure_ascii=False)
-                    copied.append(dest_name)
+                    copied.append((dest_name, len(data)))
                 except Exception as e:
                     errors.append(f"Backup failed for {filename}: {e}")
                     continue
@@ -1088,8 +1089,8 @@ class MainMenu(tk.Toplevel):
             msg_parts = []
             if copied:
                 msg_parts.append(f"Backed up {len(copied)} file(s) to:\n{backup_dir}\n")
-                for name in copied:
-                    msg_parts.append(f"  \u2714 {name}")
+                for name, count in copied:
+                    msg_parts.append(f"  \u2714 {name} ({count} records)")
             if errors:
                 msg_parts.append("\nErrors:")
                 for err in errors:

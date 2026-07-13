@@ -891,79 +891,29 @@ def parse_with_snippet(text: str):
 
     return is_valid, msg, parsed, None
 
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-_db = None
-
-def _get_db():
-    global _db
-    if _db is None:
-        if not firebase_admin._apps:
-            # Check if the local key exists
-            key_path = os.path.join(os.path.dirname(__file__), "firebase-key.json")
-            if os.path.exists(key_path):
-                cred = credentials.Certificate(key_path)
-            else:
-                cred = credentials.ApplicationDefault()
-            firebase_admin.initialize_app(cred, {'projectId': 'djb-onthisday'})
-        _db = firestore.client(database_id="onthisday")
-    return _db
-
 def _load_json(path: str) -> list[dict] | None:
+    if not os.path.exists(path):
+        _error_dialog(None, "Load Error", f"'{path}' does not exist.")
+        return None
     try:
-        db = _get_db()
-        if "NZ" in path.upper():
-            col_ref = db.collection("countries").document("NZ").collection("wars").document("vietnam").collection("honor_roll")
-        else:
-            col_ref = db.collection("countries").document("AU").collection("wars").document("vietnam").collection("honor_roll")
-            
-        docs = col_ref.stream()
-        data = []
-        for doc in docs:
-            d = doc.to_dict()
-            if "referenceID" not in d:
-                d["referenceID"] = doc.id
-            data.append(d)
-            
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if not isinstance(data, list):
+            _error_dialog(None, "Load Error", f"'{path}' must contain a JSON array.")
+            return None
         data.sort(key=lambda x: x.get("referenceID", ""))
         return data
     except Exception as exc:
-        _error_dialog(None, "Load Error", f"Could not load data from Firestore.\n{exc}")
+        _error_dialog(None, "Load Error", f"Could not load data from '{path}'.\n{exc}")
         return None
 
 def _save_json(path: str, data: list[dict]) -> bool:
     try:
-        db = _get_db()
-        if "NZ" in path.upper():
-            col_ref = db.collection("countries").document("NZ").collection("wars").document("vietnam").collection("honor_roll")
-        else:
-            col_ref = db.collection("countries").document("AU").collection("wars").document("vietnam").collection("honor_roll")
-
-        batches = []
-        batch = db.batch()
-        count = 0
-        for record in data:
-            ref_id = record.get("referenceID")
-            if not ref_id:
-                continue
-            doc_ref = col_ref.document(ref_id)
-            batch.set(doc_ref, record, merge=True)
-            count += 1
-            if count == 500:
-                batches.append(batch)
-                batch = db.batch()
-                count = 0
-                
-        if count > 0:
-            batches.append(batch)
-            
-        for b in batches:
-            b.commit()
-            
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2, ensure_ascii=False)
         return True
     except Exception as exc:
-        _error_dialog(None, "Save Error", f"Could not save to Firestore.\n{exc}")
+        _error_dialog(None, "Save Error", f"Could not save to '{path}'.\n{exc}")
         return False
 
 

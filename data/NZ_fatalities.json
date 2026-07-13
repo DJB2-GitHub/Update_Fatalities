@@ -1,0 +1,1167 @@
+[
+  {
+    "referenceID": "NZ_37221",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "37221",
+      "service_status": "Unassigned",
+      "full_name": "DON, Alastair John Sherwood",
+      "sex": "M",
+      "date_of_death": "1965-09-14",
+      "date_of_birth": "1938-03-27",
+      "rank": "Sergeant",
+      "unit": "161 Battery, Royal New Zealand Artillery",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Bien Hoa Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 14 September 1965 \u2013 vehicle hit command detonated mine at Ben Cat.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "161 Battery, Royal New Zealand Artillery",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_928518",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "928518",
+      "service_status": "Unassigned",
+      "full_name": "WHITE, Robert",
+      "sex": "M",
+      "date_of_death": "1965-09-14",
+      "date_of_birth": "1937-02-25",
+      "rank": "Bombardier",
+      "unit": "161 Battery, Royal New Zealand Artillery",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Bien Hoa Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 14 September 1965 \u2013 Land Rover towing trailer with ammunition hit command detonated mine.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "161 Battery, Royal New Zealand Artillery",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_645140",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "645140",
+      "service_status": "Unassigned",
+      "full_name": "GRIGG, Graham Richard",
+      "sex": "M",
+      "date_of_death": "1965-12-04",
+      "date_of_birth": "1933-10-05",
+      "rank": "Staff Sergeant",
+      "unit": "New Zealand Army Medical Corps",
+      "fatality_type": "Died of Illness"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Saigon, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "New Zealand Army Medical Corps",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_37404",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "37404",
+      "service_status": "Unassigned",
+      "full_name": "WILLIAMS, Peter",
+      "sex": "M",
+      "date_of_death": "1967-02-14",
+      "date_of_birth": "1938-03-14",
+      "rank": "Captain",
+      "unit": "161 Battery, Royal New Zealand Artillery",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 14 February 1967 \u2013 booby trap at An Nhut. FO attached to 5RAR.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "161 Battery, Royal New Zealand Artillery",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_346598",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "346598",
+      "service_status": "Unassigned",
+      "full_name": "MANTON, Maurice",
+      "sex": "M",
+      "date_of_death": "1967-09-02",
+      "date_of_birth": "1938-06-08",
+      "rank": "Corporal",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 2 September 1967 \u2013 mine in the Long Green area, Phuoc Tuy Province.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_42752",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "42752",
+      "service_status": "Unassigned",
+      "full_name": "ELLWOOD, Stuart William",
+      "sex": "M",
+      "date_of_death": "1968-02-06",
+      "date_of_birth": "1947-10-19",
+      "rank": "Gunner",
+      "unit": "161 Battery, Royal New Zealand Artillery",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Bien Hoa Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "161 Battery, Royal New Zealand Artillery",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43032",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43032",
+      "service_status": "Regular",
+      "full_name": "WICKMAN, Michael John",
+      "sex": "M",
+      "date_of_death": "1968-06-22",
+      "date_of_birth": "1946-05-31",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "South Vietnam, Phuoc Tuy Province, jungle area near Nui Dat Task Force Base",
+        "incident_location": "YS523586",
+        "incident_coordinates": "10.4736, 107.30676"
+      },
+      "circumstances_of_death": "During Operation Toan Thang II, Private Wickman was killed in action when V Company was attacked by approximately 30 Vietcong in a jungle clash shortly after his unit had killed three Vietcong guerrillas. He sustained a gunshot wound to the head and neck.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Coy, 1 Bn, RNZIR, 4 RAR/NZ (ANZAC) Bn",
+      "references": [],
+      "ai_response": "Created 25:Jun:2026 20:22 used gemini $A 0.0031 (36s) - Option A: 1-Step (JSON Schema)\n{\n  \"soldier_identity\": {\n    \"country\": \"New Zealand\",\n    \"service_number\": \"43032\",\n    \"service_status\": \"Regular\",\n    \"full_name\": \"WICKMAN, Michael John\",\n    \"sex\": \"M\",\n    \"date_of_death\": \"1968-06-22\",\n    \"date_of_birth\": \"1946-05-31\",\n    \"rank\": \"Private\",\n    \"unit\": \"V Company, 1st Battalion, Royal New Zealand Infantry Regiment\",\n    \"fatality_type\": \"Killed in Action\"\n  },\n  \"extra_derived_data\": {\n    \"2_unit_served_with\": \"New Zealand, New Zealand Army, Royal New Zealand Infantry Regiment, 1st Australian Task Force, 4th Royal Australian Regiment/New Zealand (ANZAC) Battalion, V Company\",\n    \"military_operation\": \"Operation Toan Thang II\",\n    \"operational_tactical_setting\": {\n      \"mission_objectives\": \"To keep pressure on Viet Cong (VC) and People's Army of Vietnam (PAVN) forces at III Corps, seal enemy infiltration routes into Saigon, and identify rocket-launching sites.\",\n      \"terrain\": \"Thick jungle country in Phuoc Tuy Province, South Vietnam.\",\n      \"enemy_situation\": \"V Company of the Anzac Battalion was attacked by approximately 30 Vietcong shortly after the New Zealanders had killed three Vietcong guerrillas in a jungle clash.\",\n      \"friendly_force_disposition\": \"Private Wickman was in V Company of the Anzac Battalion, which was integrated with the 4th Battalion, Royal Australian Regiment (4 RAR) to form 4 RAR/NZ (ANZAC) Battalion.\",\n      \"narrative_summary\": \"Private Michael John Wickman, serving with V Company, 4 RAR/NZ (ANZAC) Battalion, was killed in action on June 22, 1968, during a contact with approximately 30 Vietcong. This engagement occurred shortly after his unit had killed three Vietcong guerrillas in a jungle clash a few miles from the Nui Dat Task Force Base. At the time, the 4 RAR/NZ (ANZAC) Battalion was participating in Operation Toan Thang II, which aimed to interdict enemy infiltration routes and rocket sites in the III Corps area. The New Zealand infantry companies, including V Company, were integrated with Australian battalions within the 1st Australian Task Force (1ATF) at Nui Dat, Phuoc Tuy province, and were involved in constant jungle patrols, ambushes, and cordon-and-search operations.\"\n    },\n    \"cause_of_death\": \"Gunshot wound to the head and neck in contact.\",\n    \"grid_reference\": \"YS523586\",\n    \"map_sheet_utm_zone\": \"Not explicitly stated, but the grid reference YS523586 is within the military grid reference system used in Vietnam, likely UTM Zone 48P.\",\n    \"detailed_location_description\": \"The contact occurred a few miles from the Nui Dat Task Force Base. The grid reference YS523586 places the incident in Phuoc Tuy Province, South Vietnam.\",\n    \"unit_movements_48_hours_prior\": \"On June 22, 1968, V Company was involved in a jungle clash where three Vietcong guerrillas were killed shortly before the contact in which Private Wickman died. The 4 RAR/NZ (ANZAC) Battalion joined Operation Toan Thang II on June 23, 1968, deploying to the Bi\u00ean H\u00f2a-Long Kh\u00e1nh Province border. Given that Private Wickman died on June 22, his unit would have been operating in the general area of Phuoc Tuy Province as part of the broader operational context leading up to 4 RAR/NZ's deployment to Operation Toan Thang II. New Zealand infantry companies engaged in constant jungle patrols, ambushes, and cordon-and-search operations.\",\n    \"after_action_reports_etc\": \"Casualty reports would have been generated. Specific After Action Reports or War Diaries for this particular incident were not found in the provided search results, but such documents would exist in military archives.\",\n    \"others_killed_or_wounded\": {\n      \"killed\": [],\n      \"wounded\": [\n        \"Lt. Maurice F. Dodson\",\n        \"Pte Llewellyn J.H. Williams\",\n        \"Pte Campbell Keelan\",\n        \"Cpl. Arohanui L. Ropeta\"\n      ]\n    },\n    \"burial_repatriation_details\": \"Buried at Papatoetoe Cemetery, Auckland, New Zealand.\",\n    \"tank_apc_track_fsb_patrol_route_engineer_lane\": \"Not specified in the provided information. The incident was a jungle clash.\",\n    \"most_probable_grid_archival_sources\": \"The exact grid reference YS523586 is provided. Archival sources for this information would include New Zealand military pay records and the Flinkenberg List.\",\n    \"notes_on_accuracy_and_confidence_level\": \"The information regarding Private Wickman's identity, date of death, unit, cause of death, grid reference, and burial location is highly accurate and comes from official New Zealand government and military memorial sources. The operational context is derived from reliable historical accounts of New Zealand's involvement in the Vietnam War and the specific operations active at the time.\",\n    \"references\": [\n      \"Pte Michael John Wickman | VietnamWar.govt.nz - New Zealand and the Vietnam War\",\n      \"Michael John Wickman - Online Cenotaph - Auckland War Memorial Museum\",\n      \"New Zealand's Vietnam War Veterans | VietnamWar.govt.nz - New Zealand and the Vietnam War\",\n      \"The Vietnam War - NZ History\",\n      \"New Zealand in the Vietnam War - Wikipedia\",\n      \"Phuoc Tuy Province, South Vietnam. 1968-08-12. During a halt in patrolling, members of the 1st ... Australian War Memorial\",\n      \"TOUR | 1968 Vietnam War\",\n      \"On operations | VietnamWar.govt.nz - New Zealand and the Vietnam War\",\n      \"Operation Toan Thang II - Wikipedia\",\n      \"Royal New Zealand Infantry Regiment Vietnam deployments 1965\u20131972 - Wikipedia\",\n      \"Timeline - NZ's Vietnam War 1963\u201375 | VietnamWar.govt.nz\",\n      \"Royal New Zealand Infantry Regiment - Wikipedia\"\n    ]\n  }\n}",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43221",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43221",
+      "service_status": "Unassigned",
+      "full_name": "HOLLOWS, Terrence Norman",
+      "sex": "M",
+      "date_of_death": "1969-07-29",
+      "date_of_birth": "1948-09-11",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Wounded in action, 23 July 1969 \u2013 mine at Ap Lo Gom on Route 44. Died of wounds, 29 July 1969, from wounds recieved at Ap Lo Gom.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_42294",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "42294",
+      "service_status": "Unassigned",
+      "full_name": "PETERSEN, Bryan James",
+      "sex": "M",
+      "date_of_death": "1968-09-14",
+      "date_of_birth": "1947-03-18",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 14 September 1968 \u2013 gunshot wound in contact.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41383",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41383",
+      "service_status": "Unassigned",
+      "full_name": "BENSEMANN, Donald Imlay",
+      "sex": "M",
+      "date_of_death": "1968-11-16",
+      "date_of_birth": "1948-10-30",
+      "rank": "Lance Corporal",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Gunshot wound to throat in contact.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41530",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41530",
+      "service_status": "Unassigned",
+      "full_name": "WILLIAMS, John Stewart",
+      "sex": "M",
+      "date_of_death": "1969-06-17",
+      "date_of_birth": "1948-12-15",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 17 June 1969 \u2013 gunshot wounds to head and neck in contact, when V4 encountered a large enemy bunker system",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_38655",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "38655",
+      "service_status": "Unassigned",
+      "full_name": "GATENBY, James Robert",
+      "sex": "M",
+      "date_of_death": "1969-06-05",
+      "date_of_birth": "1937-12-05",
+      "rank": "Corporal",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 5 June 1969 \u2013 rocket propelled grenade fragments to head in contact.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_573233",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "573233",
+      "service_status": "Unassigned",
+      "full_name": "FRITH, Donald Campbell",
+      "sex": "M",
+      "date_of_death": "1969-07-11",
+      "date_of_birth": "1946-10-02",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Nine weeks into his Tour of Duty, Don became very sick and died of illness on 11 July 1969",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_42742",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "42742",
+      "service_status": "Unassigned",
+      "full_name": "HAWTHORNE, Raymond Anthony",
+      "sex": "M",
+      "date_of_death": "1969-08-04",
+      "date_of_birth": "1948-01-04",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Wounded in action, 23 July 1969 \u2013 mine at Ap Lo Gom on Route 44. Died of wounds, 4 August 1969 \u2013 as a result of wounds suffered at Ap Lo Gom.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41708",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41708",
+      "service_status": "Unassigned",
+      "full_name": "BROWN, Rawhiti Hoera",
+      "sex": "M",
+      "date_of_death": "1969-08-12",
+      "date_of_birth": "1941-09-26",
+      "rank": "Sapper",
+      "unit": "New Zealand Engineers",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 12 August 1969 \u2013 mine.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "New Zealand Engineers",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43134",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43134",
+      "service_status": "Unassigned",
+      "full_name": "BERMINGHAM, Arthur Vicary",
+      "sex": "M",
+      "date_of_death": "1969-11-20",
+      "date_of_birth": "1948-06-14",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Mine. Shrapnel wounds to groin and body. Died of wounds in Australia, 20 November 1969, as a result of wounds suffered 12 August 1969.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43648",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43648",
+      "service_status": "Unassigned",
+      "full_name": "RAUHIHI, Peter",
+      "sex": "M",
+      "date_of_death": "1969-11-24",
+      "date_of_birth": "1948-06-13",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "On 24 November 1969 he and three other members of V4 were on patrol with an ARVN platoon when they were ambushed. In the ensuing contact, Pete (who was the M60 machine gunner) was mortally wounded and Jerry Barrett killed. Two other New Zealanders \u2013 Ray Davidson and Patrick Smith \u2013 were wounded.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41240",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41240",
+      "service_status": "Unassigned",
+      "full_name": "CAMPBELL, Graham Joseph",
+      "sex": "M",
+      "date_of_death": "1970-01-14",
+      "date_of_birth": "1941-04-12",
+      "rank": "Sergeant",
+      "unit": "New Zealand Special Air Service",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Long Khanh Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action during a contact on patrol in Binh Tuy Province.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "New Zealand Special Air Service",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_80166",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "80166",
+      "service_status": "Unassigned",
+      "full_name": "WATT, Gordon Sutherland",
+      "sex": "M",
+      "date_of_death": "1970-03-01",
+      "date_of_birth": "1941-01-31",
+      "rank": "Sergeant",
+      "unit": "Royal New Zealand Air Force",
+      "fatality_type": "Accidental"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 1 March 1970 \u2013 booby trap. Sgt Gordon Watt was the RNZAF's only fatal casualty of the Vietnam War. He remains the only air force member killed as a result of enemy action since 1945.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "Royal New Zealand Air Force",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43651",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43651",
+      "service_status": "Unassigned",
+      "full_name": "PAENGA, Te Wa Moana",
+      "sex": "M",
+      "date_of_death": "1970-03-19",
+      "date_of_birth": "1949-03-17",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "On 19 March 1970, less than two months before the end of his Tour of Duty, Mo was killed in a major contact during Operation Waiponamu in the Nui Dinh Hills.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_43233",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43233",
+      "service_status": "Unassigned",
+      "full_name": "WRIGHT, David Nelson",
+      "sex": "M",
+      "date_of_death": "1970-03-19",
+      "date_of_birth": "1946-08-30",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Wounded in action during operations in Phuoc Tuy province, 30 January 1970. Medevaced to Sydney, Australia but died of wounds, 19 March 1970.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_838605",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "838605",
+      "service_status": "Unassigned",
+      "full_name": "KIDD, Stanley James",
+      "sex": "M",
+      "date_of_death": "1970-04-17",
+      "date_of_birth": "1944-01-27",
+      "rank": "Lieutenant",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "On 17 April 1970 Stan's platoon were leading a company advance during Operation Townsville \u2013 V4's final operation \u2013 when they contacted the enemy and he was killed in action.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_483256",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "483256",
+      "service_status": "Unassigned",
+      "full_name": "GURNICK, John Louis",
+      "sex": "M",
+      "date_of_death": "1970-05-29",
+      "date_of_birth": "1948-07-09",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 29 May 1970 \u2013 grenade booby trap.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41301",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41301",
+      "service_status": "Unassigned",
+      "full_name": "FISK, Cecil Richard",
+      "sex": "M",
+      "date_of_death": "1970-06-18",
+      "date_of_birth": "1945-06-02",
+      "rank": "Lance Corporal",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Died of wounds, 18 June 1970 \u2013 command detonated mine.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_629544",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "629544",
+      "service_status": "Unassigned",
+      "full_name": "JONES, Leonard Cyril",
+      "sex": "M",
+      "date_of_death": "1970-06-18",
+      "date_of_birth": "1946-11-07",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 18 June 1970 \u2013 command detonated mine.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41081",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41081",
+      "service_status": "Unassigned",
+      "full_name": "SUTHERLAND, Malcolm Lindsay",
+      "sex": "M",
+      "date_of_death": "1970-10-31",
+      "date_of_birth": "1944-10-20",
+      "rank": "Lance Corporal",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 31 October 1970 \u2013 gunshot wound to back in friendly fire incident while conducting a river crossing.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_41576",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41576",
+      "service_status": "Unassigned",
+      "full_name": "WINTON, John Ramsey",
+      "sex": "M",
+      "date_of_death": "1971-03-10",
+      "date_of_birth": "1947-01-14",
+      "rank": "Lieutenant",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "Killed in action, 10 March 1971 \u2013 shrapnel from claymore mine detonated by fire in contact.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "V Company, 1RNZIR",
+      "references": [],
+      "ai_response": "Unassigned",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_388111",
+    "record_status": {
+      "changed": "",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "388111",
+      "service_status": "Regular",
+      "full_name": "HARDING, Kenneth Horomai",
+      "sex": "M",
+      "date_of_death": "1971-06-24",
+      "date_of_birth": "1948-02-24",
+      "rank": "Private",
+      "unit": "V Company, 1st Battalion, Royal New Zealand Infantry Regiment",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "death_location": "Vietnam, Long Binh (24th US Evacuation Hospital)",
+        "incident_location": "Unassigned",
+        "incident_coordinates": "Unassigned"
+      },
+      "circumstances_of_death": "During Operation Overlord, the soldier was shot by an enemy sentry while approaching a bunker in thick jungle. He sustained a gunshot wound to the head and died of wounds that night.",
+      "pre_service_occupation": "Unassigned",
+      "unit_served_with": "Coy Support Sect, V Coy, 1 Bn, RNZIR",
+      "references": [],
+      "ai_response": "Created 25:Jun:2026 20:18 used gemini $A 0.0061 (45s) - Option A: 1-Step (JSON Schema)\n{\n  \"soldier_identity\": {\n    \"country\": \"New Zealand\",\n    \"service_number\": \"388111\",\n    \"service_status\": \"Regular\",\n    \"full_name\": \"HARDING, Kenneth Horomai\",\n    \"sex\": \"M\",\n    \"date_of_death\": \"1971-06-24\",\n    \"date_of_birth\": \"1948-02-24\",\n    \"rank\": \"Private\",\n    \"unit\": \"V Company, 1st Battalion, Royal New Zealand Infantry Regiment\",\n    \"fatality_type\": \"Killed in Action\"\n  },\n  \"extra_derived_data\": {\n    \"2_unit_served_with\": \"New Zealand, New Zealand Army, Royal New Zealand Infantry Regiment, 1st Battalion, V Company, Victor 6 Company, Company Support Section\",\n    \"military_operation\": \"Operation Overlord, Battle of Long Khanh\",\n    \"operational_tactical_setting\": {\n      \"mission_objectives\": \"Operation Overlord was a 'Search and Clear' operation aimed at destroying and disrupting enemy elements, specifically the 3/33rd North Vietnamese Army (NVA) Regiment, 274th (Main Force) Viet Cong (VC) Regiment, D445 VC Battalion, and local VC Units, to prevent them from launching attacks into northern Phuoc Tuy Province and threatening the 1st Australian Task Force (1ATF) Base at Nui Dat.\",\n      \"terrain\": \"The operation took place in southern Long Khanh Province, close to the Phuoc Tuy Province border, and north-east of the De-Courtenay Rubber Plantation. The area was characterized by thick, tangled jungle and a massive hidden underground base system.\",\n      \"enemy_situation\": \"Intelligence indicated that the 3/33rd NVA Regiment, 274th (Main Force) VC Regiment, D445 VC Battalion, and local VC Units (including 13 Chau Duc, C36 Sapper Company, and the K8 Support Company) were using the area to retrain, re-equip, and reinforce. These forces were actively launching attacks into northern Phuoc Tuy Province. The enemy was described as 'very good soldiers, very good fighters'.\",\n      \"friendly_force_disposition\": \"Operation Overlord involved 1ATF and US Army Forces. The US Army's 2/8th Bn, 3 Brigade, 1st US Cavalry Division (Air Mobile) was deployed to block north-east and east along the Suoi Luc river. The 4RAR/NZ (ANZAC) Bn, which included V Company, was deployed to block south and south-east along the Suoi Ran river system. A Squadron, 3rd Cavalry Regiment, was used as a cordon, and 3RAR was tasked to search between the two blocking battalions. Operational Control was vested in the Commander 1ATF, whose Headquarters (Forward) was relocated to Courtenay Hill. Private Harding was serving in the Company Support Section, Victor 6 Company (V6), which was part of the 4th Royal Australian Regiment / New Zealand (ANZAC) Battalion (4RAR/NZ).\",\n      \"narrative_summary\": \"Operation Overlord commenced on June 5, 1971, with the insertion of blocking forces, including Australian, New Zealand, and US troops. On June 6, 1971, 3RAR discovered a suspect bunker system. The following morning, June 7, 1971, B Company's 5 Platoon of 3RAR began an assault on enemy positions, encountering heavy automatic fire and becoming pinned down, marking the beginning of the Battle of Long Khanh. The fighting was intense, with Australian troops pinned down by heavy fire. Centurion tanks provided close support, crushing many bunkers. The enemy managed to slip away under the cover of night, leaving behind a large network of bunkers. The operation continued with rifle companies having fleeting contacts. On June 12, an Australian armoured personnel carrier was ambushed, resulting in seven deaths and several wounded. Operation Overlord concluded on June 14, 1971. Private Kenneth Horomai Harding was shot by a sentry while approaching the outskirts of a bunker on June 24, 1971, and died of his wounds later that night.\"\n    },\n    \"cause_of_death\": \"Gunshot wound to the head, sustained in contact with the enemy.\",\n    \"grid_reference\": \"\",\n    \"map_sheet_utm_zone\": \"\",\n    \"location_description\": \"Died of wounds at 2100 hrs in 24th US Evacuation Hospital, Long Binh. The incident where he sustained his wounds occurred while approaching the outskirts of a bunker.\",\n    \"unit_movements_48_hours_prior\": \"On May 1971, V5 Company, 1RNZIR left Vietnam and was replaced by Victor 6 (V6) Company, 1RNZIR. V6 Company deployed to The Horseshoe on June 5, 1971. On June 24, 1971, while approaching the outskirts of a bunker, Private Harding was shot. The following day, V6 Company, along with tanks, assaulted the bunker position.\",\n    \"aar_war_diaries_contact_casualty_reports\": [\n      \"The Vietnam List (an updated version of New Zealand's original Vietnam nominal roll \u2013 the Flinkenberg List, compiled by Captain Con Flinkenberg in 1972) contains information on Private Harding.\",\n      \"Auckland War Memorial Museum Online Cenotaph records.\"\n    ],\n    \"others_killed_or_wounded\": \"The provided information does not explicitly state others killed or wounded in the *same incident* as Private Harding. However, Operation Overlord resulted in 10 Australian deaths and over 20 wounded. Specifically, on June 12, 1971, an ambush on Australian armoured personnel carriers killed seven and wounded others.\",\n    \"burial_repatriation_details\": \"Buried Waima Valley, Hokianga on 6 July 1971. His mother, Mrs Annie Harding, and sister, Mrs Susan Mokaraka, received the New Zealand Operational Service Medal on his behalf in 2003.\",\n    \"tank_apc_track_fsb_patrol_route_engineer_lane\": \"Private Harding was part of V6 Company, which on the day following his wounding, joined with tanks of C Squadron to assault the bunker position.\",\n    \"most_probable_grid_and_archival_sources\": \"Exact grid reference is not available in the provided sources. The incident occurred during Operation Overlord in southern Long Khanh Province, near the Phuoc Tuy Province border, and north-east of the De-Courtenay Rubber Plantation. Archival sources include the Vietnam List and the Auckland War Memorial Museum Online Cenotaph.\",\n    \"notes_on_accuracy_and_confidence_level\": \"Confidence in the soldier's identity, unit, date of death, cause of death, and burial details is high due to multiple corroborating sources from official New Zealand military history sites and museum records. Details regarding the specific tactical events immediately surrounding his wounding are derived from a single source, but align with the broader operational context of Operation Overlord. The exact grid reference and map sheet/UTM zone are not available in the provided public records. The service status is derived from the fact that New Zealand only sent full-time professional regular force soldiers to Vietnam.\",\n    \"references\": [\n      \"Pte Kenneth Horomai Harding | VietnamWar.govt.nz - New Zealand and the Vietnam War. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE9I6j4fdCajjeDlJKXfYu8EiUfA3RpKZjoq4ErBjoxDCWABMjEu3ib2qxp-AuESCKz0Wb7_gs6Ed5J9o_1hgdRLLfrjURqPwJhf0kvP_nEplVc46FBmzOjmGOEogvbIrHh1kT-C-T5x0v4szW24kC2OLBve0YKLzLM\",\n      \"Kenneth Horomai Harding - Online Cenotaph - Auckland Museum. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHInoaNdaNid3aA8Y9ikT7DEYWaS64tAfSliIvqrpn6SffmV7W6SnHPdAS4RjlpuzrUfpFG6pb1omfX2a_sakFhXWZ46Vuck5SBwnJ57Kei-GcEGi1YAgFPMSV4UWNlZ_lUksm2IWk3lf6LqmcC4WPIuP9CF7gmTLsJG9Bpmh7LtIO-LMw=\",\n      \"Compulsory military training in New Zealand - Wikipedia. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGtoI6Q2Fum0V8l-KdgOI1jZX2vT0oB0p4Dq2cW9zFCUnQCIwBYOUo4HpH36iGwQ1J6almKobQ53RRFt5JySqslaKRW5vTxR-l-7MBz-CtmkifwqDdVyr6eFsiEnyfG75SmriyCGuSiqdGgbKs1rrtPqDVRV49Jnvz6XpHumm-8bQzH4eU\",\n      \"The Vietnam War - NZ History. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFedmJVJt9TOVNZShdSwUsDlEPTALO6W2W0lDG4RFvL_rHq6HVVdVaJLKKsCT1AVdAmbSQlSmZcDzrtCiIJgtSOS5PLzaXca88uqnU_oPcJwTrwXAHFManHJ29YYSDjdiW20qLS\",\n      \"Vetstory 80 | Operation Overlord June 1971 - 104 Sig Sqn. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE96H0CcD3GEE4Da4bP5feMpsKfK7volT8HjoM4znVvZ6N3D-YUb1JQC8_hf3Oj9Qa2vrCQLISF94OrGdN9e8TvSJK-TbzN9c_Q55Fp6NVDp9FDFMrVs1OZA2nOG8TCUsGFY1gT_WDd7PMT7W77V9bn\",\n      \"Australians in Operation Overlord and the Battle of Long Khanh in 1971 - Anzac Portal - DVA. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHzaUH4YDhyFlY6xrj-MUroaFN9Xo_xdNW7XJrU2mg0uia7brXs7wTZsmzqhGf3FRpOJuH_3P3XHlEBrpnY39NpA43zLckh4hI-eaO2Li2n-qZ9wi4rTJC38GlkyLUR33pf2l6TSB_R0Eg4MWhx1JHtu_c9DdB9vBTHQ6GUcOZK8BpfUI23YyUW0PMbLb8AQYyp7nQgEIdGOx3K5X5VnWgtBeY=\",\n      \"National Services for the 50th Anniversary of Operation Overlord including the Battle of Long Khanh - DVA. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEVE_pnZQrk0zxau8l3Qzpz7jsuKwbr-eHNvqgi-SUEcTJQWaYsqnJda2qcmjjuzHRxnHk1o31zmk548kzUHLsVaMwSjjZPFIOHNvEDwgDVytqLWr6665lUIDxL-c6a7jlRSa-45j7gjwZ7A1whB1w0glU5JrUEM-Bh1jZ65DjcGsf94J7qluEWLhddiQRUm0dfA==\",\n      \"Royal New Zealand Infantry Regiment Vietnam deployments 1965\u20131972 - Wikipedia. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHIa9xOkt4ok9-WXdhxfkXwqPQI_8pdacobWphgL6b6LXD9NvOM__Pia8QRy4uLq-sz38MEGrJDKtRsT2S3UR0vJQF2M8LjcqVLID045_2nscbdni9pUydi8xcU7CdP9HfRxkVaO5ndkmhNp8b8tr51cmnUFIjfQ38-jrSzVKWKi6ew_3ga5LDNCXKAtFsL90gK7NIP3TNkwp3pk31zER7ENJ8=\",\n      \"Timeline - NZ's Vietnam War 1963\u201375 | VietnamWar.govt.nz. https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEUEz8-hA8ZDF0xidPgEwE4W5v_HhPDm--qDzHZNefaXetEREbzYXmXXCFpBxHLPyf1iS_cVC-DfM1sMBp-C43Ydjg8fMp7SjMbtcEuPFt42EWkxtvDvN2f56lV10vcsGdpk5_iV8rLxg==\"\n    ]\n  }\n}",
+      "authoritative_ai_override": "Unassigned"
+    }
+  },
+  {
+    "referenceID": "NZ_699033",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "699033",
+      "service_status": "Regular",
+      "full_name": "AWATERE, William Reginald",
+      "sex": "M",
+      "date_of_death": "1968-04-12",
+      "date_of_birth": "1944-12-13",
+      "rank": "Pte",
+      "unit": "W1,RNZIR",
+      "fatality_type": "Died of Wounds"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Died of wounds, 12 May 1968 \u2013 shrapnel to face and chest.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_209440",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "209440",
+      "service_status": "Regular",
+      "full_name": "BARRETT, Jerry Tauri",
+      "sex": "M",
+      "date_of_death": "1969-11-24",
+      "date_of_birth": "1942-04-22",
+      "rank": "Spr",
+      "unit": "V4,RNZE",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "On 24 November 1969 he and three other members of V4 were on patrol with an ARVN platoon when they were ambushed. In the ensuing contact, Jerry was killed and Peter Rauhihi mortally wounded. Two other New Zealanders \u2013 Ray Davidson and Patrick Smith \u2013 were wounded. ",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_482859",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "482859",
+      "service_status": "Regular",
+      "full_name": "COOPER, Thomas",
+      "sex": "M",
+      "date_of_death": "1970-10-11",
+      "date_of_birth": "1948-07-17",
+      "rank": "Pte",
+      "unit": "W3,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Wounded in action, 10 October 1970 \u2013 gunshot wound in friendly fire incident. Died of wounds at US 24th Evacuation Hospital, Long Binh on 11 October 1970.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_463211",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "463211",
+      "service_status": "Regular",
+      "full_name": "HIRINI, Haere Desmond",
+      "sex": "M",
+      "date_of_death": "1968-02-01",
+      "date_of_birth": "1936-03-10",
+      "rank": "Pte",
+      "unit": "V2,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Killed in action, 1 February 1968 \u2013 gunshot wound.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_211075",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "211075",
+      "service_status": "Regular",
+      "full_name": "HOERARA, George Kingi",
+      "sex": "M",
+      "date_of_death": "1968-01-26",
+      "date_of_birth": "1926-01-02",
+      "rank": "Cpl",
+      "unit": "W1 V2,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Killed in action, 26 January 1968 \u2013 mine.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_43349",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "43349",
+      "service_status": "Regular",
+      "full_name": "HURMAN, Keith Richard",
+      "sex": "M",
+      "date_of_death": "1969-01-11",
+      "date_of_birth": "1947-02-18",
+      "rank": "Pte",
+      "unit": "W2,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Killed in action, 11 January 1969 \u2013 mine and gunshot wounds in friendly fire inciden",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_41243",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "41243",
+      "service_status": "Regular",
+      "full_name": "LYES, Noel Stanley George",
+      "sex": "M",
+      "date_of_death": "1968-06-23",
+      "date_of_birth": "1939-11-20",
+      "rank": "Gnr",
+      "unit": "161 Bty,RNZA",
+      "fatality_type": "Other"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Killed in Action",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_539244",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "539244",
+      "service_status": "Regular",
+      "full_name": "RADFORD, Joseph William",
+      "sex": "M",
+      "date_of_death": "1969-07-23",
+      "date_of_birth": "1940-02-22",
+      "rank": "Cpl",
+      "unit": "W2,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "Killed in action, 23 July 1969 \u2013 mine at Ap Lo Gom on Route 44.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  },
+  {
+    "referenceID": "NZ_42116",
+    "record_status": {
+      "changed": "2026-07-13",
+      "update_to_firestore": ""
+    },
+    "serviceRecordAuthority": {
+      "service_number": "42116",
+      "service_status": "Regular",
+      "full_name": "TURNBULL, Murray John",
+      "sex": "M",
+      "date_of_death": "1969-08-02",
+      "date_of_birth": "1948-02-18",
+      "rank": "Pte",
+      "unit": "V4,RNZIR",
+      "fatality_type": "Killed in Action"
+    },
+    "derived_details": {
+      "fatality_locations": {
+        "incident_location": "",
+        "incident_coordinates": "",
+        "death_location": "",
+        "place_of_burial": ""
+      },
+      "circumstances_of_death": "He was killed in action during Operation Mundingburra as a result of booby trap device.",
+      "unit_served_with": "",
+      "ai_response": "",
+      "enhanced_operation_details": "",
+      "authoritative_ai_override": "Unassigned",
+      "references": [],
+      "summary": ""
+    }
+  }
+]

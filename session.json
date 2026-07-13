@@ -27,11 +27,11 @@
     }
   },
   "AU_fatalities.json": {
-    "pos": 0,
-    "search": "1731426",
+    "pos": 1,
+    "search": "",
     "ai_option": "Option A: 1-Step (JSON Schema)",
     "live_search": true,
-    "lastRefId": "AU_1731426",
+    "lastRefId": "AU_NEW_1783920462",
     "AU_43326": {
       "prompt": "",
       "response": "",
@@ -73,7 +73,7 @@
       "responseLabel": "RESPONSE",
       "sidePanelVisible": 0
     },
-    "on_this_day": false,
+    "on_this_day": true,
     "on_this_day_date": "26-06",
     "on_this_day_month": "08",
     "on_this_day_day": "14",
@@ -97,7 +97,7 @@
       "response": "",
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
-      "sidePanelVisible": 1
+      "sidePanelVisible": 0
     },
     "AU_58625": {
       "prompt": "",
@@ -319,10 +319,10 @@
       "sidePanelVisible": 1
     },
     "AU_2412362": {
-      "prompt": "TASK: From the provided soldier fatality record, identify the best-estimate GPS coordinates for where the death-related location — and extract all physical location/place names from the text.\n\nFIRST: identify the fatality_type from the source text. This determines the location approach.\n\nFOR COMBAT DEATHS (KIA, DOW, enemy action):\n  - Identify where the fatal INCIDENT occurred — the place of wounding/action     (this is NOT necessarily where they died, which may be a hospital/aid station).\n\nFOR NON-COMBAT DEATHS (Accidental, Illness, Motor Vehicle, Drowning, etc.):\n  - Identify the location where the death or accident occurred (e.g. base camp,     training area, barracks, hospital, road, river, or civilian location).\n  - Do NOT search for war diary grid references, fire support bases, or combat incidents.\n  - There is no 'place of wounding' — use the death or incident location directly.\n  - If the death occurred at a base, camp, or hospital, that IS the location.\n  - If the location is merely a province or country-level (e.g. 'South Vietnam'),     that is sufficient — do NOT fabricate a specific grid reference or hamlet.\n\nPROCESS:\n  1. FIRST, check any authoritatively marked override section.  If it contains coordinates or a grid reference, use those as your starting point — but STILL search for and include location/place names.\n  2. Analyse all location-related information in the text, including:\n     - any location descriptions or geographic details\n     - any grid references, map sheet numbers, or UTM zones\n     - any military operation names (combat deaths only)\n     - any narrative or summary text\n     - any place names (village, hamlet, district, province)\n     - any fire support bases, rivers, roads, or landmarks\n     - any ARVN/US/Australian operational areas\n  3. Identify ALL location names in the text — villages, hamlets, districts,\n     provinces, FSB names, LZ names, rivers, rubber plantations, landmarks.\n  4. If a grid reference MGRS / UTM / partial coordinate appears anywhere in the text, extract it exactly as written.\n  5. Convert any full or partial grid reference into an approximate GPS coordinate when possible.\n  6. If no grid reference exists, use:\n     - Vietnam War 1:50,000 map sheets\n     - historical village/hamlet locations\n     - known AO boundaries\n     - documented operations to estimate the lowest-level location (village > hamlet > district > province).\n  7. Always output one single best-estimate GPS coordinate in decimal degrees.\n\nLOCATION NAME RULES (MANDATORY when location info exists):\n  - Extract ALL predominant physical place names found in the text.\n  - Include: villages, hamlets, districts, provinces, rivers, mountains, roads,\n    rubber plantations, landmarks, FSB names, LZ names.\n  - Do NOT omit location names just because you have GPS coordinates.\n  - Concatenate place names from smallest to largest (e.g. \"Ap Lo Gom, Phuoc Tuy\").\n  - Only omit location names if absolutely NO location info exists in the text.\n\nOUTPUT FORMAT (MANDATORY):\nReturn a single line:\n  \"best_estimate_gps\": \"LAT, LON [GRID1, GRID2, ...] — location_names\"\n\nCRITICAL: The \" — location_names\" suffix is MANDATORY whenever any place\nname, landmark, FSB, LZ, village, hamlet, district, province, river, road,\nor rubber plantation is mentioned in the source text. DO NOT return bare\nGPS coordinates if location details exist.\n\nRules:\n  - If grid fragments exist → include them in [brackets] before the location.\n  - If no grid fragments exist → output GPS then location names.\n  - If no estimate is possible → return an empty string.\n\nExamples:\n  \"best_estimate_gps\": \"16.533, 107.533 — Ap Lo Gom, Phuoc Tuy Province\"\n  \"best_estimate_gps\": \"10.512, 106.345 [YS478548] — Courtenay Rubber, FSB Flinders, Phuoc Tuy\"\n  \"best_estimate_gps\": \"11.221, 108.112 [48PYS1234] — near Song Rai River, Phuoc Tuy\"\nReturn ONLY the output line — no commentary, no markdown, no explanation.\n\nThe SOURCE TEXT to analyse is provided below between the <source> tags.\nThis text is compiled from the record's AI-generated master response and any authoritative override notes.\n\n<source>\n[gemini-3.5-flash]  31s  $A 0.012765\n\n# Historical Research Report\n\n**Subject:** Lance Corporal Richard Mervyn Woolford (4718082), 2nd Battalion, The Royal Australian Regiment (2RAR)  \n**Date of Death:** 1 August 1967  \n**Fatality Type:** Killed in Action (KIA)  \n**Location of Death:** Phuoc Tuy Province, South Vietnam  \n**Operational Context:** Operation Paddeland (16 July – 4 August 1967)  \n\n---\n\n## Executive Summary\n\nThis report provides a detailed historical reconstruction of the circumstances, location, and operational context surrounding the death of Lance Corporal (L/Cpl) Richard Mervyn Woolford on 1 August 1967. \n\nL/Cpl Woolford was a National Serviceman serving with B Company, 2nd Battalion, The Royal Australian Regiment (2RAR/NZ ANZAC). He was killed in action during a patrol contact with Viet Cong (VC) forces in the eastern sector of Phuoc Tuy Province during **Operation Paddeland**. \n\n---\n\n## 1. Precise Location of Death\n\n* **Province:** Phuoc Tuy Province, South Vietnam.\n* **District:** Dat Do District (eastern sector).\n* **Geographical Features:** \n  * **Waterways:** The contact occurred in the vicinity of the **Song Rai River** valley, a major north-south waterway in eastern Phuoc Tuy known as a key infiltration and supply route for Viet Cong local and main force units.\n  * **Terrain:** The area was characterized by dense secondary jungle, thick bamboo stands, and pockets of swampy terrain, which severely restricted visibility and movement.\n  * **Grid Reference (Reasoned Inference):** Based on the boundaries of Operation Paddeland, the contact occurred in the general grid square area of **YS 480800 to YS 550800**, east of the 1st Australian Task Force (1ATF) base at Nui Dat.\n\n---\n\n## 2. Fire Support Base (FSB) and Base Context\n\n* **Primary Base of Operations:** The unit was operating out of the **1ATF Base at Nui Dat** (Grid Reference: YS 4367). \n* **Artillery Support:** \n  * **Direct Support Battery:** **106th Field Battery, Royal Australian Artillery (RAA)**, which was equipped with 105mm L5 Pack Howitzers and M2A2 Howitzers. The battery provided continuous defensive fire and offensive support tasks for 2RAR during the operation.\n  * **General Support:** Heavy artillery support was available on-call from US Army artillery units (such as the 2nd Battalion, 35th Artillery, operating 155mm and 8-inch self-propelled howitzers) stationed within range of the operational area.\n\n---\n\n## 3. Operation Name and Operational Context\n\n### Operation Paddeland (16 July – 4 August 1967)\n* **Commanding Headquarters:** 1st Australian Task Force (1ATF).\n* **Participating Units:** 2nd Battalion, The Royal Australian Regiment (2RAR), 7th Battalion (7RAR), A Squadron 3rd Cavalry Regiment, and supporting arms.\n* **Operational Objective:** Operation Paddeland was a search-and-destroy and reconnaissance-in-force operation conducted in the eastern sector of Phuoc Tuy Province. The primary mission was to interdict Viet Cong transit routes, locate and destroy enemy base camps/caches, and disrupt the food-gathering operations of the **VC D445 Local Force Battalion** and elements of the **274th VC Regiment**.\n* **Tactical Execution:** 2RAR deployed its rifle companies into designated search areas east of Nui Dat. B Company was tasked with conducting aggressive platoon and section-level patrols through dense jungle to locate enemy tracks and bunker systems.\n\n---\n\n## 4. Unit War Diary Extracts & Tactical Reconstruction\n\n*Source: Summarised from the 2nd Battalion, Royal Australian Regiment War Diary (AWM95, Item 7/2/17, August 1967).*\n\n### Chronological Reconstruction of 1 August 1967:\n* **0800 Hours:** B Company, 2RAR, continues search-and-patrol operations in its assigned sector of the Song Rai valley. The platoons move in tactical formation through thick undergrowth, searching for signs of recent enemy movement.\n* **1115 Hours:** A patrol from B Company (specifically the lead section of the platoon) makes sudden contact with an estimated squad-sized Viet Cong force. The enemy is positioned in a well-concealed defensive or ambush posture.\n* **The Engagement:** The VC open fire with small arms (AK-47 and SKS rifles) and light automatic weapons. The Australian patrol immediately returns fire and maneuvers to assault the enemy position. \n* **Casualty Sustained:** During the initial exchange of fire, L/Cpl Woolford is mortally wounded by enemy small arms fire. \n* **Enemy Withdrawal:** Under heavy return fire from B Company, the VC break contact and withdraw rapidly into the dense jungle, utilizing pre-planned escape routes.\n* **1145 Hours (Approx.):** A \"Dustoff\" (medical evacuation helicopter) is requested. Due to the dense canopy, a clearing must be secured or a winch extraction utilized to evacuate L/Cpl Woolford. His body is flown back to the 1st Australian Field Hospital at Vung Tau, where he is officially pronounced dead.\n\n---\n\n## 5. Eyewitness Accounts and Personal Context\n\n* **Role:** L/Cpl Woolford served as a Section Second-in-Command (2IC) or senior rifleman within B Company, 2RAR. In this role, he was responsible for assisting the Section Commander in leading infantrymen during patrols and maintaining tactical discipline under fire.\n* **Comrades' Remembrance:** Veterans of 2RAR recall the intense heat, thick vegetation, and constant tension of Operation Paddeland. The suddenness of contact in the dense scrub meant that decisions had to be made in split seconds. L/Cpl Woolford is remembered by his platoon members as a dedicated, reliable soldier and a respected junior leader.\n* **Repatriation:** Following a change in Australian government policy in January 1966, the bodies of Australian servicemen killed in Vietnam were repatriated to Australia if their families so wished. L/Cpl Woolford’s body was returned to Australia.\n* **Resting Place:** He is buried with full military honours at **Centennial Park Cemetery, Pasadena, Mitcham City, South Australia** (Location: Derrick Gardens, Path 15, Grave 212A).\n\n---\n\n## 6. Cross-Verification and Sources\n\nThe details in this report have been cross-referenced and verified against the following authoritative databases and historical records:\n\n1. **Australian War Memorial (AWM) Roll of Honour:** Confirms Richard Mervyn Woolford, Service Number 4718082, 2nd Battalion, Royal Australian Regiment, KIA on 1 August 1967.\n2. **Department of Veterans' Affairs (DVA) Nominal Roll of Vietnam Veterans:** Confirms enlistment details, service dates, and unit allocation (2RAR).\n3. **AWM95 Australian Army War Diaries (Vietnam):** 2nd Battalion, Royal Australian Regiment - Narrative, Duty Officer's Logs, and Commander's Diaries for August 1967 (AWM95 7/2/17).\n4. **Official History of Australia's Involvement in Southeast Asian Conflicts:** *To Fighting Hungry: The Story of the 2nd Battalion, The Royal Australian Regiment* (various editions) and *On the Offensive: Australia's Army in the Vietnam War, 1967–1968* by Ian McNeill and Ashley Ekins.\n5. **Virtual War Memorial Australia (VWMA):** Commemorative profile confirming burial details at Centennial Park, South Australia, and personal service history.\n\n---\n\n## 7. Gaps in the Historical Record\n\n* **Specific Platoon Designation:** While the war diaries confirm B Company, 2RAR, the specific platoon (4, 5, or 6 Platoon) is not explicitly highlighted in the digitized high-level summary logs of the AWM95 diary for that specific hour, though it is highly likely to have been the lead platoon on patrol that morning. Detailed platoon-level roll books held in private collections or restricted archives would be required to isolate the exact platoon number.\n</source>\n\nExtract the requested information based on your system instructions from the source text above.",
-      "response": "[gemini-3.5-flash]  14s  $A 0.003417  | source: enhanced_operation_details\n\n\"best_estimate_gps\": \"10.674, 107.294 [YS480800, YS550800] — Song Rai River valley, Dat Do District, Phuoc Tuy Province\"",
+      "prompt": "",
+      "response": "",
       "promptLabel": "PROMPT",
-      "responseLabel": "RESPONSE: incident_location",
+      "responseLabel": "RESPONSE",
       "sidePanelVisible": 1
     },
     "AU_3790395": {
@@ -499,6 +499,27 @@
       "promptLabel": "PROMPT",
       "responseLabel": "RESPONSE",
       "sidePanelVisible": 0
+    },
+    "AU_1200265": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 0
+    },
+    "AU_NEW_1783920436": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
+    },
+    "AU_NEW_1783920462": {
+      "prompt": "",
+      "response": "",
+      "promptLabel": "PROMPT",
+      "responseLabel": "RESPONSE",
+      "sidePanelVisible": 1
     }
   },
   "maintenance_field": "circumstances_of_death"
