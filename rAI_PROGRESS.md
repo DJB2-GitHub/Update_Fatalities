@@ -1,18 +1,14 @@
 # AI Session Progress & Next Steps
 
 ## Session Summary
-- **Wired up Firestore Push**: Fully integrated the Firestore push functionality into the two new Main Menu buttons (**"Push AU Updates to Firestore"** and **"Push NZ Updates to Firestore"**).
-- **Background Task UI**: Implemented `_run_push` in `MainMenu`, which confirms user intent, locks the UI, and displays a modern, flat-design progress modal while running the `push_updates` backend script via threading.
-- **Callback Integration**: Successfully tied the button actions to the `push_updates` function from the existing `push_json_updates_to_firestore.py` script.
-- **Status Updates & Error Handling**: The progress modal continuously updates with the number of records pushed. Once completed, a styled dialog is presented summarizing the success or error state before unlocking the UI.
+- **Added menu buttons**: Two new placeholder buttons added under `Update NZ_Fatalities.json` in the `MainMenu` — **"Push AU Updates to Firestore"** and **"Push NZ Updates to Firestore"**. Both use `_flat_button` and are registered in `self._all_buttons`. Click callbacks are no-ops (`lambda _e: None`) — no backend wired.
 
 ## Current System State
-- **Background Worker Pattern**: The `_run_push` method establishes a pattern for background tasks using `threading.Thread(target=_task, daemon=True)` and schedules UI updates safely using `self.after(0, ...)`.
-- **Button-Lock Contract**: The `self._set_buttons_locked(True/False)` mechanism is strictly enforced during background execution, guaranteeing that users cannot trigger concurrent operations or open conflicting modals.
-- **Dependencies**: Imported `push_updates` from `push_json_updates_to_firestore.py` and `threading` within `main.py`.
+- **MainMenu button layout** (`main.py`, `MainMenu.__init__`, lines 809–817): Order is `Update AU_Fatalities.json` → `Update NZ_Fatalities.json` → **Push AU Updates to Firestore** → **Push NZ Updates to Firestore** → Backup button → separator → Report button → Quit button.
+- **Button-lock contract**: All main-menu buttons (including the two new ones) are added to `self._all_buttons` via `_flat_button` and toggled uniformly by `_set_buttons_locked()`.
 
 ## Absolute Next-Step Checklist
-- [ ] Launch the app and verify the two new push buttons render correctly in the main menu layout.
-- [ ] Test the "Push AU Updates" or "Push NZ Updates" flow and confirm the progress modal displays as expected.
-- [ ] Verify that the progress dialog correctly disables other buttons during execution.
-- [ ] Confirm that JSON records with `update_to_firestore == "false"` sync successfully to the `djb-onthisday` Firestore database and their local JSON attribute flips to `"true"`.
+- [ ] Implement Firestore push callbacks for both buttons (replace `lambda _e: None`).
+- [ ] Launch the app, verify the two buttons render and lock/unlock correctly during modal usage.
+
+**Incomplete work**: Firestore push backend logic is unimplemented — button UI only.
