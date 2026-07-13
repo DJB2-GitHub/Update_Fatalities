@@ -12,11 +12,14 @@ import glob
 import json
 import os
 import re
+import threading
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
 from update_fatalities import UpdateFatalities
+from push_json_updates_to_firestore import push_updates
+
 
 # ---------------------------------------------------------------------------
 # Design tokens
@@ -810,6 +813,14 @@ class MainMenu(tk.Toplevel):
             btn = self._flat_button(body, f"  Update {label}", self._update, file_path)
             btn.pack(fill=tk.X, pady=3)
 
+        au_path = datasets.get("live", {}).get("AU_Fatalities.json")
+        push_au_btn = self._flat_button(body, "  Push AU Updates to Firestore", lambda _e, c="AU", p=au_path: self._run_push(c, p), None)
+        push_au_btn.pack(fill=tk.X, pady=3)
+
+        nz_path = datasets.get("live", {}).get("NZ_Fatalities.json")
+        push_nz_btn = self._flat_button(body, "  Push NZ Updates to Firestore", lambda _e, c="NZ", p=nz_path: self._run_push(c, p), None)
+        push_nz_btn.pack(fill=tk.X, pady=3)
+
         backup_btn = self._flat_button(body, "  Backup Firestore Fatalities to folder for OneDrive sync", lambda _e: self._backup_files(), None)
         backup_btn.pack(fill=tk.X, pady=3)
         self._backup_btn_frame = backup_btn
@@ -971,6 +982,60 @@ class MainMenu(tk.Toplevel):
         except Exception:
             pass
         self.after(100, self._sync_parent_iconify)
+
+    def _run_push(self, country_code: str, file_path: str | None):
+        if not file_path or not os.path.exists(file_path):
+            _show_error(f"Cannot find dataset for {country_code}")
+            return
+
+        if self._buttons_locked:
+            return
+
+        if not _ask_yes_no(self, "Confirm Push", f"Push updates to Firestore for {country_code}?"):
+            return
+
+        self._set_buttons_locked(True)
+
+        progress_win = tk.Toplevel(self)
+        progress_win.title("Pushing to Firestore...")
+        progress_win.geometry("400x120")
+        progress_win.configure(bg=WHITE)
+        progress_win.resizable(False, False)
+        progress_win.transient(self)
+        progress_win.grab_set()
+
+        progress_win.update_idletasks()
+        pw, ph = self.winfo_screenwidth(), self.winfo_screenheight()
+        w, h = progress_win.winfo_width(), progress_win.winfo_height()
+        progress_win.geometry(f"+{(pw-w)//2}+{(ph-h)//2}")
+
+        lbl = tk.Label(progress_win, text=f"Pushing {country_code} updates...", bg=WHITE, fg=TEXT_DARK, font=(FONT_FAMILY, 11))
+        lbl.pack(pady=(20, 10))
+
+        progress_var = tk.StringVar(value="Starting...")
+        status_lbl = tk.Label(progress_win, textvariable=progress_var, bg=WHITE, fg=TEXT_MUTED, font=(FONT_FAMILY, 9))
+        status_lbl.pack()
+
+        def _cb(current, total):
+            progress_var.set(f"Updated {current} of {total} records")
+
+        def _task():
+            try:
+                count = push_updates(country_code, file_path, _cb)
+                msg = f"Successfully pushed {count} updates."
+                icon = "info"
+            except Exception as e:
+                msg = f"Error pushing updates:\n{str(e)}"
+                icon = "error"
+
+            def _on_finish():
+                progress_win.destroy()
+                self._set_buttons_locked(False)
+                StyledDialog(self, "Push Result", msg, icon=icon, buttons=[("OK", None)])
+
+            self.after(0, _on_finish)
+
+        threading.Thread(target=_task, daemon=True).start()
 
     def _sync_parent_iconify(self):
         try:

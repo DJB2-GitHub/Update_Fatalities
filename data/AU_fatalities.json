@@ -1846,11 +1846,11 @@
     "referenceID": "AU_1730947",
     "record_status": {
       "changed": "2026-07-13",
-      "update_to_firestore": "true"
+      "update_to_firestore": "false"
     },
     "serviceRecordAuthority": {
       "service_number": "1730947",
-      "service_status": "National Service",
+      "service_status": "Regular",
       "full_name": "GRICE, Victor Roy",
       "sex": "M",
       "date_of_death": "1966-08-18",
