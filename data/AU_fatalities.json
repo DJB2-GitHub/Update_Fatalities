@@ -1846,7 +1846,7 @@
     "referenceID": "AU_1730947",
     "record_status": {
       "changed": "2026-07-13",
-      "update_to_firestore": "false"
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1730947",

@@ -1,14 +1,19 @@
 # AI Session Progress & Next Steps
 
 ## Session Summary
-- **Added menu buttons**: Two new placeholder buttons added under `Update NZ_Fatalities.json` in the `MainMenu` — **"Push AU Updates to Firestore"** and **"Push NZ Updates to Firestore"**. Both use `_flat_button` and are registered in `self._all_buttons`. Click callbacks are no-ops (`lambda _e: None`) — no backend wired.
+- **Firestore push confirmation dialog**: Replaced the simple yes/no `_ask_yes_no` confirmation in `_run_push` with a two-step flow:
+  1. `count_updates(file_path)` scans the JSON and returns the count of flagged records — no Firestore call.
+  2. `_ask_number()` dialog displays the count and asks the user to enter how many records to push (pre-filled with total, max shown). Cancel is the default action (red button, Enter cancels).
+  3. `push_updates()` now accepts an optional `limit` parameter; only the first N flagged records are pushed and marked `"true"` in the JSON.
+- **Refactored `push_json_updates_to_firestore.py`**: Extracted `_init_firebase()` and `_load_records_to_update()` as shared internals. New public function `count_updates()` for zero-cost counting.
+- **Both AU and NZ push buttons** follow the same flow (both wired through `_run_push`).
 
 ## Current System State
-- **MainMenu button layout** (`main.py`, `MainMenu.__init__`, lines 809–817): Order is `Update AU_Fatalities.json` → `Update NZ_Fatalities.json` → **Push AU Updates to Firestore** → **Push NZ Updates to Firestore** → Backup button → separator → Report button → Quit button.
-- **Button-lock contract**: All main-menu buttons (including the two new ones) are added to `self._all_buttons` via `_flat_button` and toggled uniformly by `_set_buttons_locked()`.
+- **Button-lock contract**: All main-menu buttons (including Push AU/NZ) are in `_all_buttons` via `_flat_button`, toggled uniformly by `_set_buttons_locked()`.
+- **Push flow** (`_run_push` in `main.py`): count → number dialog → threaded push with progress window → result dialog.
+- **Cancel default**: `_ask_number` dialog has Cancel as the primary (red) button. `<Return>` and `<Escape>` both cancel. User must deliberately click Push or type in the entry and click Push.
+- **Firestore project**: `djb-onthisday` (from `firebase-key.json`). Firestore database must be provisioned in the Firebase Console before push will succeed (404 if not created).
 
 ## Absolute Next-Step Checklist
-- [ ] Implement Firestore push callbacks for both buttons (replace `lambda _e: None`).
-- [ ] Launch the app, verify the two buttons render and lock/unlock correctly during modal usage.
-
-**Incomplete work**: Firestore push backend logic is unimplemented — button UI only.
+- [ ] Create the Firestore database in Firebase Console for project `djb-onthisday` (`https://console.firebase.google.com/project/djb-onthisday/firestore`).
+- [ ] Launch the app (`python main.py`), click "Push AU Updates to Firestore", verify the count dialog appears with correct record count, test Cancel (Enter/Escape), test entering a number and pushing.

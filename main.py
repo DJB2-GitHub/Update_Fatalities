@@ -18,7 +18,7 @@ import webbrowser
 from tkinter import ttk
 
 from update_fatalities import UpdateFatalities
-from push_json_updates_to_firestore import push_updates
+from push_json_updates_to_firestore import count_updates, push_updates
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +141,91 @@ def _ask_yes_no(parent: tk.Tk, title: str, message: str) -> bool:
         buttons=[("Yes", True), ("No", False)],
     )
     return dialog.result
+
+
+def _ask_number(parent: tk.Tk, title: str, message: str, total: int) -> int | None:
+    """Custom dialog with a numeric entry. Returns int or None (cancelled)."""
+    result: int | None = None
+
+    dlg = tk.Toplevel(parent)
+    dlg.title(title)
+    dlg.resizable(False, False)
+    dlg.configure(bg=WHITE)
+    dlg.transient(parent)
+
+    dlg.update_idletasks()
+    pw, ph = parent.winfo_screenwidth(), parent.winfo_screenheight()
+    w, h = 420, 180
+    dlg.geometry(f"{w}x{h}+{(pw-w)//2}+{(ph-h)//2}")
+    dlg.grab_set()
+
+    msg_lbl = tk.Label(
+        dlg, text=message, bg=WHITE, fg=TEXT_DARK,
+        font=(FONT_FAMILY, 10), wraplength=380, justify=tk.LEFT,
+    )
+    msg_lbl.pack(padx=20, pady=(20, 8), anchor=tk.W)
+
+    entry_frame = tk.Frame(dlg, bg=WHITE)
+    entry_frame.pack(fill=tk.X, padx=20, pady=(0, 12))
+
+    entry_var = tk.StringVar(value=str(total))
+    entry = tk.Entry(
+        entry_frame, textvariable=entry_var, font=(FONT_FAMILY, 11),
+        bg=WHITE, fg=TEXT_DARK, relief=tk.SOLID, borderwidth=1,
+        highlightthickness=0, width=8,
+    )
+    entry.pack(side=tk.LEFT)
+
+    tk.Label(
+        entry_frame, text=f"  (max {total})", bg=WHITE, fg=TEXT_MUTED,
+        font=(FONT_FAMILY, 9),
+    ).pack(side=tk.LEFT)
+
+    ttk.Separator(dlg, orient=tk.HORIZONTAL).pack(fill=tk.X)
+    btn_frame = tk.Frame(dlg, bg=WHITE)
+    btn_frame.pack(fill=tk.X, padx=16, pady=12)
+
+    def _ok():
+        nonlocal result
+        try:
+            n = int(entry_var.get())
+            if n < 1:
+                return
+            result = min(n, total)
+        except ValueError:
+            return
+        dlg.destroy()
+
+    def _cancel():
+        nonlocal result
+        result = None
+        dlg.destroy()
+
+    ok_frame = tk.Frame(btn_frame, bg=WHITE, cursor="hand2")
+    ok_frame.pack(side=tk.RIGHT, padx=4)
+    ok_lbl = tk.Label(
+        ok_frame, text="Push", bg=WHITE, fg=TEXT_DARK,
+        font=(FONT_FAMILY, 10), padx=18, pady=6,
+    )
+    ok_lbl.pack()
+    ok_lbl.bind("<Button-1>", lambda _e: _ok())
+
+    cancel_frame = tk.Frame(btn_frame, bg=RED_PRIMARY, cursor="hand2")
+    cancel_frame.pack(side=tk.RIGHT, padx=4)
+    cancel_lbl = tk.Label(
+        cancel_frame, text="Cancel", bg=RED_PRIMARY, fg=WHITE,
+        font=(FONT_FAMILY, 10), padx=18, pady=6,
+    )
+    cancel_lbl.pack()
+    cancel_lbl.bind("<Button-1>", lambda _e: _cancel())
+
+    entry.bind("<Escape>", lambda _e: _cancel())
+    dlg.bind("<Return>", lambda _e: _cancel())
+    cancel_lbl.focus_set()
+
+    dlg.protocol("WM_DELETE_WINDOW", _cancel)
+    dlg.wait_window()
+    return result
 
 
 class StyledDialog(tk.Toplevel):
@@ -991,8 +1076,23 @@ class MainMenu(tk.Toplevel):
         if self._buttons_locked:
             return
 
-        if not _ask_yes_no(self, "Confirm Push", f"Push updates to Firestore for {country_code}?"):
+        # Count first — no Firestore call
+        total = count_updates(file_path)
+        if total == 0:
+            StyledDialog(
+                self, "No Updates", "No records flagged for update.",
+                icon="info", buttons=[("OK", None)],
+            )
             return
+
+        limit = _ask_number(
+            self, "Push to Firestore",
+            f"Found {total} {country_code} record(s) flagged for update.\n"
+            f"Enter how many to push:",
+            total,
+        )
+        if limit is None:
+            return  # user cancelled
 
         self._set_buttons_locked(True)
 
@@ -1021,7 +1121,7 @@ class MainMenu(tk.Toplevel):
 
         def _task():
             try:
-                count = push_updates(country_code, file_path, _cb)
+                count = push_updates(country_code, file_path, _cb, limit=limit)
                 msg = f"Successfully pushed {count} updates."
                 icon = "info"
             except Exception as e:
