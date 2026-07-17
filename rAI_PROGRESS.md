@@ -1,19 +1,17 @@
 # AI Session Progress & Next Steps
 
 ## Session Summary
-- **Firestore push confirmation dialog**: Replaced the simple yes/no `_ask_yes_no` confirmation in `_run_push` with a two-step flow:
-  1. `count_updates(file_path)` scans the JSON and returns the count of flagged records — no Firestore call.
-  2. `_ask_number()` dialog displays the count and asks the user to enter how many records to push (pre-filled with total, max shown). Cancel is the default action (red button, Enter cancels).
-  3. `push_updates()` now accepts an optional `limit` parameter; only the first N flagged records are pushed and marked `"true"` in the JSON.
-- **Refactored `push_json_updates_to_firestore.py`**: Extracted `_init_firebase()` and `_load_records_to_update()` as shared internals. New public function `count_updates()` for zero-cost counting.
-- **Both AU and NZ push buttons** follow the same flow (both wired through `_run_push`).
+- **Pushed all pending changes to GitHub** (`30d53aa`): numbered push dialog with `count_updates`/`_ask_number` pre-flight, `limit` parameter on `push_updates()`, refactored `push_json_updates_to_firestore.py` (extracted `_init_firebase`, `_load_records_to_update`, added `count_updates`), and targeted existing Firestore database via `firestore.client(database_id='onthisday')`.
+- **Made `rank` field editable** in the Update Fatalities modal: added `field_name == "rank"` to the `is_editable` guard in both `_render_fields` (UI render ~line 2187) and `_read_form` (save logic ~line 2418) in `update_fatalities.py`. The `rank` field under `serviceRecordAuthority` now renders as a 12pt editable entry and saves changes on Update Record — same behaviour as `unit`, `service_status`, and `fatality_type`.
 
 ## Current System State
-- **Button-lock contract**: All main-menu buttons (including Push AU/NZ) are in `_all_buttons` via `_flat_button`, toggled uniformly by `_set_buttons_locked()`.
-- **Push flow** (`_run_push` in `main.py`): count → number dialog → threaded push with progress window → result dialog.
-- **Cancel default**: `_ask_number` dialog has Cancel as the primary (red) button. `<Return>` and `<Escape>` both cancel. User must deliberately click Push or type in the entry and click Push.
-- **Firestore project**: `djb-onthisday` (from `firebase-key.json`). Firestore database must be provisioned in the Firebase Console before push will succeed (404 if not created).
+- **Firestore database**: Project `djb-onthisday`, database `onthisday` (already provisioned — must NOT be re-created). All Firestore client calls use `firestore.client(database_id='onthisday')`.
+- **Push flow** (`main.py`, `_run_push`): `count_updates()` → `_ask_number()` dialog (Cancel default, Enter/Escape cancel) → threaded `push_updates(country_code, path, callback, limit=N)` → result dialog.
+- **Editable fields in Update Fatalities modal**: `derived_details.*`, `service_status`, `unit`, `fatality_type`, `rank`. All other `serviceRecordAuthority` fields (e.g. `full_name`, `service_number`, `date_of_death`) remain read-only.
+- **Dirty tracking & lock**: Editing any editable field sets `_record_dirty = True` and locks prev/next/search/date-filter controls until the user saves or discards.
 
 ## Absolute Next-Step Checklist
-- [ ] Create the Firestore database in Firebase Console for project `djb-onthisday` (`https://console.firebase.google.com/project/djb-onthisday/firestore`).
-- [ ] Launch the app (`python main.py`), click "Push AU Updates to Firestore", verify the count dialog appears with correct record count, test Cancel (Enter/Escape), test entering a number and pushing.
+- [ ] Commit the `rank` editable change and any outstanding data/session diffs and push to GitHub.
+- [ ] Launch the app, open an AU record, confirm the `rank` field is editable and persists after Update Record.
+
+**Incomplete work**: None.

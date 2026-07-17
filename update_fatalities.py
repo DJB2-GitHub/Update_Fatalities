@@ -2184,7 +2184,7 @@ Your final report must:
                         dv = str(raw_value) if raw_value is not None else ""
                     if field_name in ("date_of_death", "date_of_birth"):
                         dv = _format_date_display(dv)
-                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type")
+                    is_editable = prefix_path and (prefix_path[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type" or field_name == "rank")
                     entry_font = (FONT, 12) if is_editable else (FONT, 10)
                     if not is_editable:
                         entry = _styled_entry(rf, width=42, font=entry_font)
@@ -2415,7 +2415,7 @@ Your final report must:
                     orig_val = ""
                     
             field_name = path_tuple[-1]
-            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type")
+            is_editable = len(path_tuple) > 0 and (path_tuple[0] == "derived_details" or field_name == "service_status" or field_name == "unit" or field_name == "fatality_type" or field_name == "rank")
             
             if not is_editable:
                 val = orig_val
