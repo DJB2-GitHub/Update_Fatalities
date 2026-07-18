@@ -11,7 +11,7 @@
 - **Dirty tracking & lock**: Editing any editable field sets `_record_dirty = True` and locks prev/next/search/date-filter controls until the user saves or discards.
 
 ## Absolute Next-Step Checklist
-- [ ] Commit the `rank` editable change and any outstanding data/session diffs and push to GitHub.
+- [x] Commit the `rank` editable change and push to GitHub. (`85382aa`)
 - [ ] Launch the app, open an AU record, confirm the `rank` field is editable and persists after Update Record.
 
 **Incomplete work**: None.
