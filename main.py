@@ -18,7 +18,8 @@ import webbrowser
 from tkinter import ttk
 
 from update_fatalities import UpdateFatalities
-from push_json_updates_to_firestore import count_updates, push_updates
+from push_json_updates_to_firestore import _init_firebase, count_updates, push_updates
+from firebase_admin import firestore
 
 
 # ---------------------------------------------------------------------------
@@ -1188,7 +1189,6 @@ class MainMenu(tk.Toplevel):
         import glob as _glob
         from datetime import datetime
         from tkinter import messagebox
-        from coords import _load_json
 
         self._backup_btn_label.configure(fg=TEXT_MUTED, text="  Backing up...")
         self._backup_btn_label.unbind("<Button-1>")
@@ -1221,14 +1221,28 @@ class MainMenu(tk.Toplevel):
             copied = []
             errors = []
 
+            try:
+                _init_firebase()
+                db = firestore.client(database_id='onthisday')
+            except Exception as e:
+                messagebox.showerror("Backup Error", f"Firebase init failed:\n{e}")
+                return
+
             for filename in src_files:
                 base, ext = os.path.splitext(filename)
 
+                # Derive country code from filename: AU_fatalities -> AU
+                cc = base.split("_")[0].upper()
+                if not cc:
+                    errors.append(f"Cannot derive country code from {filename}")
+                    continue
+
                 try:
-                    # Fetch data from Firestore using our modified load logic
-                    data = _load_json(filename)
-                    if data is None:
-                        errors.append(f"Failed to fetch data for {filename} from Firestore")
+                    collection_path = f"countries/{cc}/wars/vietnam/honor_roll"
+                    docs = db.collection(collection_path).stream()
+                    data = [doc.to_dict() for doc in docs]
+                    if not data:
+                        errors.append(f"No documents found for {filename} at {collection_path}")
                         continue
 
                     dest_name = f"{base}_{len(data)}_{timestamp}{ext}"
