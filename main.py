@@ -1223,7 +1223,7 @@ class MainMenu(tk.Toplevel):
 
             try:
                 _init_firebase()
-                db = firestore.client(database_id='onthisday')
+                db = firestore.client(database_id='onthisdayinvn')
             except Exception as e:
                 messagebox.showerror("Backup Error", f"Firebase init failed:\n{e}")
                 return

@@ -98,7 +98,7 @@
   {
     "referenceID": "AU_1200265",
     "record_status": {
-      "changed": "2026-07-17",
+      "changed": "2026-07-23",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
@@ -261,7 +261,7 @@
     "referenceID": "AU_1200817",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1200817",
@@ -392,7 +392,7 @@
     "referenceID": "AU_1201249",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1201249",
@@ -523,7 +523,7 @@
     "referenceID": "AU_1201940",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1201940",
@@ -653,7 +653,7 @@
     "referenceID": "AU_1202729",
     "record_status": {
       "changed": "2026-07-06",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1202729",
@@ -687,7 +687,7 @@
     "referenceID": "AU_1202992",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1202992",
@@ -817,7 +817,7 @@
     "referenceID": "AU_13097",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "13097",
@@ -886,7 +886,7 @@
     "referenceID": "AU_135494",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "135494",
@@ -1050,7 +1050,7 @@
     "referenceID": "AU_14208",
     "record_status": {
       "changed": "2026-07-06",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "14208",
@@ -1118,7 +1118,7 @@
     "referenceID": "AU_14574",
     "record_status": {
       "changed": "2026-06-30",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "14574",
@@ -1408,7 +1408,7 @@
     "referenceID": "AU_15705",
     "record_status": {
       "changed": "2026-07-06",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "15705",
@@ -1543,7 +1543,7 @@
     "referenceID": "AU_16327",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "16327",
@@ -1579,7 +1579,7 @@
     "referenceID": "AU_16667",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "16667",
@@ -1645,7 +1645,7 @@
     "referenceID": "AU_17073",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "17073",
@@ -2052,7 +2052,7 @@
     "referenceID": "AU_1731426",
     "record_status": {
       "changed": "2026-06-28",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1731426",
@@ -2404,7 +2404,7 @@
     "referenceID": "AU_1733818",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "1733818",
@@ -2759,7 +2759,7 @@
     "referenceID": "AU_17693",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "17693",
@@ -2922,7 +2922,7 @@
     "referenceID": "AU_18409",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "18409",
@@ -2988,7 +2988,7 @@
     "referenceID": "AU_18665",
     "record_status": {
       "changed": "2026-07-10",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "18665",
@@ -3343,7 +3343,7 @@
     "referenceID": "AU_213834",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "213834",
@@ -3571,7 +3571,7 @@
     "referenceID": "AU_214348",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "214348",
@@ -3637,7 +3637,7 @@
     "referenceID": "AU_214468",
     "record_status": {
       "changed": "2026-06-28",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "214468",
@@ -3767,7 +3767,7 @@
     "referenceID": "AU_215144",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "215144",
@@ -4281,7 +4281,7 @@
     "referenceID": "AU_216445",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "216445",
@@ -4544,7 +4544,7 @@
     "referenceID": "AU_217350",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "217350",
@@ -4643,7 +4643,7 @@
     "referenceID": "AU_217762",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "217762",
@@ -4710,7 +4710,7 @@
     "referenceID": "AU_217961",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "217961",
@@ -4776,7 +4776,7 @@
     "referenceID": "AU_218041",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "218041",
@@ -4968,7 +4968,7 @@
     "referenceID": "AU_218450",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "218450",
@@ -5034,7 +5034,7 @@
     "referenceID": "AU_218453",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "218453",
@@ -5322,7 +5322,7 @@
     "referenceID": "AU_219663",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "219663",
@@ -5838,7 +5838,7 @@
     "referenceID": "AU_2412151",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2412151",
@@ -5870,7 +5870,7 @@
     "referenceID": "AU_2412362",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2412362",
@@ -5906,7 +5906,7 @@
     "referenceID": "AU_2412450",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2412450",
@@ -6337,7 +6337,7 @@
     "referenceID": "AU_2781944",
     "record_status": {
       "changed": "2026-07-01",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2781944",
@@ -6435,7 +6435,7 @@
     "referenceID": "AU_2782226",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2782226",
@@ -6885,31 +6885,34 @@
   {
     "referenceID": "AU_2785238",
     "record_status": {
-      "changed": "2026-07-08",
+      "changed": "2026-07-18",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2785238",
-      "service_status": "Unassigned",
+      "service_status": "National Service",
       "full_name": "CUTCLIFFE, Timothy Joseph",
       "sex": "M",
       "date_of_death": "1967-08-25",
       "date_of_birth": "1946-06-17",
       "rank": "Private",
-      "unit": "2nd Battalion",
+      "unit": "2RAR",
       "fatality_type": "Died of wounds"
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "Phuoc Tuy Province, South Vietnam",
-        "incident_location": "//        // {Phuoc Tuy Province, South Vietnam}",
-        "incident_coordinates": "Unassigned"
+        "death_location": "Phước Tuy Province, South Vietnam",
+        "incident_location": "//10° 33′ N 107° 14′ E// {Phước Tuy Province, South Vietnam}",
+        "incident_coordinates": "10.55, 107.23333"
       },
-      "circumstances_of_death": "Private Timothy Joseph Cutcliffe died of wounds sustained during a patrol that encountered enemy fire.",
+      "circumstances_of_death": "Died of blast wounds approximately one hour after treading on a mine in Phước Tuy Province.",
       "pre_service_occupation": "Labourer",
-      "unit_served_with": "2nd Battalion, The Royal Australian Regiment (2RAR)",
-      "references": [],
-      "ai_response": "Unassigned",
+      "unit_served_with": "2RAR",
+      "references": [
+        "https://vwma.org.au/explore/people/654285",
+        "https://s3-ap-southeast-2.amazonaws.com/awm-media/collection/RCDIG1029935/large/5851632.JPG"
+      ],
+      "ai_response": "### Authoritative identification\n\n**Soldier:** Private Timothy Joseph CUTCLIFFE  \n**Service Number:** 2785238  \n**Army Country:** Australia  \n**War:** Vietnam War (1962–1972)  \n**Uniqueness of match:** Only one Vietnam War Roll of Honour entry with surname CUTCLIFFE and date of death 25 August 1967.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n\n---\n\n### Core personal and service details\n\n- **Full name:** Timothy Joseph Cutcliffe   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Date of birth:** 17 June 1946   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Place of birth:** Orange, New South Wales, Australia   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Rank at death:** Private   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Service:** Australian Army   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Corps:** Royal Australian Infantry Corps   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Unit at death:** 2nd Battalion, The Royal Australian Regiment (2 RAR)   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Previous Vietnam unit:** 1st Australian Reinforcement Unit (1 ARU) from 10 June 1967 to 18 July 1967   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Vietnam service with 2 RAR:** 19 July 1967 – 25 August 1967   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n\n---\n\n### Service status\n\n- **Service Status:** **National Service** (DVA Nominal Roll explicitly records “National Service: Yes”).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n\n---\n\n### Death: date, place, cause, and circumstances\n\n#### Documented facts\n\n- **Date of death:** 25 August 1967   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Place of death:** South Vietnam, Vietnam (specifically recorded as “South Vietnam, Vietnam” / “Vietnam: South Vietnam”).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Find a Grave](https://www.findagrave.com/memorial/249776713/timothy_joseph-cutcliffe)  \n- **Cause of death (official):** “Died of wounds” (Vietnam War Roll of Honour and related records).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Find a Grave](https://www.findagrave.com/memorial/249776713/timothy_joseph-cutcliffe)  \n\n#### Additional circumstantial detail\n\n- **Nature of wounds:** Virtual War Memorial biography (sourced from Find a Grave and Nashos Nominal Roll) states that Private Cutcliffe “died of blast wounds an hour after treading on a mine in Phuoc Tuy Province, 25th August 1967.”   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n\n  - This description is **documented** on Virtual War Memorial but is derived from secondary sources (Find a Grave and Nashos Nominal Roll). It aligns with the official “died of wounds” classification but adds specific mechanism (mine blast) and timing (approximately one hour after wounding).\n\n- **Province of incident:** Phuoc Tuy Province (from Virtual War Memorial biography).   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n\n#### Operation, sub‑unit, and tactical context\n\n- **Operation name at time of incident:** **NOT_DOCUMENTED** in the consulted primary sources (AWM Roll of Honour, AWM collection entries, DVA Nominal Roll, VWMA page, and accessible newspaper snippet).  \n- **Company/platoon or patrol details:** **NOT_DOCUMENTED** in the above sources.  \n- **Eyewitness accounts:** No specific eyewitness testimony located in AWM collections, VWMA personal stories, or Trove-accessible text; **NOT_DOCUMENTED**.   [Australian War Memorial](https://www.awm.gov.au/collection/C191609)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Central Western Daily](https://www.centralwesterndaily.com.au/story/92548/remembering-private-cutcliffe/)  \n\n---\n\n### Medical treatment and immediate aftermath\n\n- **Time between wounding and death:** Virtual War Memorial biography records that he “died of blast wounds an hour after treading on a mine.”   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Details of medical evacuation (e.g., field dressing station, hospital):** **NOT_DOCUMENTED** in the consulted sources.  \n- **Any formal investigation into the incident:** **NOT_DOCUMENTED** in the consulted sources.  \n\n---\n\n### Burial, commemoration, and repatriation\n\n- **Cemetery (official commemoration):** Orange Cemetery / Orange General Cemetery, Orange, New South Wales, Australia.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Grave location:** Roman Catholic Section K, Grave 342 (DVA Nominal Roll).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Repatriation:** The burial in Orange, NSW implies repatriation of remains to Australia; however, no explicit statement of repatriation process is given in the sources—formal details are **NOT_DOCUMENTED**.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n\n#### Memorials and honour rolls\n\nVirtual War Memorial lists multiple memorials on which Private Cutcliffe is commemorated, including:   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n\n- **Australian War Memorial Roll of Honour** (Panel 5, Commemorative Area).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Find a Grave](https://www.findagrave.com/memorial/249776713/timothy_joseph-cutcliffe)  \n- **Local and national memorials:**  \n  - Grafton Clarence Valley Vietnam Veterans Memorial  \n  - Kallangur Vietnam Veterans’ Place  \n  - “Fallen of Orange” Memorial Banners  \n  - Orange Cenotaph  \n  - Orange Post‑WW2 Honour Board  \n  - Orange Vietnam Veteran’s Memorial Plaque  \n  - Port Pirie Vietnam Veterans Honour Wall  \n  - Seymour Vietnam Veterans Commemorative Walk Roll of Honour  \n  - Terang 2nd Battalion Royal Australian Regiment Memorial  \n  - Wollongong Vietnam Memorial  \n\nAdditionally:\n\n- **AWM name projection:** The Australian War Memorial records scheduled projections of his name on the Hall of Memory exterior on several dates in 2026.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  \n\n---\n\n### Awards and medals\n\n- **Honours (DVA display field):** “None for display” (i.e., no individual gallantry or distinguished service decorations recorded).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Campaign and service medals:** Virtual War Memorial, citing Nashos Nominal Roll, lists:  \n  - Australian Active Service Medal (AASM)  \n  - Vietnam Campaign Medal  \n  - Australian Defence Medal (ADM)  \n  - Australian National Service Medal (ANSM)  \n  - South Vietnam Star   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n\nThese are standard entitlements for qualifying Vietnam National Servicemen and are **documented** on VWMA, though not individually enumerated on DVA’s Nominal Roll page.\n\n---\n\n### National Archives of Australia (service record)\n\n- The AWM Roll of Honour page includes a general link to National Archives of Australia for personal service records but does **not** provide a direct digitised file reference for Private Cutcliffe.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  \n- Within the scope of the current search, a specific NAA item (series and control symbol) for his personal service record was **NOT_DOCUMENTED**.  \n\n---\n\n### Contemporary newspaper and later historical commentary\n\n- **Central Western Daily (Orange, NSW):** An article titled “REMEMBERING PRIVATE CUTCLIFFE” (2012) describes him as a “popular young man” and notes that his death “rocked the town of Orange,” referring to him as “killed in action in Vietnam.”   [Central Western Daily](https://www.centralwesterndaily.com.au/story/92548/remembering-private-cutcliffe/)  \n\n  - Full text is behind a subscription wall; detailed narrative of the incident, unit action, or eyewitness accounts is therefore **NOT_DOCUMENTED** from this source in the accessible snippet.\n\n- **Published unit histories / 2 RAR Vietnam narratives:** General histories of 2 RAR’s 1967–68 tour (e.g., Vietnam Veterans Association of Australia summary) confirm the battalion’s operations in Phuoc Tuy Province but do **not** specifically mention Private Cutcliffe’s incident by name in the accessible text.   [Vietnam Veterans Association of Australia](https://vvaavic.org.au/2022/06/07/2-battalion-the-royal-australian-regiment-2rar-nz-anzac/)  \n  - Therefore, specific operation designation, patrol details, or command reports relating to his death remain **NOT_DOCUMENTED** in the consulted material.\n\n---\n\n### Consolidated factual profile (with documentation status)\n\n- **Service Number:** 2785238 — documented (AWM, DVA, VWMA).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Full Name:** Timothy Joseph Cutcliffe — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Rank:** Private — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Unit at death:** 2nd Battalion, The Royal Australian Regiment — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Service Status:** National Service — documented (DVA).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Date of birth:** 17 June 1946 — documented.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Place of birth:** Orange, NSW — documented.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Date of death:** 25 August 1967 — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n- **Place of death:** South Vietnam — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Find a Grave](https://www.findagrave.com/memorial/249776713/timothy_joseph-cutcliffe)  \n- **Official cause of death:** Died of wounds — documented.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715595)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318897)  [Find a Grave](https://www.findagrave.com/memorial/249776713/timothy_joseph-cutcliffe)  \n- **Detailed mechanism (mine blast, Phuoc Tuy, approx. one hour after wounding):** documented on VWMA (secondary provenance: Find a Grave, Nashos Nominal Roll).   [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  [Virtual War Memorial](https://vwma.org.au/explore/people/654285)  \n- **Operation name / patrol designation / sub‑unit:** NOT_DOCUMENTED.  \n- **Medical evacuation and treatment details:** NOT_DOCUMENTED.  \n- **Formal investigation or Board of Inquiry:** NOT_DOCUMENTED.  \n- **Awards beyond standard campaign/service medals:** None recorded (DVA: “Honours: None for display”).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1253155&c=VIETNAM)  \n\nIf you’d like, Darryl, we can next try to correlate 2 RAR’s August 1967 operational diary with this date to see which operation he was likely on—clearly marked as inference only, not as documented fact.",
       "authoritative_ai_override": "Unassigned",
       "enhanced_operation_details": "Unassigned"
     }
@@ -7270,7 +7273,7 @@
     "referenceID": "AU_2787278",
     "record_status": {
       "changed": "2026-07-06",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2787278",
@@ -7497,7 +7500,7 @@
     "referenceID": "AU_2788085",
     "record_status": {
       "changed": "2026-06-30",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2788085",
@@ -7563,7 +7566,7 @@
     "referenceID": "AU_2788524",
     "record_status": {
       "changed": "2026-07-09",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2788524",
@@ -7888,7 +7891,7 @@
     "referenceID": "AU_2790417",
     "record_status": {
       "changed": "2026-07-01",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2790417",
@@ -8210,7 +8213,7 @@
     "referenceID": "AU_2794031",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "2794031",
@@ -8692,7 +8695,7 @@
     "referenceID": "AU_311534",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "311534",
@@ -8917,31 +8920,33 @@
   {
     "referenceID": "AU_3175954",
     "record_status": {
-      "changed": "2026-07-08",
+      "changed": "2026-07-18",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3175954",
-      "service_status": "Unassigned",
+      "service_status": "Regular",
       "full_name": "MOORE, Sydney Thomas",
       "sex": "M",
       "date_of_death": "1970-08-25",
       "date_of_birth": "1950-06-20",
       "rank": "Private",
-      "unit": "110 Signal Squadron",
+      "unit": "110 Signal Squadron, RAS",
       "fatality_type": "Died of Illness"
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "Victoria, Australia",
-        "incident_location": "//        // {Victoria, Australia}",
+        "death_location": "Repatriation General Hospital, Heidelberg, Victoria, Australia",
+        "incident_location": "//        // {Núi Đất, Phước Tuy province, South Vietnam}",
         "incident_coordinates": "Unassigned"
       },
-      "circumstances_of_death": "Private Sydney Thomas Moore died from illness while serving with 110 Signal Squadron.",
+      "circumstances_of_death": "Died of illness (neuroblastoma *). Onset of illness while serving in Vietnam on 18 September 1969; evacuated to Australia and died at Repatriation General Hospital, Heidelberg, Victoria, on 25 August 1970.\n(* claim made on \"find a grave\" -> Died of neuroblastoma.)",
       "pre_service_occupation": "Clerk",
-      "unit_served_with": "Royal Australian Corps of Signals, 110 Signal Squadron",
-      "references": [],
-      "ai_response": "Unassigned",
+      "unit_served_with": "110 Signal Squadron, RAS",
+      "references": [
+        "https://vwma.org.au/explore/people/654485"
+      ],
+      "ai_response": "/### Identified soldier\n\n**Full Name:** Sydney Thomas Moore  \n**Service Number:** 3175954  \n**Rank at death:** Signalman (also recorded as Signaller/Private in some service-history entries)   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n**Unit:** 110 Signal Squadron, Royal Australian Corps of Signals   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n**Conflict:** Vietnam War, 1962–1975   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  \n\n---\n\n### Core death details (documented facts)\n\n- **Date of death:** 25 August 1970   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n- **Age at death:** 20 years   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n- **Place of death (general):** Victoria, Australia   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318954)  \n- **Place of death (specific):** Repatriation General Hospital, Heidelberg, Victoria, Australia   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n- **Cause of death (general):** Illness – non‑battle casualty   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318954)  [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n- **Cause of death (specific):** Neuroblastoma (died of neuroblastoma after return to Australia)   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n- **Nature of casualty:** Died of illness; death attributed to war service (listed by Office of Australian War Graves and DVA Vietnam Nominal Roll)   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\n---\n\n### Circumstances of illness and evacuation (documented facts)\n\n- **Onset of illness in theatre:** Became ill on 18 September 1969 while serving with 110 Signal Squadron in Vietnam.   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n- **Evacuation:** Returned to Australia following onset of illness; later died in Repatriation General Hospital, Heidelberg, Victoria, on 25 August 1970.   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\n**Operation / combat context:**  \n- **Operation name:** NOT_DOCUMENTED (no specific operation or combat action linked to his illness or death in the consulted sources).  \n- **Battle involvement at time of illness:** NOT_DOCUMENTED (sources describe illness and medical evacuation, not combat wounding).  \n\n---\n\n### Service details and status\n\n- **Service:** Australian Army   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n- **Corps:** Royal Australian Corps of Signals   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n- **Vietnam unit history (Nominal Roll):**  \n  - **Unit:** 110 Signal Squadron  \n  - **Vietnam service dates (operational area):** 13 August 1969 – 16 September 1969   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n\n- **Service status (Regular vs National Service):**  \n  - DVA Nominal Roll field **“National Service”** is recorded as **“No”** for MOORE, Sydney Thomas.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n  - **Documented classification:** Not a National Serviceman.  \n  - **Inference:** As he is recorded as Australian Army, National Service “No”, his status is best classified as **Regular**. (This is an inference based on DVA field usage; no source explicitly uses the word “Regular”.)\n\n---\n\n### Personal details\n\n- **Date of birth:** 20 June 1950   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n- **Place of birth:** Carlton, Victoria, Australia   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n- **Home town:** Carlton, Melbourne, Victoria   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n\n---\n\n### Burial, commemoration, and repatriation\n\n- **Burial (physical grave):**  \n  - Lilydale Lawn Cemetery, Lilydale, Yarra Ranges Shire, Victoria, Australia; Church of England Section 3, Grave 26.   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\n- **Official war graves commemoration:**  \n  - Garden of Remembrance, Springvale, Melbourne, Victoria, Australia (Victorian Garden of Remembrance, Wall 109, Row J).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\n- **Other memorials (VWMA listing):**  \n  - Australian War Memorial Roll of Honour (Canberra).   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  \n  - Grafton Clarence Valley Vietnam Veterans Memorial.   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n  - Kallangur Vietnam Veterans’ Place.   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n  - Port Pirie Vietnam Veterans Honour Wall.   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n  - Seymour Vietnam Veterans Commemorative Walk Roll of Honour.   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n  - Wollongong Vietnam Memorial.   [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n\n- **Repatriation:**  \n  - Documented as having been returned from Vietnam to Australia after becoming ill; he subsequently died in the Repatriation General Hospital, Heidelberg.   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\n---\n\n### Awards and honours\n\n- **Honours (DVA Nominal Roll):** “None for display” (no recorded Imperial or Australian honours specific to Vietnam service).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n- **Campaign/service medals:** NOT_DOCUMENTED in the consulted online sources (these are generally not listed on the Nominal Roll).  \n\n---\n\n### Investigations, medical detail, and eyewitness accounts\n\n- **Medical diagnosis:** Neuroblastoma (as stated in the Find a Grave narrative).   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n- **Treatment course (beyond evacuation and hospital of death):** NOT_DOCUMENTED.  \n- **Formal investigations or Boards of Inquiry:** NOT_DOCUMENTED in AWM, DVA, VWMA, or publicly accessible summaries.  \n- **Eyewitness accounts of illness, evacuation, or death:** NOT_DOCUMENTED in the consulted sources.  \n- **Unit war diary / 110 Signal Squadron history references to his illness or death:** NOT_DOCUMENTED in the accessible web material; any such detail would likely be in archival unit records or personal service file, which are referenced but not reproduced online.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  \n\n---\n\n### National Archives of Australia and contemporary newspapers\n\n- **National Archives of Australia (personal service record):**  \n  - AWM Roll of Honour page notes that personal service records can be obtained via NAA, but no specific NAA file citation or digitised record for 3175954 is visible in the search results used here.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  \n  - **Status:** Detailed NAA service file contents for Sydney Thomas Moore are NOT_DOCUMENTED in the accessible web snippets consulted.\n\n- **Contemporary newspaper coverage (Trove, major dailies):**  \n  - Searches did not surface a clearly identified obituary or report specifically naming “Sydney Thomas Moore” in relation to his 1970 death; access to some Trove content is restricted in the snippets returned.   [Trove](https://trove.nla.gov.au/newspaper/article/133738805)  \n  - **Status:** Newspaper accounts of his illness, evacuation, or death are NOT_DOCUMENTED in the material available from this search.\n\n---\n\n### Summary of death classification\n\n- **Documented classification:**  \n  - Australian War Memorial and Virtual War Memorial both record his death as **“Illness (Non battle casualty)” / “Died of Illness” in Victoria, Australia**, with commemoration as a Vietnam War fatality.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715652)  [Virtual War Memorial](https://vwma.org.au/explore/people/654485)  \n  - DVA Nominal Roll records his date of death and official commemoration in the Garden of Remembrance, indicating the death was **attributed to war service**.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1268743&c=VIETNAM)  \n  - Find a Grave provides the more detailed narrative: he became ill on 18 September 1969 while serving with 110 Signal Squadron in Vietnam, was returned to Australia, and died of **neuroblastoma** at Repatriation General Hospital, Heidelberg, on 25 August 1970.   [Find a Grave](https://www.findagrave.com/memorial/38156146/sydney_thomas-moore)  \n\nSo, for Sydney Thomas Moore (3175954), the evidence shows a Vietnam War fatality due to service‑related illness (neuroblastoma), with onset while on active service in Vietnam, evacuation to Australia, and death in a repatriation hospital in Victoria rather than in combat or in‑theatre.",
       "authoritative_ai_override": "Unassigned",
       "enhanced_operation_details": "Unassigned"
     }
@@ -9049,7 +9054,7 @@
     "referenceID": "AU_3411862",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3411862",
@@ -9437,7 +9442,7 @@
     "referenceID": "AU_37010",
     "record_status": {
       "changed": "2026-06-28",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "37010",
@@ -9536,7 +9541,7 @@
     "referenceID": "AU_3786634",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3786634",
@@ -9634,7 +9639,7 @@
     "referenceID": "AU_37867",
     "record_status": {
       "changed": "2026-06-28",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "37867",
@@ -9764,7 +9769,7 @@
     "referenceID": "AU_3787580",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3787580",
@@ -10122,7 +10127,7 @@
     "referenceID": "AU_3790395",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3790395",
@@ -10476,7 +10481,7 @@
     "referenceID": "AU_3793566",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3793566",
@@ -10575,7 +10580,7 @@
     "referenceID": "AU_3794096",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3794096",
@@ -10641,7 +10646,7 @@
     "referenceID": "AU_3794377",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3794377",
@@ -10740,7 +10745,7 @@
     "referenceID": "AU_3794831",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3794831",
@@ -11030,7 +11035,7 @@
     "referenceID": "AU_3797613",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "3797613",
@@ -11288,7 +11293,7 @@
     "referenceID": "AU_38110",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "38110",
@@ -11356,7 +11361,7 @@
     "referenceID": "AU_38324",
     "record_status": {
       "changed": "2026-07-01",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "38324",
@@ -11650,7 +11655,7 @@
     "referenceID": "AU_38939",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "38939",
@@ -11750,7 +11755,7 @@
     "referenceID": "AU_39281",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "39281",
@@ -11848,7 +11853,7 @@
     "referenceID": "AU_39426",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "39426",
@@ -12011,7 +12016,7 @@
     "referenceID": "AU_39923",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "39923",
@@ -12043,7 +12048,7 @@
     "referenceID": "AU_41400",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41400",
@@ -12077,7 +12082,7 @@
     "referenceID": "AU_4186",
     "record_status": {
       "changed": "2026-07-07",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "4186",
@@ -12273,7 +12278,7 @@
     "referenceID": "AU_42720",
     "record_status": {
       "changed": "2026-06-30",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "42720",
@@ -12401,7 +12406,7 @@
     "referenceID": "AU_43326",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43326",
@@ -12663,7 +12668,7 @@
     "referenceID": "AU_43941",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43941",
@@ -13145,7 +13150,7 @@
     "referenceID": "AU_4718082",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "4718082",
@@ -13596,7 +13601,7 @@
     "referenceID": "AU_4719565",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "4719565",
@@ -13950,7 +13955,7 @@
     "referenceID": "AU_515835",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "515835",
@@ -14400,7 +14405,7 @@
     "referenceID": "AU_54320",
     "record_status": {
       "changed": "2026-07-01",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "54320",
@@ -14530,7 +14535,7 @@
     "referenceID": "AU_55119",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "55119",
@@ -14919,7 +14924,7 @@
     "referenceID": "AU_5713739",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "5713739",
@@ -15303,7 +15308,7 @@
     "referenceID": "AU_5715206",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "5715206",
@@ -15625,7 +15630,7 @@
     "referenceID": "AU_5717657",
     "record_status": {
       "changed": "2026-07-04",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "5717657",
@@ -15724,7 +15729,7 @@
     "referenceID": "AU_58625",
     "record_status": {
       "changed": "2026-06-28",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "58625",
@@ -15758,7 +15763,7 @@
     "referenceID": "AU_61560",
     "record_status": {
       "changed": "2026-06-30",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "61560",
@@ -16049,31 +16054,33 @@
   {
     "referenceID": "AU_6709107",
     "record_status": {
-      "changed": "2026-07-08",
+      "changed": "2026-07-18",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "6709107",
-      "service_status": "Unassigned",
+      "service_status": "National Service",
       "full_name": "BANFIELD, David John",
       "sex": "M",
       "date_of_death": "1969-08-21",
       "date_of_birth": "1947-12-25",
       "rank": "Private",
-      "unit": "5th Battalion",
+      "unit": "5RAR",
       "fatality_type": "Killed in Action"
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "Phuoc Tuy Province, South Vietnam",
-        "incident_location": "//        // {Phuoc Tuy Province, South Vietnam}",
-        "incident_coordinates": "Unassigned"
+        "death_location": "Biên Hòa, Đồng Nai Province, South Vietnam",
+        "incident_location": "//YS  247 846 // {Biên Hòa, Đồng Nai Province, South Vietnam}",
+        "incident_coordinates": "10.71032, 107.0563"
       },
-      "circumstances_of_death": "Private David John Banfield was killed when his platoon was ambushed during a patrol in dense jungle.",
-      "pre_service_occupation": "Labourer",
-      "unit_served_with": "5th Battalion, The Royal Australian Regiment (5RAR)",
-      "references": [],
-      "ai_response": "Unassigned",
+      "circumstances_of_death": "During Operation Camden, Private Banfield's platoon assaulted a heavily defended bunker system and came under heavy machine-gun, RPG and mortar fire. A mortar round exploded nearby, killing him.",
+      "pre_service_occupation": "Farmer",
+      "unit_served_with": "5RAR",
+      "references": [
+        "https://vwma.org.au/explore/people/654200"
+      ],
+      "ai_response": "### Authoritative identification\n\n**Soldier identified**\n\n- **Full name:** David John BANFIELD   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Service number:** 6709107   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Rank at death:** Private   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Service:** Australian Army   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Unit:** 5th Battalion, Royal Australian Regiment (5RAR)   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **War:** Vietnam War, 1962–1975   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Date of death:** 21 August 1969   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Place of death (official):** South Vietnam, Vietnam   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Age at death:** 21   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Cause of death (official):** Killed in action   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  \n\nNo other Australian Vietnam War soldier with surname BANFIELD and date of death 21 August 1969 was found; this appears to be a unique match.\n\n---\n\n### Personal details\n\n- **Date of birth:** 25 December 1947   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n- **Place of birth:** Ulverstone, Tasmania, Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n- **Pre‑war occupation:** Farmer near Devonport, northern Tasmania (biographical note)   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Home town:** Ulverstone, Tasmania   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n\nFamily details (parents’ names, siblings, etc.) are given in secondary genealogical sources (e.g. WikiTree) but not in the core military repositories; therefore they are **NOT_DOCUMENTED** here as primary military facts.   [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\n---\n\n### Service history and status\n\n- **Enlistment date:** 1 May 1968   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Enlistment place:** Puckapunyal, Victoria   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Unit in Vietnam:** 5th Battalion, The Royal Australian Regiment (5RAR)   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Service in theatre:** Recorded by AWM as service in South Vietnam with 5RAR; detailed dates of arrival/departure from Vietnam are held on DVA’s Vietnam Nominal Roll but were not surfaced in the snippets retrieved, so exact tour dates are **NOT_DOCUMENTED** here.   [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/records-and-military-history/about-nominal-rolls/list-of-nominal-rolls)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1274979&c=VIETNAM)  \n\n**Service status (Regular vs National Service)**\n\n- VWMA biography states that he was “drafted in May, 1968”, language normally used for National Service conscripts.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- DVA Vietnam Nominal Roll entry for BANFIELD was not directly retrieved in the search snippets, so the field “National Service: Yes/No” could not be read from the primary roll.   [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/records-and-military-history/about-nominal-rolls/list-of-nominal-rolls)  \n\n> **Inference:** Based on VWMA wording “drafted” and standard Australian Army usage, his **Service Status is most likely National Service**, but because the DVA Nominal Roll field was not directly visible, this remains an **INFERENCE, not formally documented**.\n\n---\n\n### Circumstances of death\n\n**Operational context**\n\n- On 21 August 1969, Private Banfield was serving with 5RAR during **Operation Camden** in South Vietnam.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n- VWMA and derivative narratives describe his platoon and another platoon being in contact with a **heavily defended bunker system** during the operation.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\n**Immediate circumstances**\n\n- As both platoons assaulted the bunker position, they came under **heavy machine‑gun, RPG and 61‑mm mortar fire**, forcing a withdrawal.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n- During this contact, a **mortar round exploded close by**, killing Private Banfield and wounding his platoon sergeant, Garth Wheat.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n- The contact continued for some time, with the majority of soldiers in both platoons being wounded.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\nThese detailed circumstances come from VWMA’s biography and are echoed in later secondary summaries (WikiTree, local press). They are consistent with, but more detailed than, the AWM Roll of Honour’s simple “Killed in action, South Vietnam” entry.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  [The Advocate](https://www.theadvocate.com.au/story/6338643/remembering-50-years-of-david-banfields-sacrifice/)  \n\n**Location of death**\n\n- AWM records the **place of death** as “South Vietnam, Vietnam”.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- Find a Grave and WikiTree specify **Biên Hòa, Đồng Nai Province, South Vietnam** as the place of death; this is a more precise location but comes from secondary compilations rather than AWM or DVA.   [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\n> **Inference:** It is reasonable to infer that the fatal contact during Operation Camden occurred in or near Bien Hoa in South Vietnam, but the exact grid reference or battlefield location is **NOT_DOCUMENTED** in the primary military repositories consulted.\n\n**Medical treatment / evacuation**\n\n- No primary source consulted (AWM, VWMA, DVA, NAA) provides specific information on medical treatment, evacuation chain, or time of death beyond “Killed in action”.  \n  - **Medical treatment details:** NOT_DOCUMENTED  \n  - **Evacuation and hospitalisation:** NOT_DOCUMENTED  \n\n---\n\n### Burial, commemoration, and repatriation\n\n- **Official cemetery / burial location (AWM Roll of Honour):** Carr Villa General Cemetery, Launceston, Tasmania, Australia.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  \n- **VWMA cemetery detail:** Carr Villa Memorial Park, Tasmania, Monumental D6 No 138.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n- **Find a Grave (actual burial):** Carr Villa Memorial Park, Kings Meadows, Launceston City Council, Tasmania, Australia.   [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  \n\n> **Inference:** Taken together, these sources indicate that his remains were repatriated to Tasmania and interred at Carr Villa Memorial Park/General Cemetery in Launceston. The repatriation process itself (dates, transport) is **NOT_DOCUMENTED** in the sources consulted.\n\n**Memorials and honour rolls**\n\n- **Australian War Memorial Roll of Honour:** Name inscribed on Panel 5 in the Commemorative Area.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  \n- **AWM unit Roll of Honour:** Listed under 5th Battalion, Royal Australian Regiment.   [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  \n- **Other memorials (VWMA listing):**  \n  - Devonport Vietnam Veterans Memorial Wall  \n  - Grafton Clarence Valley Vietnam Veterans Memorial  \n  - Kallangur Vietnam Veterans’ Place  \n  - Port Pirie Vietnam Veterans Honour Wall  \n  - Seymour Vietnam Veterans Commemorative Walk Roll of Honour  \n  - Wollongong Vietnam Memorial   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n\n---\n\n### Awards and decorations\n\n- None of the primary sources consulted (AWM Roll of Honour entry, AWM collection entry, VWMA, DVA Nominal Rolls snippets) list specific gallantry awards or individual decorations beyond the standard campaign and service medals that would normally accrue to Vietnam service.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/records-and-military-history/about-nominal-rolls/list-of-nominal-rolls)  \n\n> **Individual gallantry awards or special distinctions:** NOT_DOCUMENTED in the accessible records.\n\n---\n\n### Investigations, inquiries, and historical analysis\n\n- No explicit record of a formal Board of Inquiry or investigation into his death is mentioned in AWM, VWMA, DVA, or NAA references surfaced by the searches.  \n  - **Formal investigation details:** NOT_DOCUMENTED  \n\n- The detailed narrative of the contact during Operation Camden in VWMA and derivative sources appears to be based on 5RAR unit histories and veterans’ recollections, but the specific unit history volume or AATTV/5RAR archival citation is not named in the VWMA entry.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\n> **Inference:** His death is understood within 5RAR histories as part of a major contact with a bunker system during Operation Camden, but the precise archival document (e.g. battalion war diary page, official after‑action report) is **NOT_DOCUMENTED** in the publicly accessible summaries consulted.\n\n---\n\n### Summary (fact vs inference)\n\n- **Documented facts (primary repositories):**  \n  - Private David John Banfield, service number 6709107, Australian Army, 5th Battalion, Royal Australian Regiment.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/P10318159)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  \n  - Born 25 December 1947 at Ulverstone, Tasmania; killed in action on 21 August 1969 in South Vietnam, aged 21.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  \n  - Official cause of death: Killed in action; place of death: South Vietnam, Vietnam; burial at Carr Villa General Cemetery/Memorial Park, Launceston, Tasmania.   [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Australian War Memorial](https://www.awm.gov.au/collection/R1714857)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\n- **Well‑supported but still inferential details:**  \n  - Death occurred during Operation Camden in a contact with a heavily defended bunker system, under heavy machine‑gun, RPG and mortar fire; killed by a mortar round that also wounded his platoon sergeant Garth Wheat.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  [The Advocate](https://www.theadvocate.com.au/story/6338643/remembering-50-years-of-david-banfields-sacrifice/)  \n  - Likely National Service status (drafted in May 1968), though the DVA Nominal Roll field was not directly visible.   [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Virtual War Memorial](https://vwma.org.au/explore/people/654200)  [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/records-and-military-history/about-nominal-rolls/list-of-nominal-rolls)  \n  - More precise location of death at or near Bien Hoa, Đồng Nai Province, South Vietnam, from secondary memorial sources.   [Find a Grave](https://www.findagrave.com/memorial/249760559/david_john-banfield)  [WikiTree](https://www.wikitree.com/wiki/Banfield-1357)  \n\nEverything not explicitly supported by the cited repositories—medical treatment, exact grid location, repatriation logistics, formal investigations, and any individual gallantry awards—remains **NOT_DOCUMENTED** on the basis of the material currently accessible.",
       "authoritative_ai_override": "Unassigned",
       "enhanced_operation_details": "Unassigned"
     }
@@ -16082,7 +16089,7 @@
     "referenceID": "AU_6709611",
     "record_status": {
       "changed": "2026-07-05",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "6709611",
@@ -16340,7 +16347,7 @@
     "referenceID": "AU_A222023",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "A222023",
@@ -16406,7 +16413,7 @@
     "referenceID": "AU_A317006",
     "record_status": {
       "changed": "2026-07-03",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "A317006",
@@ -16696,7 +16703,7 @@
     "referenceID": "AU_O16657",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "O16657",
@@ -16730,31 +16737,34 @@
   {
     "referenceID": "AU_O2361",
     "record_status": {
-      "changed": "2026-07-08",
+      "changed": "2026-07-18",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "O2361",
-      "service_status": "Unassigned",
+      "service_status": "Regular",
       "full_name": "CASADIO, Anthony Austin",
       "sex": "M",
       "date_of_death": "1968-08-21",
       "date_of_birth": "1945-12-30",
       "rank": "Lieutenant",
-      "unit": "RAN Helicopter Flight Vietnam",
+      "unit": "RANHFV, 135th Assault Helicopter Company",
       "fatality_type": "Killed in Action"
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "South Vietnam",
-        "incident_location": "//        // {South Vietnam}",
-        "incident_coordinates": "Unassigned"
+        "death_location": "Blackhorse, Xuân Lộc, Long Khánh Province, Vietnam",
+        "incident_location": "//10.946°N, 107.023°E// {Blackhorse, Long Khánh Province, Vietnam}",
+        "incident_coordinates": "10.946, 107.023"
       },
-      "circumstances_of_death": "Lieutenant Anthony Austin Casadio was killed when his helicopter came under enemy fire during operations.",
+      "circumstances_of_death": "Killed in action when his UH-1C gunship was struck by a rocket-propelled grenade, crashed and burned near Blackhorse while leading a light fire team.",
       "pre_service_occupation": "Naval officer",
-      "unit_served_with": "RAN Helicopter Flight Vietnam",
-      "references": [],
-      "ai_response": "Unassigned",
+      "unit_served_with": "RANHFV, 135th Assault Helicopter Company",
+      "references": [
+        "https://vwma.org.au/explore/people/499767",
+        "https://trove.nla.gov.au/newspaper/article/107069101"
+      ],
+      "ai_response": "### Identified soldier\n\n**Full Name:** Anthony Austin CASADIO  \n**Service Number:** O2361  \n**Rank at death:** Lieutenant (SL)  \n**Service:** Royal Australian Navy  \n**Unit:** Royal Australian Navy Helicopter Flight Vietnam (RANHFV), integrated with US 135th Assault Helicopter Company (EMU)   [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n\n---\n\n### Core personal and service details\n\n- **Birth:**\n  - **Date:** 30 December 1945   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - **Place:** Port Lincoln, South Australia, Australia   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - **Childhood/Home town:** Mount Gambier, South Australia   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n  - **Schooling:** Marist Brothers College, Mount Gambier   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n\n- **Pre‑Navy aviation background:**\n  - **Air Training Corps service:** About 2½ years in ATC, reaching Flight Sergeant; topped ATC senior NCO course at RAAF Edinburgh in 1963   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\n- **Enlistment and service status:**\n  - **Enlisted in RAN:** 10 August 1964   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/certificate/1286484/VIETNAM)  \n  - **Service Status:** **Regular** (commissioned Royal Australian Navy officer; not a National Serviceman) — **inferred from RAN officer career path, not explicitly stated in sources**   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/certificate/1286484/VIETNAM)  \n\n- **Flying training and early postings:**\n  - **Basic training:** HMAS Cerberus (RAN recruit training)   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n  - **Basic Flying Training:** No. 56 Basic Flying Training Course, RAAF Point Cook (Winjeel aircraft)   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n  - **Advanced Flying Training:** No. 56 Advanced Flying Training Course, RAAF Pearce (Vampire aircraft), graduated March 1966 and provisionally awarded wings   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n  - **Helicopter conversion:** HMAS Albatross, Bell Iroquois “B” model; later Wessex Mk 31 with 725 Squadron   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n  - **First front‑line squadron:** HS817 Squadron, embarked in HMAS Melbourne (aircraft carrier) in 1967   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\n- **Vietnam service:**\n  - **Arrival in Vietnam:** First RANHFV contingent reached South Vietnam 16 October 1967; Casadio booked air passage mid‑October 1967 for operational service with US Army on arrival   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n  - **Nominal Roll service dates (Vietnam):** 15/10/1967 – 21/08/1968 (312 days)   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/certificate/1286484/VIETNAM)  \n  - **Unit in theatre:** Royal Australian Navy Helicopter Flight Vietnam, integrated with US Army 135th Assault Helicopter Company (“Experimental Military Unit” – EMU)   [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n  - **Role:** Gunship pilot and squadron leader, flying UH‑1 Iroquois “Huey” gunships   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n  - **Promotion:** Promoted to Lieutenant in early February 1968 while serving with RANHFV   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\n---\n\n### Circumstances of death\n\n- **Date of death:** 21 August 1968   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/certificate/1286484/VIETNAM)  \n- **Place of death:** Vietnam (near Blackhorse base, Long Khánh Province, while en route to Nui Dat)   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n- **Age at death:** 22 years   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n- **Official cause of death (Roll of Honour):** Helicopter crash   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  \n- **Classification (VWMA):** Killed in Action, Vietnam   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n\n#### Detailed incident description\n\n- **Mission context:**\n  - On 21 August 1968, Casadio was leading a light fire team of gunships flying at tree‑top level from Blackhorse to Nui Dat. Low‑level flight was used because the cloud base was low and tree‑top flying reduced vulnerability to ground fire.   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n\n- **Enemy engagement and crash:**\n  - The light fire team was engaged by enemy troops equipped with rocket‑propelled grenades (RPGs) near Blackhorse.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - The wingman reported a sheet of flame exiting from the jet pipe of Casadio’s UH‑1C gunship; the aircraft flared, sank into the trees with rapidly slowing rotor RPM, crashed heavily, broke up and began to burn.   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n  - The helicopter, captained by Lieutenant Casadio, was hit by an RPG, exploded in flames, crashed through trees and exploded again.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n\n- **Rescue attempt and fatalities:**\n  - Lieutenant Dalgleish, RAN, landed his helicopter quickly in an attempt to rescue the crew, but the force of impact had killed all on board; exploding ammunition prevented attempts to extinguish the fire.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Fatalities in Casadio’s aircraft:\n    - **Lieutenant Anthony Austin Casadio, RAN** (pilot)   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n    - **Petty Officer O.C. “Darky” Phillips, RANHFV**   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n    - **Warrant Officer Hershel Bullock (USA)**   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n    - **Specialist 4 William Fennell (USA)**   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n\n- **Operational setting:**\n  - The 135th Assault Helicopter Company (including RANHFV) was based at Blackhorse in Long Khánh Province at this time, flying troop lift, combat assault and support missions in Phước Tuy Province and the Mekong Delta, often under heavy ground fire.   [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n\n- **Investigation:**\n  - An accident investigation was appointed (from the battalion, not the company) and laboratory examination of the aircraft was ordered; further details of the investigation’s findings are **NOT_DOCUMENTED** in the accessible web sources.   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\n---\n\n### Earlier notable combat incident (context to his record)\n\n- **First EMU helicopter shot down (19 November 1967):**\n  - Casadio piloted a gunship attacking Viet Cong positions in the Rung Sat Special Zone near Saigon.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n  - The helicopter was hit several times by ground fire; fuel tanks were punctured, forcing a crash‑landing in enemy‑controlled territory.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n  - Casadio and his crew used door‑mounted M60 machine guns and small arms to establish a defensive perimeter and held off advancing Viet Cong until another EMU helicopter rescued them; they killed at least two enemy soldiers.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n  - A Chinook later recovered the downed helicopter to Vung Tau.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n\n---\n\n### Honours and awards\n\n- **United States Distinguished Flying Cross (DFC):**\n  - Awarded for leadership, skill and courage during the 19 November 1967 Rung Sat Special Zone incident; noted as the first gallantry award to be won by a naval aviator in Vietnam.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\n- **Mention in Dispatches (MID):**\n  - Casadio’s record of “constant heroic acts and exceptional devotion to duty” was posthumously mentioned in despatches.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - DVA Nominal Roll lists “Honour: Mention in Dispatches”.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/certificate/1286484/VIETNAM)  \n\n- **Unit citation and broader recognition:**\n  - RANHFV as a unit later received a Unit Citation for Gallantry for its service; this provides contextual recognition of Casadio’s service but is not an individual award.   [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n\n---\n\n### Burial, memorials and commemoration\n\n- **Burial location (conflicting documentation):**\n  - **Australian War Memorial Roll of Honour card:** Garden of Remembrance, Centennial Park Cemetery, Adelaide, South Australia.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  \n  - **Virtual War Memorial biography:** Carinya Gardens Cemetery, Mount Gambier, South Australia; burial date 10 September 1968.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n  - **Status:** These two authoritative sources conflict; precise burial location cannot be resolved from available web documentation and is therefore **PARTIALLY DOCUMENTED with discrepancy**.\n\n- **Memorials listing his name:**\n  - Australian War Memorial Roll of Honour (panel 4, Commemorative Area, Canberra).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n  - Adelaide Vietnam War Memorial.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Fremantle Royal Australian Navy in Vietnam Memorial.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Mount Gambier War Memorial.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Nowra Fleet Air Arm Roll of Honour.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Seymour Vietnam Veterans Commemorative Walk Roll of Honour.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n  - Multiple other local Vietnam memorials listed on VWMA (East Rockingham, Grafton, Kallangur, Pooraka, Port Pirie, Somerton Park, Wollongong).   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  \n\n- **Last Post Ceremony (AWM):**\n  - Casadio’s story was featured in the Australian War Memorial’s Last Post Ceremony on 30 January 2018, with a detailed narrative of his life, Vietnam service, and death in the helicopter crash on 21 August 1968.   [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  \n\n---\n\n### Service record and archival status\n\n- **National Archives of Australia (NAA) personal service record:**\n  - AWM Roll of Honour notes that personal service records can be obtained via NAA, but a specific NAA file reference for Casadio (O2361) is **NOT_DOCUMENTED** in the accessible web search results.   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [naa.gov.au](https://www.naa.gov.au/explore-collection/palace-letters)  \n\n- **Contemporary newspaper coverage (Trove, major newspapers):**\n  - Specific articles from Trove, The Age, or Sydney Morning Herald detailing the crash or funeral for Lieutenant Casadio were **NOT_DOCUMENTED** in the search results used here; such coverage likely exists but requires direct archival search by name and date.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n\n---\n\n### Summary of death classification\n\n- **War/Conflict:** Vietnam War (1962–1975).   [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  \n- **Service arm:** Royal Australian Navy, Fleet Air Arm, RAN Helicopter Flight Vietnam.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n- **Nature of death:** Killed in action in Vietnam when his UH‑1C gunship was struck by a rocket‑propelled grenade, exploded and crashed near Blackhorse while leading a light fire team at tree‑top level; all crew killed on impact.   [Virtual War Memorial](https://vwma.org.au/explore/people/499767)  [Australian War Memorial](https://www.awm.gov.au/collection/R1715480)  [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610598)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/RoH-Casadio-v2.pdf)  \n\nIf you’d like, I can next map this incident against broader RANHFV casualty patterns or reconstruct the flight profile and tactical context in more detail.",
       "authoritative_ai_override": "Unassigned",
       "enhanced_operation_details": "Unassigned"
     }
@@ -16891,7 +16901,7 @@
     "referenceID": "AU_O51626",
     "record_status": {
       "changed": "2026-07-02",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "O51626",
@@ -16926,7 +16936,7 @@
     "referenceID": "AU_R54257",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "R54257",
@@ -16957,31 +16967,34 @@
   {
     "referenceID": "AU_R56859",
     "record_status": {
-      "changed": "2026-07-08",
+      "changed": "2026-07-18",
       "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "R56859",
-      "service_status": "Unassigned",
+      "service_status": "Regular",
       "full_name": "PHILLIPS, O'Brian Cedric Ignatious",
       "sex": "M",
       "date_of_death": "1968-08-21",
       "date_of_birth": "1936-06-18",
       "rank": "Petty Officer",
-      "unit": "RAN Helicopter Flight Vietnam",
-      "fatality_type": "Helicopter crash"
+      "unit": "RANHFV, 135th Assault Helicopter Company (EMU)",
+      "fatality_type": "Killed in Action"
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "South Vietnam",
-        "incident_location": "//        // {South Vietnam}",
-        "incident_coordinates": "Unassigned"
+        "death_location": "Blackhorse, Xuan Lộc, Long Khánh Province, Vietnam",
+        "incident_location": "//10.9318, 107.2322// {Blackhorse, Xuan Loc, Long Khánh Province, Vietna",
+        "incident_coordinates": "10.9318, 107.2322"
       },
-      "circumstances_of_death": "Petty Officer O’Brian Cedric Ignatious Phillips was killed in a helicopter crash while serving with the RAN Helicopter Flight Vietnam.",
-      "pre_service_occupation": "Electrician",
-      "unit_served_with": "RAN Helicopter Flight Vietnam",
-      "references": [],
-      "ai_response": "Unassigned",
+      "circumstances_of_death": "Helicopter was struck by a rocket-propelled grenade (RPG) while flying a combat mission from Fire Support Base Black Horse to Núi Đất at tree-top level, then crashed in a clearing; all four crew killed on impact.",
+      "pre_service_occupation": "Trainee Engineman - WA Railways",
+      "unit_served_with": "RANHFV, 135th Assault Helicopter Company (EMU)",
+      "references": [
+        "https://vwma.org.au/explore/people/654538",
+        "https://trove.nla.gov.au/newspaper/article/107069101"
+      ],
+      "ai_response": "### Identified soldier\n\n**Authoritative identity (single match)**  \n- **Full name:** O’Brian Cedric Ignatious PHILLIPS   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  \n- **Service number:** R56859   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  \n- **Service:** Royal Australian Navy   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  \n- **Rank at death:** Petty Officer Aircrewman   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Australian War Memorial](https://www.awm.gov.au/collection/P10319504)  \n- **Unit:** Royal Australian Navy Helicopter Flight Vietnam (RANHFV), integrated with US Army 135th Assault Helicopter Company (EMU)   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n- **War:** Vietnam War (1962–1975)   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  \n- **Date of death:** 21 August 1968   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n\nNo other Vietnam War Roll of Honour entry with surname PHILLIPS and date of death 21 August 1968 appears; this is a single, authoritative match.   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  \n\n---\n\n### Death: cause, location and circumstances\n\n**Basic facts**  \n- **Cause of death:** Helicopter crash (killed in action)   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n- **Place of death (theatre):** Vietnam   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Australian War Memorial](https://www.awm.gov.au/collection/P10319504)  \n- **Age at death:** 32 years   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n\n**Detailed circumstances (convergent sources)**  \n- **Mission type:** Lead helicopter in a light fire team of gunships, flying a combat mission from Fire Support Base Black Horse to Nui Dat at tree‑top level.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n- **Enemy action:** The helicopter was struck by a rocket‑propelled grenade (RPG), then crashed in a clearing; all four crew were killed on impact.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n- **Location context:**  \n  - Operating from Black Horse fire support base near Xuan Loc, Long Khánh/Phuoc Tuy area.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n  - Flight route described as Black Horse to Nui Dat, Phuoc Tuy Province.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n\n**Other crew and unit involvement**  \n- **Australian pilot:** Lieutenant Anthony Austin CASADIO, RANHFV, pilot in command of the gunship; killed in the same crash.   [Australian War Memorial](https://www.awm.gov.au/collection/P11027168)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n- **US crew members:** Warrant Officer Hershel BULLOCK and Specialist 4 William FENNELL (US Army 135th AHC), killed in the crash.   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/19680822-RoH-PHILLIPSv2.pdf)  \n- **Unit:** RANHFV integrated into US Army 135th Assault Helicopter Company (EMU), conducting troop lift, combat assault and support missions in Phuoc Tuy Province and the Mekong Delta.   [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/memorials/memorials-north-america/united-states-america/135th-ahc-emu-us-army-royal-australian-navy-memorial)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  \n\n**Contemporary reporting**  \n- **Newspaper report:** The Canberra Times, 22 August 1968, “Copter crash kills RAN men”  \n  - Reports two Australian naval airmen killed when an American gunship helicopter crashed and burst into flames 40 miles north‑east of Saigon.  \n  - Names Lieutenant Anthony Austin Casadio (22, single, of Mount Gambier, SA) and Petty Officer Aircrewman O’Brian Cedric Phillips (32, married, of Bassendean, WA).  \n  - States the crash occurred yesterday (21 August 1968) and that the RAN helicopter flight was serving with the US Army’s 135th Aviation Company at Blackhorse.   [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n\n**Eyewitness accounts / investigations**  \n- **Eyewitness testimony:** NOT_DOCUMENTED (no primary eyewitness narrative located in AWM, DVA, VWMA, Trove, or published unit histories beyond the general descriptive accounts above).  \n- **Formal investigation details (board of inquiry, accident report):** NOT_DOCUMENTED (no accessible NAA or Defence accident report found in open web sources for this specific crash).  \n\n---\n\n### Medical treatment, burial, repatriation and commemoration\n\n**Medical treatment at time of incident**  \n- **On‑scene outcome:** All four crew killed on impact; no indication of survival or subsequent medical treatment.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n- **Post‑crash medical care:** NOT_DOCUMENTED (no record of evacuation or treatment—consistent with “killed on impact” wording).\n\n**Burial and repatriation**  \n- **Burial location:** Karrakatta Cemetery, Karrakatta, Perth, Western Australia, Australia.   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610798)  \n- **Official commemoration position:** Roman Catholic – KA – 591 (Karrakatta Cemetery, WA).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  \n- **Repatriation:** Implied by burial in Perth; specific transport/repatriation details NOT_DOCUMENTED in the consulted sources.\n\n**Memorials and Rolls**  \n- **Australian War Memorial Roll of Honour:** Listed under Vietnam War, Royal Australian Navy Helicopter Flight Vietnam, panel 4.   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  \n- **Multiple memorials (VWMA listing):**  \n  - AWM Roll of Honour  \n  - East Rockingham Vietnam War Roll of Honour  \n  - Fremantle Royal Australian Navy in Vietnam Memorial  \n  - Clarence Valley Vietnam Veterans Memorial (Grafton)  \n  - Kallangur Vietnam Veterans’ Place  \n  - Kings Park WA State War Memorial  \n  - Nowra Fleet Air Arm Roll of Honour  \n  - Port Pirie Vietnam Veterans Honour Wall  \n  - Seymour Vietnam Veterans Commemorative Walk Roll of Honour  \n  - Wollongong Vietnam Memorial   [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n\n**Unit and collective commemoration**  \n- **EMU / RANHFV memorial:** 135th AHC (EMU) US Army–Royal Australian Navy Memorial at Fort Rucker, USA, includes RANHFV Roll of Honour.   [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/memorials/memorials-north-america/united-states-america/135th-ahc-emu-us-army-royal-australian-navy-memorial)  \n- **Last Post Ceremony (AWM):** Story of R56859 Petty Officer Aircrewman O’Brian Cedric Ignatious Phillips delivered 18 August 2018; identifies death as helicopter crash on 21 August 1968 and burial at Karrakatta Cemetery.   [Australian War Memorial](https://www.awm.gov.au/collection/C2610798)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  \n\n---\n\n### Service status and career\n\n**Service status (Regular vs National Service)**  \n- **Enlistment:** Royal Australian Navy, 12 March 1960, Ordinary Seaman.   [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n- **National Service field (DVA Nominal Roll):** No National Service flag recorded; category listed as “Naval Airman”.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  \n- **Inference:** Given voluntary enlistment in the RAN in 1960, continuous naval career, and absence of National Service designation on the Nominal Roll, his **Service Status** is best classified as **Regular** (inferred from service record and DVA categorisation, not explicitly labelled).   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n\n**Career highlights (relevant to Vietnam service)**  \n- **Pre‑Vietnam naval service:** Served as sonar operator in Wessex anti‑submarine helicopters from HMAS Melbourne; promoted Petty Officer in 1965.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n- **Transfer to aircrew:** Converted from electrical/technical branch to aircrewman; specialised as POAUC (Aircrewman Underwater Controller), later redesignated POACM (Petty Officer Aircrewman).   [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2025/11/19680822-RoH-PHILLIPSv2.pdf)  \n- **Vietnam deployment:** Joined first contingent of RANHFV in 1967; served as gunship aircrewman and door gunner on UH‑1 Iroquois helicopters.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [Royal Australian Navy](https://www.navy.gov.au/about-navy/history/history-milestones/service-royal-australian-navy-helicopter-flight-vietnam)  [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  \n- **Additional roles:**  \n  - Second‑in‑command of working party expanding Fire Support Base Black Horse, including construction of command bunker.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n  - Attached to Australian Army infantry units as pathfinder; participated in sufficient patrols to qualify for the Infantry Combat Badge—an unusual distinction for a naval aviator.   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n\n---\n\n### Awards, honours and unit citations\n\n**Individual decorations**  \n- **Personal gallantry or service awards:** NOT_DOCUMENTED in AWM person entry, VWMA record, DVA Nominal Roll, or FlyByTemp obituary (no specific medal list for Phillips beyond standard campaign/service entitlements).   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n\n**Unit‑level recognition (inference)**  \n- **RANHFV Unit Citation for Gallantry:** The RANHFV as a unit has been recognised with a Unit Citation for Gallantry for extraordinary and gallant service in Vietnam; as a member of RANHFV, Phillips would be an entitled recipient of this unit citation (inference based on unit‑wide award, not individually named citation).   [Anzac Portal](https://anzacportal.dva.gov.au/wars-and-missions/vietnam-war/navy/helicopter-flight)  [Department of Veterans' Affairs](https://www.dva.gov.au/recognition-and-commemoration/memorials/memorials-north-america/united-states-america/135th-ahc-emu-us-army-royal-australian-navy-memorial)  \n\n---\n\n### Personal details relevant to death context\n\n**Biographical data**  \n- **Date of birth:** 18 June 1936   [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [Australian War Memorial](https://www.awm.gov.au/collection/C2610798)  \n- **Place of birth:** Patna City, India; of British and Indian heritage.   [DVA's Nominal Rolls](https://nominal-rolls.dva.gov.au/veteran?id=1226770&c=VIETNAM)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  \n- **Pre‑service occupation:** Trainee engineman, Western Australian Railways.   [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  \n- **Home town / residence at time of service:** Bassendean / Fremantle area, Western Australia.   [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [Virtual War Memorial](https://vwma.org.au/explore/people/654538)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n- **Marital status:** Married; wife named Margaret (survived him in Australia).   [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [Australian War Memorial](https://www.awm.gov.au/wartime/86/article-six)  [faaaa.asn.au](https://www.faaaa.asn.au/wp-content/uploads/2026/01/19680822-RoH-PHILLIPS-v3.pdf)  [trove.nla.gov.au](https://trove.nla.gov.au/newspaper/article/107069101)  \n\n---\n\n### National Archives of Australia and other archival records\n\n**NAA personal service file**  \n- **Reference:** AWM Roll of Honour page notes that personal service records are held by National Archives of Australia and can be requested, but no specific NAA series or barcode for Phillips is exposed in the consulted web pages.   [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  [Australian War Memorial](https://www.awm.gov.au/collection/R1716202)  \n- **Accessible online content for this research:** NOT_DOCUMENTED (no digitised NAA file for R56859 located via open web search in this session).\n\n**Other contemporary newspapers (beyond The Canberra Times)**  \n- **The Age, Sydney Morning Herald, other Trove titles:** No additional detailed article specifically naming Phillips and describing the crash was surfaced beyond the Canberra Times report; further detail from those papers is therefore NOT_DOCUMENTED for this answer.\n\n---\n\nIf you’d like, we can next dig into unit war diaries or try to trace any surviving EMU/RANHFV oral histories that might give you more human texture around that last flight.",
       "authoritative_ai_override": "Unassigned",
       "enhanced_operation_details": "Unassigned"
     }
@@ -17054,7 +17067,7 @@
     "referenceID": "AU_R66558",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "R66558",

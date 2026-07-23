@@ -1,18 +1,24 @@
 # AI Session Progress & Next Steps
 
 ## Session Summary
-- **Confirmed `rank` editable change already pushed** (`85382aa`: "feat: make rank field editable in Update Fatalities modal").
-- **Updated `rAI_PROGRESS.md` checklist** to reflect completed items; committed & pushed (`dcd6b07`).
-- **Fixed backup-to-OneDrive bug**: `_backup_files` called `coords._load_json(filename)` which reads local disk files — these don't exist. Replaced with actual Firestore fetch via `db.collection("countries/{cc}/wars/vietnam/honor_roll").stream()`, deriving country code from filename prefix (`AU_fatalities` → `AU`). Also added `_init_firebase` + `firebase_admin.firestore` imports to `main.py`.
+- **Updated Firestore Database ID**: Switched the Python app database configuration (`push_json_updates_to_firestore.py` and `main.py`) to target the new named database `onthisdayinvn` in project `djb-onthisdayinvn`.
+- **Configured Service Account Key**: Updated the codebase to load credentials from `onthisdayinvn-firebase-key.json` instead of `firebase-key.json`, and added this new filename to `.gitignore`.
+- **Updated Web App Migration**: Pointed `migrateFirestore.js` in the web app functions to `djb-onthisdayinvn` / `onthisdayinvn`.
+- **Cleared Firestore Flags**: Ran a utility script to reset `"update_to_firestore"` to `"false"` for all 526 records in `AU_fatalities.json` and 37 records in `NZ_fatalities.json` to allow clean testing of the push/backup flows.
+- **Removed Deprecated Tasks**: Deleted the record compressor restructure task from the web app's `rAI_PROGRESS.md`.
 
 ## Current System State
-- **Firestore database**: Project `djb-onthisday`, database `onthisday` (never re-create). All Firestore client calls use `firestore.client(database_id='onthisday')`.
-- **Backup flow** (`main.py`, `_backup_files`): `_init_firebase()` → `firestore.client(database_id='onthisday')` → for each file in `FILES_AVAILABLE_FOR_UPDATE`, derive country code → `db.collection("countries/{cc}/wars/vietnam/honor_roll").stream()` → JSON dump with timestamp → prune to 3 most recent.
-- **Push flow**: `count_updates()` → `_ask_number()` dialog → threaded `push_updates(country_code, path, callback, limit=N)` → result dialog.
-- **Editable fields in Update Fatalities modal**: `derived_details.*`, `service_status`, `unit`, `fatality_type`, `rank`.
+- **Firestore Project**: `djb-onthisdayinvn`
+- **Firestore Database ID**: `onthisdayinvn`
+- **Credentials File**: `onthisdayinvn-firebase-key.json` (ignored via `.gitignore`)
+- **JSON Data State**: All records in `AU_fatalities.json` and `NZ_fatalities.json` are marked with `"update_to_firestore": "false"`.
 
 ## Absolute Next-Step Checklist
-- [ ] Commit the backup-to-OneDrive fix and push to GitHub.
-- [ ] Launch the app, run the backup, confirm AU/NZ data is fetched from Firestore and saved to OneDrive sync folder.
+- [ ] Launch the Python app, run the backup flow, and verify that AU/NZ data is successfully fetched from the `onthisdayinvn` database and saved to the OneDrive sync folder.
+- [ ] Run the Node.js data enrichment script to apply `record_status` metadata and `eod: "Unassigned"` fields in the `onthisdayinvn` database:
+  ```bash
+  node c:/Developments/Vibe_Coding/webApps/webapp_OnThisDay_in_Vietnam/functions/migrateFirestore.js
+  ```
 
-**Incomplete work**: None.
+## Incomplete Work
+- None.

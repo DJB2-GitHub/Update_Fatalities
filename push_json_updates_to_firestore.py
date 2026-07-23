@@ -8,7 +8,7 @@ def _init_firebase():
     """Lazy-init Firebase. Call once before any Firestore operation."""
     if not firebase_admin._apps:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        key_path = os.path.join(base_dir, "firebase-key.json")
+        key_path = os.path.join(base_dir, "onthisdayinvn-firebase-key.json")
         if not os.path.exists(key_path):
             raise FileNotFoundError(f"Cannot find Firebase service account key: {key_path}")
         cred = credentials.Certificate(key_path)
@@ -38,7 +38,7 @@ def push_updates(country_code: str, json_filepath: str, progress_callback=None, 
     If *limit* is given, only the first *limit* records are pushed.
     """
     _init_firebase()
-    db = firestore.client(database_id='onthisday')
+    db = firestore.client(database_id='onthisdayinvn')
 
     records_to_update = _load_records_to_update(json_filepath)
     if limit is not None and limit > 0:

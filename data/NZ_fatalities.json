@@ -2,8 +2,8 @@
   {
     "referenceID": "NZ_209440",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "209440",
@@ -13,7 +13,7 @@
       "date_of_death": "1969-11-24",
       "date_of_birth": "1942-04-22",
       "rank": "Spr",
-      "unit": "V4,RNZE",
+      "unit": "V4,RNZ",
       "fatality_type": "Killed in Action"
     },
     "derived_details": {
@@ -35,8 +35,8 @@
   {
     "referenceID": "NZ_211075",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "211075",
@@ -68,12 +68,12 @@
   {
     "referenceID": "NZ_346598",
     "record_status": {
-      "changed": "",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "346598",
-      "service_status": "Unassigned",
+      "service_status": "Regular",
       "full_name": "MANTON, Maurice",
       "sex": "M",
       "date_of_death": "1967-09-02",
@@ -84,11 +84,11 @@
     },
     "derived_details": {
       "fatality_locations": {
-        "death_location": "Phuoc Tuy Province, South Vietnam",
+        "death_location": "Phước Tuy Province, South Vietnam",
         "incident_location": "Unassigned",
         "incident_coordinates": "Unassigned"
       },
-      "circumstances_of_death": "Killed in action, 2 September 1967 – mine in the Long Green area, Phuoc Tuy Province.",
+      "circumstances_of_death": "Killed in action, 2 September 1967 – mine in the Long Green area, Phước Tuy Province.",
       "pre_service_occupation": "Unassigned",
       "unit_served_with": "V Company, 1RNZIR",
       "references": [],
@@ -100,7 +100,7 @@
     "referenceID": "NZ_37221",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "37221",
@@ -131,7 +131,7 @@
     "referenceID": "NZ_37404",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "37404",
@@ -162,7 +162,7 @@
     "referenceID": "NZ_38655",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "38655",
@@ -193,7 +193,7 @@
     "referenceID": "NZ_388111",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "388111",
@@ -224,7 +224,7 @@
     "referenceID": "NZ_41081",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41081",
@@ -255,7 +255,7 @@
     "referenceID": "NZ_41240",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41240",
@@ -285,8 +285,8 @@
   {
     "referenceID": "NZ_41243",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41243",
@@ -319,7 +319,7 @@
     "referenceID": "NZ_41301",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41301",
@@ -350,7 +350,7 @@
     "referenceID": "NZ_41383",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41383",
@@ -381,7 +381,7 @@
     "referenceID": "NZ_41530",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41530",
@@ -412,7 +412,7 @@
     "referenceID": "NZ_41576",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41576",
@@ -443,7 +443,7 @@
     "referenceID": "NZ_41708",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "41708",
@@ -473,8 +473,8 @@
   {
     "referenceID": "NZ_42116",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "42116",
@@ -507,7 +507,7 @@
     "referenceID": "NZ_42294",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "42294",
@@ -538,7 +538,7 @@
     "referenceID": "NZ_42742",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "42742",
@@ -569,7 +569,7 @@
     "referenceID": "NZ_42752",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "42752",
@@ -600,7 +600,7 @@
     "referenceID": "NZ_43032",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43032",
@@ -631,7 +631,7 @@
     "referenceID": "NZ_43134",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43134",
@@ -662,7 +662,7 @@
     "referenceID": "NZ_43221",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43221",
@@ -693,7 +693,7 @@
     "referenceID": "NZ_43233",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43233",
@@ -723,8 +723,8 @@
   {
     "referenceID": "NZ_43349",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43349",
@@ -757,7 +757,7 @@
     "referenceID": "NZ_43648",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43648",
@@ -788,7 +788,7 @@
     "referenceID": "NZ_43651",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "43651",
@@ -818,8 +818,8 @@
   {
     "referenceID": "NZ_463211",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "463211",
@@ -851,8 +851,8 @@
   {
     "referenceID": "NZ_482859",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "482859",
@@ -885,7 +885,7 @@
     "referenceID": "NZ_483256",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "483256",
@@ -915,8 +915,8 @@
   {
     "referenceID": "NZ_539244",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "539244",
@@ -949,7 +949,7 @@
     "referenceID": "NZ_573233",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "573233",
@@ -980,7 +980,7 @@
     "referenceID": "NZ_629544",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "629544",
@@ -1011,7 +1011,7 @@
     "referenceID": "NZ_645140",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "645140",
@@ -1041,8 +1041,8 @@
   {
     "referenceID": "NZ_699033",
     "record_status": {
-      "changed": "2026-07-13",
-      "update_to_firestore": ""
+      "changed": "2026-07-18",
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "699033",
@@ -1075,7 +1075,7 @@
     "referenceID": "NZ_80166",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "80166",
@@ -1106,7 +1106,7 @@
     "referenceID": "NZ_838605",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "838605",
@@ -1137,7 +1137,7 @@
     "referenceID": "NZ_928518",
     "record_status": {
       "changed": "",
-      "update_to_firestore": ""
+      "update_to_firestore": "true"
     },
     "serviceRecordAuthority": {
       "service_number": "928518",
